@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common\common.vcxproj", "{1CECDE9A-F7A2-4199-B0EA-119853E306D4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "skse", "skse\skse.vcxproj", "{7E0E2D11-EAEB-4404-8D77-CA3572C8680E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CobbAPI", "CobbAPI\plugin_example.vcxproj", "{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1CECDE9A-F7A2-4199-B0EA-119853E306D4} = {1CECDE9A-F7A2-4199-B0EA-119853E306D4}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1CECDE9A-F7A2-4199-B0EA-119853E306D4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1CECDE9A-F7A2-4199-B0EA-119853E306D4}.Debug|Win32.Build.0 = Debug|Win32
+		{1CECDE9A-F7A2-4199-B0EA-119853E306D4}.Release|Win32.ActiveCfg = Release|Win32
+		{1CECDE9A-F7A2-4199-B0EA-119853E306D4}.Release|Win32.Build.0 = Release|Win32
+		{7E0E2D11-EAEB-4404-8D77-CA3572C8680E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7E0E2D11-EAEB-4404-8D77-CA3572C8680E}.Debug|Win32.Build.0 = Debug|Win32
+		{7E0E2D11-EAEB-4404-8D77-CA3572C8680E}.Release|Win32.ActiveCfg = Release|Win32
+		{7E0E2D11-EAEB-4404-8D77-CA3572C8680E}.Release|Win32.Build.0 = Release|Win32
+		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Debug|Win32.Build.0 = Debug|Win32
+		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Release|Win32.ActiveCfg = Release|Win32
+		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

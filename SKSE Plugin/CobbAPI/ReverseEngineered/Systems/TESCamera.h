@@ -30,7 +30,10 @@ namespace RE {
          DEFINE_MEMBER_FN(SetCameraNode,  bool,   0x006532B0, NiNode**); // returns bool: does the current camera node (after setting) exist?
          DEFINE_MEMBER_FN(SetCameraState, UInt32, 0x006533D0, TESCameraState* cameraState);
    };
-   static_assert(offsetof(TESCamera, cameraNode) == 0x1C, "Data layout incorrect for RE::TESCamera: bad cameraNode."); // IntelliSense chokes on this; ignore
+   /*// Ignore these asserts. Visual Studio doesn't handle VTBLs consistently when running offsetof.
+   static_assert(offsetof(TESCamera, cameraNode) >= 0x1C, "RE::TESCamera::cameraNode is too early.");
+   static_assert(offsetof(TESCamera, cameraNode) <= 0x1C, "RE::TESCamera::cameraNode is too late.");
+   //*/
 
    class TESCameraState {
       public:
@@ -41,7 +44,7 @@ namespace RE {
          virtual void OnStateEnd();	// pure
          virtual void OnUpdate(TESCameraState* unk1); // called by TESCamera::Update // arg is out-variable; if set, TESCamera::Update will switch to the given state. increment refcount before returning (receiver will decrement refcount; presumably this prevents deletion before the state is in use)
          virtual NiQuaternion* Unk_04(NiQuaternion* out);
-         virtual NiPoint3* Unk_05(NiPoint3* out); // for ThirdPersonState, returns unk20
+         virtual NiPoint3*     Unk_05(NiPoint3* out); // for ThirdPersonState, returns unk20
          virtual void Unk_06(void*); // pure // related to saving and loading
          virtual void Unk_07();	// pure
          virtual void Unk_08();	// pure // related to serialization?

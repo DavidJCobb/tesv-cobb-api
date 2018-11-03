@@ -15,8 +15,8 @@ namespace RE {
       UInt32   unk08 = *g_invalidRefHandle; // fallback crosshair ref handle; used if crosshairRefHandle == *g_invalidRefHandle
       UInt32   unk0C = 0;
       NiPoint3 unk10;
-      void*    unk1C = NULL;
-      bhkSimpleShapePhantom* unk20 = NULL;
+      void*    unk1C = nullptr;
+      bhkSimpleShapePhantom* unk20 = nullptr;
       UInt32   unk24 = 0; // word, extended
       UInt8    unk28 = false;
       //

@@ -28,7 +28,7 @@ namespace RE {
          UInt8  unk00F;                   // 00F
          SInt32 unk010;                   // 010 // loaded in subroutine 0050D190
          UInt32 pad014[(0x028 - 0x014) / sizeof(UInt32)]; // 014
-         tArray<UInt32>  unk028; // 028 - ref handles for Actor*s? the TDETECT command loops over this to delete AI/detection state in actors
+         tArray<UInt32>  unk028; // 028 // ref handles for Actor*s? the TDETECT command loops over this to delete AI/detection state in actors
          tArray<UInt32>  unk034;
          tArray<UInt32>  unk040;
          tArray<UInt32>  unk04C;

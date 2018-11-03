@@ -14,7 +14,7 @@ namespace RE {
                FORM_FLAGS = 0x00000001
             };
             enum ChangeFlagsCELL { // All valid flags are listed.
-               //FORM_FLAGS     = 0x00000001, // this flag has the same meaning for all forms. // VS is stupid and whines if I define the same value IN DIFFERENT BLOODY ENUMS
+               //FORM_FLAGS     = 0x00000001, // this flag has the same meaning for all forms.
                CELL_FLAGS     = 0x00000002,
                FULLNAME       = 0x00000004,
                OWNERSHIP      = 0x00000008,
@@ -24,7 +24,7 @@ namespace RE {
                SEENDATA       = 0x80000000,
             };
             enum ChangeFlagsNPC_ {
-               //FORM_FLAGS     = 0x00000001, // this flag has the same meaning for all forms. // VS is stupid and whines if I define the same value IN DIFFERENT BLOODY ENUMS
+               //FORM_FLAGS     = 0x00000001, // this flag has the same meaning for all forms.
                BASE_DATA      = 0x00000002, // on ActorBase?
                // ?           = 0x00000004,
                BASE_AIDATA    = 0x00000008, // on ActorBase?
@@ -105,7 +105,7 @@ namespace RE {
          };
          UInt32      formID = 0;
          Data        data;
-         ChangeForm* next = NULL;
+         ChangeForm* next = nullptr;
    };
 
    typedef UInt32 UnknownChangeFormHashOrKey;
@@ -162,7 +162,7 @@ namespace RE {
          DEFINE_MEMBER_FN(GetChangeFlags, UInt32*, 0x00676C20, UInt32* outFlags, UInt32 formID); // modifies *outFlags; returns outFlags.
          DEFINE_MEMBER_FN(GetChangeData,  bool,    0x00676BC0, UInt32 formID, ChangeForm::Data* outData); // returns true if successful
    };
-   static_assert(offsetof(ChangeFormManager, unk20) == 0x20, "ChangeFormManager::unk20 is at the wrong offset!"); // IntelliSense chokes on this; ignore red lines
+   static_assert(offsetof(ChangeFormManager, unk20) == 0x20, "ChangeFormManager::unk20 is at the wrong offset!");
 
    class Unknown01B2E38C {
       public:

@@ -9,7 +9,7 @@
 
 #include "ReverseEngineered/Forms/BaseForms/TESFurniture.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Furniture {
       SpellItem* GetAssociatedSpell(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESFurniture* furn) {
          ERROR_AND_RETURN_0_IF(furn == nullptr, "You must specify a Furniture base form.", registry, stackId);
@@ -109,7 +109,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::Furniture::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Furniture::Register(VMClassRegistry* registry) {
    //
    // FUNCTIONS
    //

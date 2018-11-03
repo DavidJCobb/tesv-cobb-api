@@ -7,7 +7,7 @@
 #include "ReverseEngineered/Forms/Actor.h"
 #include "ReverseEngineered/Systems/Timing.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Actor {
       void Decapitate(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* subject, bool evenIfAlive) {
          //
@@ -110,7 +110,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Actor::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Actor::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, void, RE::Actor*, bool>(
          "Decapitate",

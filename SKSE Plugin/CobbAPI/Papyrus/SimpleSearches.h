@@ -10,7 +10,7 @@
 #include <vector>
 #include "CobbRotation.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace SimpleSearches {
       bool Register(::VMClassRegistry* registry);
 

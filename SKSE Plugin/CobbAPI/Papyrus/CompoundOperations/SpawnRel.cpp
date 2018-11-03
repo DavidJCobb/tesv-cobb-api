@@ -25,7 +25,7 @@
       return retval; \
    }
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace BatchSpawnRel {
       //
       // Functor virtual methods:
@@ -116,9 +116,9 @@ namespace PapyrusPrefix(Papyrus) {
                if (target != NULL || e.usingTargetPoint) {
                   Cobb::Coordinates applied;
                   if (e.usingTargetPoint) {
-                     Cobb::ApplyRelativeCoordinates(&applied, &(e.targetPos), &(e.targetRot), &(e.pos), &(e.rot), true, true);
+                     Cobb::ApplyRelativeCoordinates(applied, e.targetPos, e.targetRot, e.pos, e.rot, true, true);
                   } else if (target != NULL) {
-                     Cobb::ApplyRelativeCoordinates(&applied, &(target->pos), &(target->rot), &(e.pos), &(e.rot), true, true);
+                     Cobb::ApplyRelativeCoordinates(applied, target->pos, target->rot, e.pos, e.rot, true, true);
                   }
                   finalPos = applied.pos;
                   finalRot.x = applied.rot.x;
@@ -269,7 +269,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::BatchSpawnRel::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::BatchSpawnRel::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

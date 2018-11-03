@@ -3,7 +3,7 @@
 
 #include "skse/GameData.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Alias {
       bool Register(VMClassRegistry* registry);
    }

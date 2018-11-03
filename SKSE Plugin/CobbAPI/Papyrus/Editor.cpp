@@ -9,7 +9,7 @@
 #include "CobbRotation.h"
 #include "Types/bounds.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Editor {
       void SetDisplayOptionGlobals(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<TESGlobal*> forms) {
          TESGlobal* optionGizmos  = nullptr;
@@ -169,7 +169,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Editor::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Editor::Register(VMClassRegistry* registry) {
    #define REGISTER_SETTER_NOWAIT(fnc, name, type) \
       registry->RegisterFunction(\
          new NativeFunction1<StaticFunctionTag, void, VMArray<type>>(\

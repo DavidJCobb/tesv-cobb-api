@@ -25,7 +25,7 @@
 
 #include "Patches/PlaceableCollisionPrimitives.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace SKSEDebug {
       void EchoMemoryLocationOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* subject) {
          ERROR_AND_RETURN_IF(subject == NULL, "Form does not exist.", registry, stackId);
@@ -330,7 +330,7 @@ _MESSAGE("fOffset[%d] == %f", i, offsets[i]);
    }
 }
 
-bool PapyrusPrefix(Papyrus)::SKSEDebug::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::SKSEDebug::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1 <StaticFunctionTag, void, TESForm*>(
          "EchoMemoryLocationOf",

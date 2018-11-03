@@ -8,7 +8,7 @@
 #include "skse/GameObjects.h"
 #include "ReverseEngineered/Systems/GameData.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Shout {
       TESShout* GetAnyShoutUsingSpell(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, SpellItem* spell) {
          ERROR_AND_RETURN_0_IF(spell == nullptr, "Cannot search for a None spell.", registry, stackId);
@@ -124,7 +124,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Shout::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Shout::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, TESShout*, SpellItem*>(
          "GetAnyShoutUsingSpell",

@@ -7,7 +7,7 @@
 #include "skse/GameForms.h"
 #include "ReverseEngineered/Types.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Message {
       VMResultArray<BSFixedString> GetButtonLabels(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BGSMessage* message) {
          VMResultArray<BSFixedString> result;
@@ -29,7 +29,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Message::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Message::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, VMResultArray<BSFixedString>, BGSMessage*>(
          "GetButtonLabels",

@@ -28,7 +28,7 @@
       return retval; \
    }
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace BatchMoveRel {
       //
       // Functor virtual methods:
@@ -176,8 +176,8 @@ namespace PapyrusPrefix(Papyrus) {
                      }
                   }
                   Cobb::Coordinates applied;
-                  Cobb::GetRelativeCoordinates(&editorOffset, &editorPosTarget, &editorRotTarget, &editorPosSubject, &editorRotSubject);
-                  Cobb::ApplyRelativeCoordinates(&applied, &(target->pos), &(target->rot), &(editorOffset.pos), (NiPoint3*)&(editorOffset.rot), true, editorOffset.rot.isRadians);
+                  Cobb::GetRelativeCoordinates(editorOffset, editorPosTarget, editorRotTarget, editorPosSubject, editorRotSubject);
+                  Cobb::ApplyRelativeCoordinates(applied, target->pos, target->rot, editorOffset.pos, (NiPoint3)(editorOffset.rot), true, editorOffset.rot.isRadians);
                   applied.rot.ConvertToRadians();
                   finalPos = applied.pos;
                   finalRot.x = applied.rot.x;
@@ -191,9 +191,9 @@ namespace PapyrusPrefix(Papyrus) {
                if (target != nullptr || e.usingTargetPoint) {
                   Cobb::Coordinates applied;
                   if (e.usingTargetPoint) {
-                     Cobb::ApplyRelativeCoordinates(&applied, &(e.targetPos), &(e.targetRot), &(e.pos), &(e.rot), true, true);
+                     Cobb::ApplyRelativeCoordinates(applied, e.targetPos, e.targetRot, e.pos, e.rot, true, true);
                   } else if (target != nullptr) {
-                     Cobb::ApplyRelativeCoordinates(&applied, &(target->pos), &(target->rot), &(e.pos), &(e.rot), true, true);
+                     Cobb::ApplyRelativeCoordinates(applied, target->pos, target->rot, e.pos, e.rot, true, true);
                   }
                   finalPos = applied.pos;
                   finalRot.x = applied.rot.x;
@@ -227,7 +227,7 @@ namespace PapyrusPrefix(Papyrus) {
                      RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
                      if (destination) {
                         if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes) {
-                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*)destination, &originalPos, &originalRot, &finalPos, &finalRot);
+                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*)destination, originalPos, originalRot, finalPos, finalRot);
                         } else if (this->alsoMoveTeleportMarkers == kMoveTeleport_EditorOffset) {
                            TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(subject, (TESObjectREFR*)destination);
                         }
@@ -409,7 +409,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::BatchMoveRel::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::BatchMoveRel::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

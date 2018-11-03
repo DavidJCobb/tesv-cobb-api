@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace WeakReference {
       bool Register(::VMClassRegistry* registry);
 

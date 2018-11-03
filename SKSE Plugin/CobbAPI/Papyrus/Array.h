@@ -4,7 +4,7 @@
 
 #include "skse/PapyrusVM.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Array {
       bool Register(::VMClassRegistry* registry);
    }

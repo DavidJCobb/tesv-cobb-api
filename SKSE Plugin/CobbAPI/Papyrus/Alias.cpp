@@ -8,7 +8,7 @@
 #include "ReverseEngineered/Objects/Alias.h"
 
 class BGSRefAlias;
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Alias {
       BOOL CreatesReference(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BGSRefAlias* alias) {
          ERROR_AND_RETURN_0_IF(alias == nullptr, "You must specify a ReferenceAlias.", registry, stackId);

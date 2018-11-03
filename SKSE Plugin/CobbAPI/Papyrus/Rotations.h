@@ -6,7 +6,7 @@
 #include "skse/PapyrusArgs.h"
 #include "skse/PapyrusVM.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Rotations {
       bool Register(::VMClassRegistry* registry);
    }

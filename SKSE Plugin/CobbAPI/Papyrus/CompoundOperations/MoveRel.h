@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace BatchMoveRel {
       bool Register(::VMClassRegistry* registry);
 

@@ -12,7 +12,7 @@
 #include "Shared.h" // for access to our object storage
 #include "Services/WeakReferenceService.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace WeakReference {
       bool WeakReferenceServiceFunctor::OnSave(SKSESerializationInterface* intfc) {
          using namespace Serialization;
@@ -137,7 +137,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::WeakReference::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::WeakReference::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

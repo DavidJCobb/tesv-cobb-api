@@ -14,7 +14,7 @@
 #include "ReverseEngineered/Forms/TESObjectCELL.h"
 #include "ReverseEngineered/Forms/TESObjectREFR.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace RevealService {
       bool RevealServiceFunctor::OnSave(SKSESerializationInterface* intfc) {
          using namespace Serialization;
@@ -320,7 +320,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::RevealService::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::RevealService::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

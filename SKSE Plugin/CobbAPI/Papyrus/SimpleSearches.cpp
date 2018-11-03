@@ -17,7 +17,7 @@
 #include "ReverseEngineered/Systems/GameData.h"
 #include "ReverseEngineered/Types.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace SimpleSearches {
       //
       // Helpers:
@@ -339,7 +339,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::SimpleSearches::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::SimpleSearches::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

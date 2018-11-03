@@ -42,7 +42,7 @@
 #define DEBUG_ONLY_CELLSEARCHER_WARN(condition, ...) if ((condition)) _MESSAGE(__VA_ARGS__);
 #endif
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace CellSearcher {
       //
       // Functor methods:
@@ -505,7 +505,15 @@ namespace PapyrusPrefix(Papyrus) {
       void SetCriteriaB(
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
          SInt32 handle,
-         SInt32 abIncludeItem
+         SInt32 abIncludeItem,
+         SInt32 abReserved03,
+         SInt32 abReserved04,
+         SInt32 abReserved05,
+         SInt32 abReserved06,
+         SInt32 abReserved07,
+         SInt32 abReserved08,
+         SInt32 abReserved09,
+         SInt32 abReserved10
       ) {
          ERROR_AND_RETURN_IF(handle <= 0, "Invalid handle.", registry, stackId);
          CellSearchFunctor* func = StorableObjectStorageInstance().AccessObject<CellSearchFunctor>(handle);
@@ -618,7 +626,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::CellSearcher::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::CellSearcher::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //
@@ -682,7 +690,7 @@ bool PapyrusPrefix(Papyrus)::CellSearcher::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("CellSearcher"), "SetCriteriaA", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, void, SInt32, SInt32>(
+      new NativeFunction10<StaticFunctionTag, void, SInt32, SInt32, SInt32, SInt32, SInt32, SInt32, SInt32, SInt32, SInt32, SInt32>(
          "SetCriteriaB",
          PapyrusPrefixString("CellSearcher"),
          CellSearcher::SetCriteriaB,

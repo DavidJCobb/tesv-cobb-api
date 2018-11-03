@@ -13,7 +13,7 @@
 class TESForm;
 class TESObjectREFR;
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Array {
       //
       template <class T>
@@ -190,7 +190,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Array::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Array::Register(VMClassRegistry* registry) {
    {  // CountTruthy
       registry->RegisterFunction(
          new NativeFunction1 <StaticFunctionTag, SInt32, VMArray<float>>(

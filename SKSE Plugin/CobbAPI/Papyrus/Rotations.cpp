@@ -23,7 +23,7 @@
       return dummy;							\
    }
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Rotations {
       VMResultArray<float> GetRelativeCoordinates(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag* base, VMArray<float> afParentPosition, VMArray<float> afParentRotation, VMArray<float> afTargetPosition, VMArray<float> afTargetRotation) {
          ERROR_AND_RETURN_EMPTY_ARRAY6_IF(afParentPosition.Length() != 3, "afParentPosition is not a valid set of coordinates; it has the wrong length.", registry, stackId);
@@ -49,7 +49,7 @@ namespace PapyrusPrefix(Papyrus) {
          afTargetRotation.Get(&offsetRot.z, 2);
          //
          Cobb::Coordinates out;
-         Cobb::GetRelativeCoordinates(&out, &parentPos, &parentRot, &offsetPos, &offsetRot, false, false);
+         Cobb::GetRelativeCoordinates(out, parentPos, parentRot, offsetPos, offsetRot, false, false);
          out.rot.ConvertToDegrees();
          //
          VMResultArray<float> result;
@@ -86,7 +86,7 @@ namespace PapyrusPrefix(Papyrus) {
          afOffsetRotation.Get(&offsetRot.z, 2);
          //
          Cobb::Coordinates out;
-         Cobb::ApplyRelativeCoordinates(&out, &parentPos, &parentRot, &offsetPos, &offsetRot, false, false);
+         Cobb::ApplyRelativeCoordinates(out, parentPos, parentRot, offsetPos, offsetRot, false, false);
          out.rot.ConvertToDegrees();
          //
          VMResultArray<float> result;
@@ -252,7 +252,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::Rotations::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Rotations::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction4<StaticFunctionTag, VMResultArray<float>, VMArray<float>, VMArray<float>, VMArray<float>, VMArray<float>>(
          "GetRelativeCoordinates",

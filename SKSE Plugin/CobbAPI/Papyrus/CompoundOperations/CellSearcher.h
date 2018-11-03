@@ -10,7 +10,7 @@
 #include "Types/bounds.h"
 #include "CobbRotation.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace CellSearcher {
       bool Register(::VMClassRegistry* registry);
 

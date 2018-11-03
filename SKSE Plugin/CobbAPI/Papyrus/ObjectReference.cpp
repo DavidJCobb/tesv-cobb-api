@@ -60,7 +60,7 @@ RE::BSFurnitureMarkerNode* _GetFRN(TESObjectREFR* reference, VMClassRegistry* re
    return FRN;
 };
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace ObjectReference {
       namespace CollisionPrimitives {
          VMResultArray<float> GetBoundsToHalfwidthOffsets(
@@ -284,7 +284,7 @@ namespace PapyrusPrefix(Papyrus) {
                NiPoint3 position(result[0], result[1], result[2]);
                NiPoint3 rotation(0.0, 0.0, FRN->markers[marker].yaw);
                Cobb::Coordinates applied;
-               Cobb::ApplyRelativeCoordinates(&applied, &(subject->pos), &(subject->rot), &position, &rotation, true, true);
+               Cobb::ApplyRelativeCoordinates(applied, subject->pos, subject->rot, position, rotation, true, true);
                applied.rot.ConvertToDegrees();
                result[0] = applied.pos.x;
                result[1] = applied.pos.y;
@@ -333,7 +333,7 @@ namespace PapyrusPrefix(Papyrus) {
                if (absolute) {
                   NiPoint3 rotation(0.0, 0.0, current.yaw);
                   Cobb::Coordinates applied;
-                  Cobb::ApplyRelativeCoordinates(&applied, &(subject->pos), &(subject->rot), &(current.position), &rotation, true, true);
+                  Cobb::ApplyRelativeCoordinates(applied, subject->pos, subject->rot, current.position, rotation, true, true);
                   applied.rot.ConvertToDegrees();
                   result.push_back(applied.pos.x);
                   result.push_back(applied.pos.y);
@@ -973,7 +973,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::ObjectReference::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::ObjectReference::Register(VMClassRegistry* registry) {
    #define REGISTER_PAPYRUS_FUNCTION(className, funcName, argCount, returnType, func, ...) \
       registry->RegisterFunction( \
          new NativeFunction##argCount <StaticFunctionTag, returnType, __VA_ARGS__>( \

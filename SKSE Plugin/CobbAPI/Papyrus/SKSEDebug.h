@@ -4,7 +4,7 @@
 
 #include "skse/PapyrusVM.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace SKSEDebug {
       bool Register(::VMClassRegistry* registry);
    };

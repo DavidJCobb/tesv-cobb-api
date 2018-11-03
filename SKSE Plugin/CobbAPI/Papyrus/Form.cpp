@@ -11,7 +11,7 @@
 #include "ReverseEngineered/Forms/BaseForms/base.h"
 #include "ReverseEngineered/Forms/BaseForms/TESObjectLIGH.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Form {
       VMResultArray<SInt32> GetBounds(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* target) {
          VMResultArray<SInt32> result;
@@ -80,7 +80,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Form::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Form::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1 <StaticFunctionTag, VMResultArray<SInt32>, TESForm*>(
          "GetBounds",

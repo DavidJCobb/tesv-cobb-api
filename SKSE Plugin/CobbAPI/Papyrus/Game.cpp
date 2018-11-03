@@ -10,7 +10,7 @@
 
 static bool* bPlayerCollisionEnabled = (bool*)0x012E3563; // 00 == collision on (normal); 01 == collision off (debug on)
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Game {
       void SetPlayerCollisionEnabled(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, bool state, bool fullProcessing) {
          if (*bPlayerCollisionEnabled == state) {
@@ -81,7 +81,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Game::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Game::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction2 <StaticFunctionTag, void, bool, bool>(
          "SetPlayerCollisionEnabled",

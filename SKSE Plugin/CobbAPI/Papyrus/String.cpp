@@ -64,8 +64,58 @@
    your container, as those store a length instead of relying on a terminator."
 
 \********************************************************************************************/
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace String {
+      namespace Numbers {
+         UInt32 BinaryToInt32(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
+            const char* s = str.data;
+            char* discard;
+            return strtoul(s, &discard, 2);
+         }
+         UInt32 HexToInt32(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
+            const char* s = str.data;
+            char* discard;
+            return strtoul(s, &discard, 16);
+         }
+         BSFixedString ToBinary(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
+            if (length < 0) {
+               registry->LogWarning("Cannot format a binary value to a negative number of bits. Defaulting to 32.", stackId);
+               length = 32;
+            } else if (length > 32) {
+               registry->LogWarning("Cannot format a binary value longer than 32 bits.", stackId);
+               length = 32;
+            }
+            char bin[33];
+            memset(bin, '0', length);
+            bin[length] = '\0';
+            for (UInt8 i = 0; i < length; i++)
+               if (value & (1 << i))
+                  bin[length - i] = '1';
+            return bin; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
+         }
+         BSFixedString ToHex(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
+            if (length < 0) {
+               registry->LogWarning("Cannot format a hexadecimal valueinteger to a negative number of digits. Defaulting to eight.", stackId);
+               length = 8;
+            } else if (length > 8) {
+               registry->LogWarning("Cannot format a hexadecimal integer longer than eight digits.", stackId);
+               length = 8;
+            }
+            char hex[9];
+            memset(hex, '0', length);
+            hex[length] = '\0';
+            while (value > 0 && length--) {
+               UInt8 digit = value % 0x10;
+               value /= 0x10;
+               if (digit < 0xA) {
+                  hex[length] = digit + '0';
+               } else {
+                  hex[length] = digit + 0x37;
+               }
+            }
+            return hex; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
+         }
+      }
       //
       // BUG: ALL std::string FIND CALLS ARE BROKEN BECAUSE THEY ARE CASE-SENSITIVE
       //
@@ -88,11 +138,6 @@ namespace PapyrusPrefix(Papyrus) {
          if (!haystack.data || !needles.data)
             return -1;
          return std::string(haystack.data).find_first_not_of(needles.data, startAt);
-      };
-      UInt32 HexToUInt32(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
-         const char* s = str.data;
-         char* discard;
-         return strtoul(s, &discard, 16);
       };
       SInt32 FindLastOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString needles, SInt32 startAt) {
          if (!haystack.data || !needles.data)
@@ -133,25 +178,6 @@ namespace PapyrusPrefix(Papyrus) {
             return result.c_str();
          };
       #endif
-      BSFixedString ToHex(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
-         if (length > 8) {
-            registry->LogWarning("Cannot format a hexadecimal integer longer than eight digits.", stackId);
-            length = 8;
-         }
-         char hex[9];
-         memset(hex, '0', length);
-         hex[length] = '\0';
-         while (value > 0 && length--) {
-            UInt8 digit = value % 0x10;
-            value /= 0x10;
-            if (digit < 0xA) {
-               hex[length] = digit + '0';
-            } else {
-               hex[length] = digit + 0x37;
-            }
-         }
-         return hex; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
-      };
       BSFixedString Trim(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
          if (!str.data)
             return nullptr;
@@ -202,7 +228,38 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::String::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
+   {  // Numbers
+      registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, UInt32, BSFixedString>(
+         "BinaryToInt32",
+         PapyrusPrefixString("String"),
+         String::Numbers::BinaryToInt32,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "BinaryToInt32", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, UInt32, BSFixedString>(
+         "HexToInt32",
+         PapyrusPrefixString("String"),
+         String::Numbers::HexToInt32,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "HexToInt32", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, BSFixedString, UInt32, SInt32>(
+         "ToBinary",
+         PapyrusPrefixString("String"),
+         String::Numbers::ToBinary,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "ToBinary", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, BSFixedString, UInt32, SInt32>(
+         "ToHex",
+         PapyrusPrefixString("String"),
+         String::Numbers::ToHex,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "ToHex", VMClassRegistry::kFunctionFlag_NoWait);
+   }
+
    registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, SInt32, BSFixedString, BSFixedString>(
          "Compare",
@@ -226,15 +283,7 @@ bool PapyrusPrefix(Papyrus)::String::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("String"), "FindFirstNotOf", VMClassRegistry::kFunctionFlag_NoWait);
    //
-   registry->RegisterFunction(
-      new NativeFunction1<StaticFunctionTag, UInt32, BSFixedString>(
-         "HexToUInt32",
-         PapyrusPrefixString("String"),
-         String::HexToUInt32,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "HexToUInt32", VMClassRegistry::kFunctionFlag_NoWait);
+   
    //
    registry->RegisterFunction(
       new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>(
@@ -270,15 +319,6 @@ bool PapyrusPrefix(Papyrus)::String::Register(VMClassRegistry* registry) {
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexReplace", VMClassRegistry::kFunctionFlag_NoWait);
    #endif
    //
-   registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, BSFixedString, UInt32, SInt32>(
-         "ToHex",
-         PapyrusPrefixString("String"),
-         String::ToHex,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "ToHex", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, BSFixedString, BSFixedString>(
          "Trim",

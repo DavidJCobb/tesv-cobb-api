@@ -11,7 +11,7 @@
 #include "ReverseEngineered/Forms/TESObjectREFR.h"
 #include "ReverseEngineered/Forms/BaseForms/TESObjectLIGH.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Light {
       namespace Setters {
          void SetFade(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESObjectREFR* pLightRef, float fNewValue, bool bRelative = true) {
@@ -131,7 +131,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Light::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Light::Register(VMClassRegistry* registry) {
    //
    // SETTER FUNCTIONS
    //

@@ -7,7 +7,7 @@
 
 //#define COBB_PAPYRUS_OBJECTREFERENCE_CHANGEFORMS_USE_FUNCTOR 1
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace ObjectReference {
       bool Register(::VMClassRegistry* registry);
       //

@@ -2,7 +2,7 @@
 #include "Papyrus/_Prefixes.h"
 
 class VMClassRegistry;
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Shout {
       bool Register(VMClassRegistry* registry);
    }

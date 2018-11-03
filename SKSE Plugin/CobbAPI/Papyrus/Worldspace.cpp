@@ -8,7 +8,7 @@
 #include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Forms/TESWorldSpace.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Worldspace {
       RE::TESWorldSpace* GetParentWorldspace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESWorldSpace* world) {
          ERROR_AND_RETURN_0_IF(world == nullptr, "Cannot retrieve the parent of a None worldspace.", registry, stackId);
@@ -25,7 +25,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Worldspace::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Worldspace::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, RE::TESWorldSpace*, RE::TESWorldSpace*>(
          "GetParentWorldspace",

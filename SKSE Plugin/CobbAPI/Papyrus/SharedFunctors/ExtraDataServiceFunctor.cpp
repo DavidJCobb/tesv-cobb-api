@@ -3,7 +3,7 @@
 #include "Papyrus/_Prefixes.h"
 #include "Services/ExtraDataService.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    void ExtraDataServiceFunctor::Run(VMValue& resultValue) {
       CobbExtraDataService* service = CobbExtraDataService::GetSingleton();
       if (!service) {

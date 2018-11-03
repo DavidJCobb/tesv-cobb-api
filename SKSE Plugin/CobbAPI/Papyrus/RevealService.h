@@ -9,7 +9,7 @@
 
 #include <vector>
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace RevealService {
       bool Register(::VMClassRegistry* registry);
 

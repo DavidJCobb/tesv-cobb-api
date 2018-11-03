@@ -16,7 +16,7 @@
 
 #include "Miscellaneous/strings.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Cell {
       enum GetterSource {
          kGetterSourceBit_Defaults       = 1,
@@ -1013,7 +1013,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Cell::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, void, RE::TESObjectCELL*, bool>(
          "ForceUniqueLighting",

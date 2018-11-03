@@ -24,7 +24,7 @@
       return retval; \
    }
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace BatchSetMotionType {
       //
       // Functor virtual methods:
@@ -154,7 +154,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::BatchSetMotionType::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::BatchSetMotionType::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

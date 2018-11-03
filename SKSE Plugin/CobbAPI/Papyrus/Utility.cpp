@@ -7,7 +7,7 @@
 #include "skse/GameForms.h" // TESForm
 #include "skse/GameObjects.h" // ActiveEffect
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace Utility {
       template<typename T> bool ScriptObjectWrappedPointerExists(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, T* entity) {
          return entity != nullptr;
@@ -15,7 +15,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 }
 
-bool PapyrusPrefix(Papyrus)::Utility::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::Utility::Register(VMClassRegistry* registry) {
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, bool, TESForm*>(
          "FormExists",

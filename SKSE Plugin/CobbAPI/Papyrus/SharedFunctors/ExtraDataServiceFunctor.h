@@ -2,7 +2,7 @@
 #include "Papyrus/_Prefixes.h"
 #include "Papyrus/CompoundOperations/Base.h"
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    class ExtraDataServiceFunctor : public CompoundOperationBase {
       public:
          explicit ExtraDataServiceFunctor(UInt32 stackId) : CompoundOperationBase(stackId) {};

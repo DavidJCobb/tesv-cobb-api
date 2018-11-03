@@ -29,7 +29,7 @@
       return retval; \
    }
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    namespace BatchMoveGroup {
       //
       // Functor methods:
@@ -127,7 +127,7 @@ namespace PapyrusPrefix(Papyrus) {
                if (this->alsoMoveTeleportMarkers) {
                   RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)root)->GetDestinationDoor();
                   if (destination) {
-                     TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, &originalRootPos, &originalRootRot, &(this->_destinationPos), &destinationRotAsRadians);
+                     TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, originalRootPos, originalRootRot, this->_destinationPos, destinationRotAsRadians);
                      skyrim_re_clear_refr(destination);
                   }
                }
@@ -167,8 +167,8 @@ namespace PapyrusPrefix(Papyrus) {
                //
                Cobb::Coordinates rel;
                Cobb::Coordinates abs;
-               Cobb::GetRelativeCoordinates  (&rel, &originalRootPos,         &originalRootRot,         &(subject->pos), &(subject->rot),      true,  true);
-               Cobb::ApplyRelativeCoordinates(&abs, &(this->_destinationPos), &(this->_destinationRot), &(rel.pos),      &(NiPoint3)(rel.rot), false, rel.rot.isRadians);
+               Cobb::GetRelativeCoordinates  (rel, originalRootPos,       originalRootRot,       subject->pos, subject->rot,      true,  true);
+               Cobb::ApplyRelativeCoordinates(abs, this->_destinationPos, this->_destinationRot, rel.pos,      (NiPoint3)rel.rot, false, rel.rot.isRadians);
                abs.rot.ConvertToRadians();
                finalPos = abs.pos;
                finalRot.x = abs.rot.x;
@@ -181,7 +181,7 @@ namespace PapyrusPrefix(Papyrus) {
             if (this->alsoMoveTeleportMarkers) {
                RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
                if (destination) {
-                  TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, &originalPos, &originalRot, &finalPos, &finalRot);
+                  TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, originalPos, originalRot, finalPos, finalRot);
                   skyrim_re_clear_refr(destination);
                }
             }
@@ -362,7 +362,7 @@ namespace PapyrusPrefix(Papyrus) {
    }
 };
 
-bool PapyrusPrefix(Papyrus)::BatchMoveGroup::Register(VMClassRegistry* registry) {
+bool CobbPapyrus::BatchMoveGroup::Register(VMClassRegistry* registry) {
    //
    // OBJECT STORAGE SETUP
    //

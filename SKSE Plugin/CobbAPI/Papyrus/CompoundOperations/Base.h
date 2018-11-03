@@ -15,7 +15,7 @@
 // specific needs.
 //
 
-namespace PapyrusPrefix(Papyrus) {
+namespace CobbPapyrus {
    class CompoundOperationBase : public IStorableObject {
       public:
          class Delegate;

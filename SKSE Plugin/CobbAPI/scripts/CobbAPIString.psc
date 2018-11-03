@@ -1,15 +1,19 @@
 Scriptname CobbAPIString Hidden
 
+;
+; Numbers
+;
+Int    Function HexToInt32    (String asString) Global Native
+Int    Function BinaryToInt32 (String asString) Global Native
+String Function ToBinary      (Int aiHex, Int aiDigits = 32) Global Native
+String Function ToHex         (Int aiHex, Int aiDigits = 8) Global Native
+
+
 Int      Function Compare        (String a, String b) Global Native
 Int      Function FindFirstOf    (String asHaystack, String asNeedle, Int aiOffset = 0) Global Native
 Int      Function FindFirstNotOf (String asHaystack, String asNeedle, Int aiOffset = 0) Global Native
-Int      Function HexToUInt32    (String asString) Global Native
 Int      Function FindLastOf     (String asHaystack, String asNeedle, Int aiOffset = -1) Global Native
 Int      Function FindLastNotOf  (String asHaystack, String asNeedle, Int aiOffset = -1) Global Native
-;String[] Function RegexMatch     (String asHaystack, String asRegex) Global Native
-;String   Function RegexReplace   (String asHaystack, String asRegex, String asReplaceWith) Global Native
-;Bool     Function RegexSearch    (String asHaystack, String asRegex) Global Native
-String   Function ToHex          (Int aiHex, Int aiDigits = 8) Global Native
 String   Function Trim           (String asString) Global Native
 
 ;
@@ -40,3 +44,6 @@ Int Function UTF8Length  (String asString) Global Native
 ;  - Haystack strings are likewise case-insensitive, so regexes are forced to work case-
 ;    insensitively.
 ;
+;String[] Function RegexMatch     (String asHaystack, String asRegex) Global Native
+;String   Function RegexReplace   (String asHaystack, String asRegex, String asReplaceWith) Global Native
+;Bool     Function RegexSearch    (String asHaystack, String asRegex) Global Native

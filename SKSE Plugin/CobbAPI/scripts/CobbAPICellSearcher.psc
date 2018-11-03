@@ -35,8 +35,8 @@ Function SetFilterMode (Int aiHandle, Int aiFilterMode) Global Native
 ; Filter the search by form type. Pass -1 to leave an attribute changed, or else pass a 
 ; truthy (include in search) or falsy (exclude from search) value to change it.
 ;
-Function SetCriteriaA  (Int aiHandle, int aiIncludeACTI = -1, int aiIncludeCONT = -1, int aiIncludeDOOR = -1, int aiIncludeFURN = -1, int aiIncludeLIGH = -1, int aiIncludeMSTT = -1, int aiIncludeNPC_ = -1, int aiIncludeSTAT = -1, int aiIncludeTREE = -1) Global Native
-Function SetCriteriaB  (Int aiHandle, int aiIncludeItem = -1) Global Native
+Function SetCriteriaA  (Int aiHandle, Int aiIncludeACTI = -1, Int aiIncludeCONT = -1, Int aiIncludeDOOR = -1, Int aiIncludeFURN = -1, Int aiIncludeLIGH = -1, Int aiIncludeMSTT = -1, Int aiIncludeNPC_ = -1, Int aiIncludeSTAT = -1, Int aiIncludeTREE = -1) Global Native
+Function SetCriteriaB  (Int aiHandle, Int aiIncludeItem = -1, Int aiReserved03, Int aiReserved04, Int aiReserved05, Int aiReserved06, Int aiReserved07, Int aiReserved08, Int aiReserved09, Int aiReserved10) Global Native
 
 Function SetExcludesPlayer    (Int aiHandle, Bool abExcludesPlayer) Global Native
 Function SetRequiresCollision (Int aiHandle, Bool abRequireCollision) Global Native

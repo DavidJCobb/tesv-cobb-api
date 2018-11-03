@@ -25,31 +25,31 @@ Float[] Function ApplySnappedOffsetToPosition(Float[] afBasePosition, Float[] af
    vLocal[1] = afMatrixTransformToLocal[3]*afBasePosition[0] + afMatrixTransformToLocal[4]*afBasePosition[1] + afMatrixTransformToLocal[5]*afBasePosition[2]
    vLocal[2] = afMatrixTransformToLocal[6]*afBasePosition[0] + afMatrixTransformToLocal[7]*afBasePosition[1] + afMatrixTransformToLocal[8]*afBasePosition[2]
    If _iCurrentPositionSnap
-	  ;
-	  ; Now snap the thing.
-	  ;
-	  ; The offset variable pretty much offsets the grid we're snapping to, to 
-	  ; match the position of the snap target. We'd normally just use a simple 
-	  ; modulus (pos local % pos snap), but Papyrus doesn't support modulus on 
-	  ; non-integers.
-	  ;
-	  Float[] fOffsets = new Float[3]
-	  fOffsets[0] = (afSnapPosition[0] as int) % aiSnapUnits + (afSnapPosition[0] - (afSnapPosition[0] as int))
-	  fOffsets[1] = (afSnapPosition[1] as int) % aiSnapUnits + (afSnapPosition[1] - (afSnapPosition[1] as int))
-	  fOffsets[2] = (afSnapPosition[2] as int) % aiSnapUnits + (afSnapPosition[2] - (afSnapPosition[2] as int))
-	  vLocal[0] = vLocal[0] - fOffsets[0]
-	  vLocal[1] = vLocal[1] - fOffsets[1]
-	  vLocal[2] = vLocal[2] - fOffsets[2]
-	  vLocal[0] = Round(vLocal[0] / aiSnapUnits) * aiSnapUnits + (fPosition[0] * aiSnapUnits)
-	  vLocal[1] = Round(vLocal[1] / aiSnapUnits) * aiSnapUnits + (fPosition[1] * aiSnapUnits)
-	  vLocal[2] = Round(vLocal[2] / aiSnapUnits) * aiSnapUnits + (fPosition[2] * aiSnapUnits)
-	  vLocal[0] = vLocal[0] + fOffsets[0]
-	  vLocal[1] = vLocal[1] + fOffsets[1]
-	  vLocal[2] = vLocal[2] + fOffsets[2]
+      ;
+      ; Now snap the thing.
+      ;
+      ; The offset variable pretty much offsets the grid we're snapping to, to 
+      ; match the position of the snap target. We'd normally just use a simple 
+      ; modulus (pos local % pos snap), but Papyrus doesn't support modulus on 
+      ; non-integers.
+      ;
+      Float[] fOffsets = new Float[3]
+      fOffsets[0] = (afSnapPosition[0] as int) % aiSnapUnits + (afSnapPosition[0] - (afSnapPosition[0] as int))
+      fOffsets[1] = (afSnapPosition[1] as int) % aiSnapUnits + (afSnapPosition[1] - (afSnapPosition[1] as int))
+      fOffsets[2] = (afSnapPosition[2] as int) % aiSnapUnits + (afSnapPosition[2] - (afSnapPosition[2] as int))
+      vLocal[0] = vLocal[0] - fOffsets[0]
+      vLocal[1] = vLocal[1] - fOffsets[1]
+      vLocal[2] = vLocal[2] - fOffsets[2]
+      vLocal[0] = Round(vLocal[0] / aiSnapUnits) * aiSnapUnits + (fPosition[0] * aiSnapUnits)
+      vLocal[1] = Round(vLocal[1] / aiSnapUnits) * aiSnapUnits + (fPosition[1] * aiSnapUnits)
+      vLocal[2] = Round(vLocal[2] / aiSnapUnits) * aiSnapUnits + (fPosition[2] * aiSnapUnits)
+      vLocal[0] = vLocal[0] + fOffsets[0]
+      vLocal[1] = vLocal[1] + fOffsets[1]
+      vLocal[2] = vLocal[2] + fOffsets[2]
    Else
-	  vLocal[0] = vLocal[0] + fPosition[0]
-	  vLocal[1] = vLocal[1] + fPosition[1]
-	  vLocal[2] = vLocal[2] + fPosition[2]
+      vLocal[0] = vLocal[0] + fPosition[0]
+      vLocal[1] = vLocal[1] + fPosition[1]
+      vLocal[2] = vLocal[2] + fPosition[2]
    EndIf
    ;
    ; Transform back, by multiplying by the transpose.

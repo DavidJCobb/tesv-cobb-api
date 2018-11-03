@@ -11,15 +11,24 @@ Scriptname CobbAPIDetection Hidden
 ;
 ; Negative handles are invalid and indicate that the actor could not be added.
 ;
+; In addition to using handles, you can associate an optional string "tag" with 
+; any given change. You can also forcibly unflag all handles associated with a 
+; given tag. This is useful for uninstallation scripts and last-resort fixups.
+;
 Bool Function ActorCannotSee            (Actor akActor) Global Native
 Bool Function ActorCannotBeSeen         (Actor akActor) Global Native
-Int  Function PreventActorFromSeeing    (Actor akActor) Global Native
-Int  Function PreventActorFromBeingSeen (Actor akActor) Global Native
+Int  Function PreventActorFromSeeing    (Actor akActor, String asTag = "") Global Native
+Int  Function PreventActorFromBeingSeen (Actor akActor, String asTag = "") Global Native
      Function ReturnActorToSeeing       (Actor akActor, Int aiHandle) Global Native
      Function ReturnActorToBeingSeen    (Actor akActor, Int aiHandle) Global Native
-;
+
 ; These methods forcibly unflag an actor by disabling its internal registration. 
-; Other callers still need to "turn in" their handles.
+; Other callers still need to "turn in" their handles before those handles are 
+; freed for use by other scripts.
 ;
 Function ForceActorToSeeing    (Actor akActor) Global Native
 Function ForceActorToBeingSeen (Actor akActor) Global Native
+
+Function ReturnTagToSeeing    (String asTag) Global Native
+Function ReturnTagToBeingSeen (String asTag) Global Native
+Function InvalidateTag        (String asTag) Global Native ; works for both seeing and being seen; may be expanded to cover more if we ever add more

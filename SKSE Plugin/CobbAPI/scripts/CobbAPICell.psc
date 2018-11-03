@@ -50,7 +50,7 @@ Float[]       Function GetExteriorUnitCoordinates (Cell akSubject) Global Native
 ;  512 = Fog max
 ; 1024 = Light fade distances
 ;
-     Function ForceUniqueLighting                  (Cell akSubject, Bool abPersist = True) Global Native ; equivalent to SetLightingTemplateUsageFlags(akSubject, 0xFFFFFFFF, False, True)
+     Function ForceUniqueLighting                  (Cell akSubject, Bool abPersist = True) Global Native ; equivalent to SetLightingTemplateUsageFlags(akSubject, 0xFFFFFFFF, False, abPersist)
 Form Function GetLightingTemplate                  (Cell akSubject) Global Native
 Bool Function GetLightingTemplateUsageFlag         (Cell akSubject, Int aiFlag) Global Native ; checks a flag
 Int  Function GetLightingTemplateUsageFlags        (Cell akSubject)             Global Native ; returns the whole bitmask

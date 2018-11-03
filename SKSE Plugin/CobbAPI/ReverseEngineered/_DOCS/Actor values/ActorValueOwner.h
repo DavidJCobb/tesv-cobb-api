@@ -106,7 +106,7 @@ float Actor::ActorValueOwner::GetBase(UInt32 avIndex) { // virtual 0x03
    auto flags = info->actorValueFlags;
    if (!(flags & 0x800) && (Actor!this) != *(Actor*)(0x01310588) && !(flags & 0x80))
       esp0C = esp14;
-   else if (TESV_005AD640(/*TODO:*/?????, avIndex ,&esp0C)) {
+   else if (ComputeDynamicBaseActorValue((Actor!this) ? this : nullptr, avIndex ,&esp0C)) {
       esp0C = esp14;
    } else {
       if (info->actorValueFlags & 0x40)

@@ -13,6 +13,17 @@ namespace RE {
       virtual void Unk_03(void);
    };
 
+   template<typename T> struct BStList {
+      T*       data; // 00
+      BStList* next; // 04
+      //
+      MEMBER_FN_PREFIX(BStList);
+      DEFINE_MEMBER_FN(Append,            void, 0x004EEAC0, T* item, void* customAllocatorFunc_orNullptr, void* customAllocatorFuncArg);
+      DEFINE_MEMBER_FN(DestroyAllAfterMe, void, 0x0048CB30, void* customDeallocatorFunc_orNullptr, void* customDeallocatorFuncArg);
+      DEFINE_MEMBER_FN(FindAndRemoveItem, void, 0x00456380, T* item, void* customDeallocatorFunc_orNullptr, void* customDeallocatorFuncArg);
+      DEFINE_MEMBER_FN(InsertAfterMe,     void, 0x0042AFA0, T* item, void* customAllocatorFunc_orNullptr, void* customAllocatorFuncArg);
+   };
+
    struct SimpleLock {
       UInt32 owningThreadID;     // thread that has ownership of the lock
       UInt32 numberOfLocksHeld;  // number of times the owning thread has locked this mechanism

@@ -28,6 +28,7 @@
 #include "Papyrus/Actor.h"
 #include "Papyrus/Array.h"
 #include "Papyrus/Cell.h"
+#include "Papyrus/Detection.h"
 #include "Papyrus/Editor.h"
 #include "Papyrus/Form.h"
 #include "Papyrus/Furniture.h"
@@ -126,7 +127,7 @@ extern "C" {
       //
       if (skse->isEditor) {
          _MESSAGE("CobbPos was loaded in the Creation Kit. Marking as incompatible.");
-		   return false;
+         return false;
       } else if (!g_TESVVersionSupported) {
          _MESSAGE("Unsupported Skyrim version: %08X.", skse->runtimeVersion);
          return false;
@@ -212,43 +213,44 @@ extern "C" {
       //-----------------------------------------------------------------------------------------------
       //   UTILITIES:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Array::Register,          "Array");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Game::Register,           "Game");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Rotations::Register,      "Rotations");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::SimpleSearches::Register, "SimpleSearches");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::String::Register,         "String");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Utility::Register,        "Utility");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::WeakReference::Register,  "WeakReference");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Array::Register,          "Array");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Detection::Register,      "Detection");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Game::Register,           "Game");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Rotations::Register,      "Rotations");
+      _RegisterAndEchoPapyrus(CobbPapyrus::SimpleSearches::Register, "SimpleSearches");
+      _RegisterAndEchoPapyrus(CobbPapyrus::String::Register,         "String");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Utility::Register,        "Utility");
+      _RegisterAndEchoPapyrus(CobbPapyrus::WeakReference::Register,  "WeakReference");
       //-----------------------------------------------------------------------------------------------
       //   EXTENSIONS TO NATIVE CLASSES:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Actor::Register,           "Actor");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Cell::Register,            "Cell");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Form::Register,            "Form");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Furniture::Register,       "Furniture");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Light::Register,           "Light");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Message::Register,         "Message");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::ObjectReference::Register, "ObjectReference");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Shout::Register,           "Shout");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Worldspace::Register,      "Worldspace");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Actor::Register,           "Actor");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Cell::Register,            "Cell");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Form::Register,            "Form");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Furniture::Register,       "Furniture");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Light::Register,           "Light");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Message::Register,         "Message");
+      _RegisterAndEchoPapyrus(CobbPapyrus::ObjectReference::Register, "ObjectReference");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Shout::Register,           "Shout");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Worldspace::Register,      "Worldspace");
       //-----------------------------------------------------------------------------------------------
       //   BATCH OPERATIONS:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchMove::Register,          "BatchMove");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchMoveGroup::Register,     "BatchMoveGroup");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchMoveRel::Register,       "BatchMoveRel");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchSpawnComplex::Register,  "BatchSpawnComplex");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchSpawnRel::Register,      "BatchSpawnRel");
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::BatchSetMotionType::Register, "BatchSetMotionTpye");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchMove::Register,          "BatchMove");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchMoveGroup::Register,     "BatchMoveGroup");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchMoveRel::Register,       "BatchMoveRel");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchSpawnComplex::Register,  "BatchSpawnComplex");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchSpawnRel::Register,      "BatchSpawnRel");
+      _RegisterAndEchoPapyrus(CobbPapyrus::BatchSetMotionType::Register, "BatchSetMotionTpye");
       //-----------------------------------------------------------------------------------------------
       //   COMPLEX OPERATIONS:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::CellSearcher::Register, "CellSearcher");
+      _RegisterAndEchoPapyrus(CobbPapyrus::CellSearcher::Register, "CellSearcher");
       //-----------------------------------------------------------------------------------------------
       //   SERVICES:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::Editor::Register,        "Editor"); // generic methods for CobbPos
-      _RegisterAndEchoPapyrus(PapyrusPrefix(Papyrus)::RevealService::Register, "RevealService");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Editor::Register,        "Editor"); // generic methods for CobbPos
+      _RegisterAndEchoPapyrus(CobbPapyrus::RevealService::Register, "RevealService");
       //-----------------------------------------------------------------------------------------------
       //   PLUG-IN DEBUGGING:
       //-----------------------------------------------------------------------------------------------

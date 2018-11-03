@@ -2,7 +2,18 @@
 #include "skse/GameForms.h"
 #include "skse/GameObjects.h"
 
+class TESObjectARMO;
 namespace RE {
+   enum BinaryGender { // 's how Bethesda set it up
+      kBinaryGender_Male   = 0,
+      kBinaryGender_Female = 1,
+   };
+   enum RaceDetectionSize : UInt32 {
+      kDetectionSize_Small = 0,
+      kDetectionSize_Medium,
+      kDetectionSize_Large,
+      kDetectionSize_VeryLarge
+   };
    class TESRace : public TESForm { // sizeof == 0x2BC
       public:
 	      enum { kTypeID = kFormType_Race };
@@ -47,51 +58,51 @@ namespace RE {
          //
 	      // Members:
 	      enum { kRace_NumSkillBonuses = 7 };
-	      struct Data { // sizeof == 0x84
+	      struct Data { // sizeof == 0xA8
 		      struct SkillBonus {
 			      UInt8 skill;
 			      UInt8 bonus;
 		      };
             //
 		      SkillBonus skillBonus[kRace_NumSkillBonuses];
-		      UInt8	pad0E[2];			// 0E
-		      float	height[2];			// 10
-		      float	weight[2];			// 18
-		      UInt32	raceFlags;			// 20 - not init'd
-		      float	health;				// 24
-		      float	magicka;			// 28
-		      float	stamina;			// 2C
-		      float	carryweight;		// 30
-		      float	mass;				// 34
-		      float	accelRate;			// 38
-		      float	deaccelRate;		// 3C
-		      UInt32	unk40; // sneak detection size: 0, 1, 2, 3 == small, normal, large, very large
-		      UInt32	unk44;				// 44 - init'd to FFFFFFFF
-		      UInt32	unk48;				// 48 - init'd to FFFFFFFF - Flags?
-		      float	injuredHealthPct;				// 4C - not init'd
-		      float	unk50;	// 50 - init'd to FFFFFFFF
-		      float	healthRegen;		// 54
-		      float	manaRegen;			// 58
-		      float	staminaRegen;		// 5C
-		      float	unarmedDamage;		// 60
-		      float	handReach;			// 64
-		      UInt32	unk68;				// 68 - init'd to FFFFFFFF - Flags?
-		      float	aimAngleTolerance;	// 6C
-		      UInt32	unk70;				// 70 - init'd to 0
-		      float	angleAcceleration;	// 74
-		      float	angleTolerance;		// 78
-		      UInt32	unk7C;			// 7C
-		      UInt32	unk80;			// 80
-		      UInt32	unk84;			// 84
+		      UInt8  pad0E[2];    // 0E
+		      float  height[2];   // 10 // indices: 0 = male; 1 = female
+		      float  weight[2];   // 18 // indices: 0 = male; 1 = female
+		      UInt32 raceFlags;   // 20 - not init'd
+		      float  health;      // 24
+		      float  magicka;     // 28
+		      float  stamina;     // 2C
+		      float  carryWeight; // 30
+		      float  mass;        // 34
+		      float  accelerationRate; // 38
+		      float  decelerationRate; // 3C
+            RaceDetectionSize	size;  // 40 // used for sneak/detection math
+		      UInt32 unk44; // 44 // Head Biped Object // init'd to FFFFFFFF
+		      UInt32 unk48; // 48 // Hair Biped Object // init'd to FFFFFFFF - Flags?
+		      float	 injuredHealthPct; // 4C - not init'd
+            UInt32 unk50; // 50 // Shield Biped Object // init'd to FFFFFFFF
+		      float  healthRegen;   // 54
+		      float  manaRegen;     // 58
+		      float  staminaRegen;  // 5C
+		      float  unarmedDamage; // 60
+		      float  unarmedReach;  // 64
+		      UInt32 unk68;         // 68 // Body Biped Object // init'd to FFFFFFFF - Flags?
+		      float  aimAngleTolerance; // 6C
+		      float  flightRadius = 0;  // 70
+		      float  angleAcceleration; // 74
+		      float  angleTolerance;    // 78
+		      UInt32 raceFlags2; // 7C
+		      UInt32 unk80;			// 80
+		      UInt32 unk84;			// 84
 		      float	unk88;			// 88
 		      float	unk8C;
 		      float	unk90;
 		      float	unk94;
 		      float	unk98;
 		      float	unk9C;
-		      float	unk100;
-		      float	unk104;
-		      float	unk10C;
+		      float	unkA0;
+		      float	unkA4;
+		      float	unkA8;
 	      };
          //
 	      TESModel					models[2];			// 058
@@ -100,50 +111,66 @@ namespace RE {
 	      BGSBehaviorGraphModel		behaviorGraph[2];	// 154
 	      StringCache::Ref			behaviorPath[2];	// 17C
 	      StringCache::Ref			behaviorName[2];	// 184
-	      BGSVoiceType				* voiceTypes[2];	// 18C
-	      BGSBodyPartData				* bodyPartData;		// 190
-	      TESForm						* decapitateArmor[2];	// 194
-	      UnkArray					unk180[2];
-	      void						* unk198[4];
-	      void						* unk1A8[2]; // AttackAnimationArrayMap
-	      StringCache::Ref			editorId;
-	      BGSMaterialType				* impactMaterial;
-	      BGSImpactDataSet			* meleeImpact;
-	      BGSArtObject				* decapitateBloodArt;
-	      BGSSoundDescriptorForm		* openCorpseSound;
-	      BGSSoundDescriptorForm		* closeCorpseSound;
-	      StringCache::Ref			bipedObjectNames[0x20];
-	      tArray<BGSEquipSlot*>		slotRestrictions;
-	      UInt32						unk274;
-	      BGSEquipSlot				* unarmedEquipSlot;
-	      TESRace						* morphRace;
-	      TESRace						* armorRace;
-	      UnkArray					unk284;
-	      UnkArray					unk290;
-	      UInt8						unk29C[0x18];
+	      BGSVoiceType*    voiceTypes[2]; // 18C // indices: 0 = male; 1 = female // if not specified, these default to the hardcoded voicetypes
+	      BGSBodyPartData* bodyPartData;  // 190
+         TESObjectARMO*   decapitateArmor[2];	// 194
+	      UnkArray unk180[2]; // 180 // "Default Hair Colors" -- likely ColorForms; a set for males and a set for females
+	      void* unk198[4];
+	      void* unk1A8[2]; // AttackAnimationArrayMap
+	      StringCache::Ref        editorId; // 1B0
+	      BGSMaterialType*        impactMaterial; // 1B4
+	      BGSImpactDataSet*       meleeImpact; // 1B8
+	      BGSArtObject*           decapitateBloodArt; // 1BC
+	      BGSSoundDescriptorForm* openCorpseSound; // 1C0
+	      BGSSoundDescriptorForm* closeCorpseSound; // 1C4
+         //
+         // Next member is wrong? 1DC is the offset of whatever is defined in the NAM7 subrecord.
+         //
+	      StringCache::Ref        bipedObjectNames[0x20];
+	      tArray<BGSEquipSlot*>   slotRestrictions;
+	      UInt32                  unk274;
+	      BGSEquipSlot*           unarmedEquipSlot; // 278
+	      TESRace*                morphRace; // 27C
+	      TESRace*                armorRace; // 280
+	      UnkArray unk284;
+	      UnkArray unk290;
+	      UInt8    unk29C[0x18];
 
-	      struct CharGenData {
+	      struct CharGenData { // sizeof == 0xAC
 		      struct TintOption {
 			      UInt32					unk00;			// 00
 			      TESTexture				texture;		// 04
-			      BGSColorForm			* defaultColor;	// 0C
+			      BGSColorForm* defaultColor;	// 0C
 			      tArray<BGSColorForm*>	colors;			// 10
 			      tArray<float>			alpha;			// 14
 			      tArray<UInt32>			unk18;			// 18
 		      };
 		      UInt32	presetFlags[4][8];					// 00
 		      UInt32	totalPresets[4];					// 80
-		      tArray<TintOption*>		* tintData;			// 90
-		      tArray<BGSTextureSet*>	* textureSet;		// 94
-		      BGSTextureSet			* defaultTexture;	// 98
-		      tArray<TESNPC*>			* presets;			// 9C
-		      tArray<BGSColorForm*>	* colors;			// A0
-		      BGSColorForm			* defaultColor;		// A4
-		      tArray<BGSHeadPart*>	* headParts;		// A8
+		      tArray<TintOption*>*    tintData;			// 90
+		      tArray<BGSTextureSet*>* detailTextureSetList;		// 94
+		      BGSTextureSet* defaultTexture;	// 98
+		      tArray<TESNPC*>* presets;			// 9C
+		      tArray<BGSColorForm*>* hairColors;			// A0
+		      BGSColorForm* defaultHairColor;		// A4
+		      tArray<BGSHeadPart*>* headParts;		// A8
+
+            MEMBER_FN_PREFIX(CharGenData);
+            DEFINE_MEMBER_FN(Constructor, CharGenData*, 0x00576810);
 	      };
 
-	      CharGenData					* chargenData[2];
+	      CharGenData* chargenData[2]; // 2B4 // face data
+
+         MEMBER_FN_PREFIX(TESRace);
+         DEFINE_MEMBER_FN(AddFaceDetailsTextureSet, void, 0x00578490, BinaryGender which, BGSTextureSet*); // aborts if given null pointer // appends to CharGenData::detailTextureSetList
+         DEFINE_MEMBER_FN(AddFaceTintLayer,         void, 0x005783C0, BinaryGender which, CharGenData::TintOption*); // aborts if given null pointer // appends to CharGenData::tintData
+         DEFINE_MEMBER_FN(AddHairColor,             void, 0x005782F0, BinaryGender which, BGSColorForm*); // aborts if given null pointer // appends to CharGenData::hairColors
+         DEFINE_MEMBER_FN(AddHeadPart,              void, 0x00578120, BinaryGender which, BGSHeadPart*); // aborts if given null pointer // appends to CharGenData::headParts
+         DEFINE_MEMBER_FN(AddPresetNPC,             void, 0x00578220, BinaryGender which, TESNPC*); // aborts if given null pointer // appends to CharGenData::presets
+         DEFINE_MEMBER_FN(SetDefaultFaceTexture,    void, 0x005768F0, BinaryGender which, BGSTextureSet*);
+         DEFINE_MEMBER_FN(SetDefaultHairColor,      void, 0x00576890, BinaryGender which, BGSColorForm*);
    };
    static_assert(offsetof(TESRace, data) == 0x80, "TESRace::data is in the wrong place!");
+   static_assert(offsetof(TESRace, chargenData) == 0x2B4, "TESRace::chargenData is in the wrong place!");
    STATIC_ASSERT(offsetof(TESRace::CharGenData, tintData) == 0x90);
 };

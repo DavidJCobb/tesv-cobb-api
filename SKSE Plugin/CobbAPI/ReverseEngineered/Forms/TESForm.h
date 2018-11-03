@@ -5,6 +5,7 @@
 #include "skse/GameFormComponents.h"
 
 class BGSLoadFormBuffer;
+class BGSSaveFormBuffer;
 namespace RE {
    class TESForm : public BaseFormComponent {
       public:
@@ -12,7 +13,10 @@ namespace RE {
          enum { kTypeID = 0 };	// special-case
          //
          enum {
-            kFlagIsDeleted    = 0x000020,
+            //
+            kFormFlag_Unk00000002 = 0x00000002, // "modified?" // setting this on a REFR also sets it on its CELL, if the refr doesn't have flag 0x8000; setting it on a CELL sets it on the cell's parent WRLD
+            //
+            kFormFlag_IsDeleted   = 0x00000020,
             kFlagPlayerKnows  = 0x000040,
             kFlagUnk_0x400    = 0x000400,
             kFlagUnk_0x800    = 0x000800,
@@ -21,28 +25,35 @@ namespace RE {
             kFlagIsMarker     = 0x800000,
          };
          enum FormFlagsCELL : UInt32 {
-            kCellFlag_OffLimits = 0x00020000,
+            kCellFlag_Persistent      = 0x00000400,
+            kCellFlag_OffLimits       = 0x00020000,
+            kCellFlag_DisallowWaiting = 0x00080000,
          };
          enum FormFlagsREFR : UInt32 {
             //
             kRefrFlag_MarkedForDelete    = 0x00000020,
             kRefrFlag_HideFromLocalMap   = 0x00000040,
             //
-            kRefrFlag_Inaccessible       = 0x00000100,
+            kRefrFlag_Inaccessible       = 0x00000100, // for DOOR references
             kRefrFlag_DontLightWater     = 0x00000100, // for LIGH references
-            kRefrFlag_MotionBlurCastsShadows = 0x00000200,
-            kRefrFlag_Unk00000400        = 0x00000400, // either "persistent" or "quest item"
-            kRefrFlag_Disabled           = 0x00000800,
+            kRefrFlag_MotionBlur         = 0x00000200, // for MSTT references
+            kRefrFlag_CastsShadows       = 0x00000200, // for LIGH references
+            kRefrFlag_Persistent         = 0x00000400,
+            kRefrFlag_Disabled           = 0x00000800, // same flag is used in ESPs for "initially disabled"
             //
             kRefrFlag_LightNeverFades    = 0x00010000,
             kRefrFlag_DontLightLandscape = 0x00020000, // for LIGH references
             //
             kRefrFlag_Unk00080000        = 0x00080000, // getter at 00401A60
             //
+            kRefrFlag_IgnoringFriendlyHits = 0x00100000, // maybe actor only?
+            //
+            kRefrFlag_Unk00400000        = 0x00400000,
             kRefrFlag_Destroyed          = 0x00800000,
             //
-            kRefrFlag_NoAIAcquire        = 0x02000000,
+            kRefrFlag_NoAIAcquire        = 0x02000000, // for item references
             //
+            kRefrFlag_Unk01000000        = 0x01000000,
             kRefrFlag_DontHavokSettle    = 0x20000000,
             kRefrFlag_NoRespawn          = 0x40000000,
             kRefrFlag_Multibound         = 0x80000000,
@@ -52,16 +63,16 @@ namespace RE {
          };
          //
          virtual void         Unk_04(void);		// reset/init? would leak pointers if called on a live object
-         virtual void         Unk_05(void);		// release pointers?
+         virtual void         Unk_05();		// release pointers?
          virtual bool         LoadForm(BGSLoadFormBuffer*); // 06
-         virtual bool         Unk_07(UInt32 arg);
-         virtual bool         Unk_08(UInt32 arg);	// calls LoadForm
+         virtual bool         Unk_07(UInt32 arg); // 07 // no-op for Actor
+         virtual bool         Unk_08(BGSLoadFormBuffer*); // 08 // for Actor, just calls LoadForm
          virtual TESForm*     Unk_09(UInt32 arg1, void * arg2);
          virtual bool         MarkChanged(UInt32 changeFlags);   // 0A
          virtual void         UnmarkChanged(UInt32 changeFlags); // 0B
-         virtual bool         Unk_0C(UInt32 arg);
-         virtual void         Unk_0D(UInt32 arg);
-         virtual void         Unk_0E(UInt32 arg);
+         virtual bool         Unk_0C(UInt32 arg); // no-op for Actor
+         virtual bool         Unk_0D(BGSSaveFormBuffer*); // 0D // possibly a "should save?" function // called by BGSSaveLoadManager::SaveGame_HookTarget+0x264 // TESObjectREFR has override; Actor doesn't
+         virtual void         Unk_0E(BGSSaveFormBuffer*); // 0E // handles actually saving the form's data // called by BGSSaveLoadManager::SaveGame_HookTarget+0x2DC if the Unk_0D call returns true
          virtual void         Unk_0F(void* savedata); // restores form state from savedata. for TESObjectREFR*, restores extra data, flora flags and 3D state, etc.
          virtual void         Unk_10(UInt32 arg);
          virtual void         Unk_11(UInt32 arg);
@@ -85,7 +96,7 @@ namespace RE {
          virtual void         Unk_23(UInt32);            // 23 // This function was inserted into the VTBL after the SKSE team last mapped it.
          virtual void         SetFormFlag00000002(bool set); // 24
          virtual void         Unk_25();
-         virtual void         Unk_26(UInt32);
+         virtual void         Unk_26(BGSLoadFormBuffer*); // 26 // loads OBND?
          virtual bool         CanBePlaced(); // 27 // actually, probably not Has3D
          virtual bool         Unk_28();
          virtual bool         Unk_29(); // 29 // actually, probably Has3D
@@ -93,8 +104,8 @@ namespace RE {
          virtual TESObjectREFR* Unk_2B(); // 2B // Appears to be a cast of some kind. Identical to 2C for most subclasses I've checked.
          virtual TESObjectREFR* Unk_2C(); // 2C // Appears to be a cast of some kind. 2C is usually used; what's the difference between it and 2B?
          virtual UInt32       Unk_2D();
-         virtual const char*  GetFullName(UInt32 arg);
-         virtual void         CopyFrom(TESForm* srcForm); // guessed
+         virtual const char*  GetFullName(UInt32 arg); // 2E
+         virtual void         CopyFrom(TESForm* srcForm); // 2F // guessed
          virtual void         Unk_30(UInt32 arg0, UInt32 arg1, UInt32 arg2);
          virtual void         Unk_31(void* dst, UInt32 unk);
          virtual const char*  GetName();            // 32 // gets an actor's short name?

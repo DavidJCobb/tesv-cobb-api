@@ -59,7 +59,7 @@ namespace RE {
          operator ::TESObjectREFR*() const { return (::TESObjectREFR*) this; }
          enum { kTypeID = kFormType_Reference };
          //
-         enum {
+         enum { // see TESForm.h enums
             kFlag_MarkedForDelete = 0x000020,
             kFlag_Disabled        = 0x000800, // same flag is used in ESPs for "initially disabled"
             kFlag_Harvested       = 0x002000,
@@ -69,15 +69,15 @@ namespace RE {
             kFlag_Destroyed       = 0x800000,
          };
          //
-         virtual void	Unk_3B(void);
-         virtual BGSLocation* GetEditorLocation(void); // 3C
+         virtual void	Unk_3B(); // sets the baseForm and parentCell to nullptr, among so many other things... "unload" method?
+         virtual BGSLocation* GetEditorLocation(); // 3C
          virtual bool	GetEditorCoordinates(NiPoint3* outPos, NiPoint3* outRot, void** outWorldOrCell, TESObjectCELL* veryRarelyUsedFallback); // 3D // This will fail if the reference has never been moved, because starting-position data isn't attached until it's moved for the first time.
-         virtual void	Unk_3E(void);
+         virtual void	Unk_3E(UInt32, UInt32); // possibly SetEditorCoordinates
          virtual void	Unk_3F(bool);
          virtual void	Unk_40();
          virtual void	Unk_41(void);
-         virtual void	Unk_42(void);
-         virtual bool	Unk_43(void); // Purpose unknown. Checks the reference's health and destructible state.
+         virtual void	Unk_42(float, UInt32); // related to destructible objects' health
+         virtual bool	Unk_43(void); // Purpose unknown. Checks flag 0x10000 for non-actor non-light refs only.
          virtual void	Unk_44(void);
          virtual void	Unk_45(void);
          virtual void	Unk_46(void);
@@ -121,10 +121,10 @@ namespace RE {
          virtual void	Unk_6C(UInt32, UInt32); // Unk_6C(0, 0) will instantly unload 3D.
          virtual void	SetNiNode(NiNode * root, UInt32 unk1); // NULL, 1?
          virtual void	Unk_6E(void);
-         virtual NiNode* GetNiRootNode(bool firstPerson);
-         virtual NiNode* GetNiNode(); // Root of the skeleton (Get3D)
-         virtual bool   Unk_71();
-         virtual void	Unk_72(void);
+         virtual NiNode* GetNiRootNode(bool firstPerson); // 6F
+         virtual NiNode* GetNiNode() const; // 70 // Root of the skeleton (Get3D)
+         virtual bool   Unk_71(); // 71 // PlayerCharacter::Unk_71 returns unk727 & 1; if true, PlayerCharacter::GetNiNode returns the firstPersonSkeleton instead
+         virtual bool	Unk_72(UInt32, UInt32);
          virtual NiPoint3* GetMinBounds(NiPoint3* out);
          virtual NiPoint3* GetMaxBounds(NiPoint3* out);
          virtual void	Unk_75();
@@ -185,7 +185,7 @@ namespace RE {
             float    unk14;	// 14
             UInt32   unk18;	// 18 // bitmask
             void*    unk1C;	// 1C
-            NiNode*  node;	// 20
+            NiNode*  node;	// 20 // This is what is returned by TESObjectREFR::GetNiNode.
             // ... probably more
             // if there's a 28, it would be a BGSAIWorldLocationPointRadius -- not a pointer
          };
@@ -203,7 +203,7 @@ namespace RE {
          LoadedState*   loadedState;// 44
          ::BaseExtraList extraData; // 48
          UInt16 scale;              // 50 // scale * 100
-         UInt16 referenceFlags;     // 52 // flags
+         UInt16 referenceFlags;     // 52 // flags, or possibly two UInt8s; if the latter, then unk53 = bool unloading
          //
          bool   AttachScript(const char* scriptName);
          void   CreateDetectionEvent(Actor* owner, SInt32 soundLevel);
@@ -234,6 +234,7 @@ namespace RE {
          DEFINE_MEMBER_FN(Activate,                void,             0x004E4230, TESObjectREFR* activatedBy, UInt32 Arg2_papyrusUses0, UInt32 Arg3_papyrusUses0, UInt32 Arg4_papyrusUses1, bool defaultOnly);
          DEFINE_MEMBER_FN(CheckDismembermentBit,   bool,             0x004D5B90, UInt32 bitIndex);
          DEFINE_MEMBER_FN(ClearDestruction,        void,             0x00449630);
+         DEFINE_MEMBER_FN(DoesRespawn,             bool,             0x004D5270); // always false for created refs; checks base form flags for NPCs and containers, and the reference's NoRespawn form flag otherwise
          DEFINE_MEMBER_FN(GetBaseContainerData,    TESContainer*,    0x004D4A30); // returns &(this->baseForm.container) for NPCs and container references
          DEFINE_MEMBER_FN(GetCurrentLocation,      BGSLocation*,     0x004D83C0);
          DEFINE_MEMBER_FN(GetDistance,             float,            0x004D7ED0, TESObjectREFR* other, bool evenIfDisabled, bool oftenFalse);
@@ -250,6 +251,7 @@ namespace RE {
          DEFINE_MEMBER_FN(HasEffectKeyword,        bool,             0x004D57A0, BGSKeyword*);
          DEFINE_MEMBER_FN(IsLocked,                bool,             0x004EB5B0); // if the reference is a teleport door, this checks the door on the other side, too
          DEFINE_MEMBER_FN(IsOffLimits,             bool,             0x004DA760);
+         DEFINE_MEMBER_FN(ModifyPersistentFlag,    void,             0x004D50A0, bool setTo);
          DEFINE_MEMBER_FN(MoveToMyEditorLocation,  bool,             0x004E6270, TESObjectCELL*, UInt32); // both arguments are zeroes?
          DEFINE_MEMBER_FN(SetDestroyed,            void,             0x00450E30, bool);
          DEFINE_MEMBER_FN(SetDisabled,             void,             0x00450FB0, bool); // sets enable state and marks changed
@@ -289,7 +291,7 @@ namespace RE {
    //extern DEFINE_SUBROUTINE(BGSDestructibleObjectForm*, GetBGSDestructibleObjectFormForRef, 0x00448090, TESObjectREFR*);
    //extern DEFINE_SUBROUTINE(void, Update3DBasedOnHarvestedFlag, 0x00455BD0, TESObjectREFR*, NiNode* root); // finds and updates the NiSwitchNode in the model
    
-   class refr_ptr {
+   class refr_ptr { // smart pointer for TESObjectREFRs
       protected:
          RE::TESObjectREFR* ref = nullptr;
          inline void _inc() {
@@ -300,8 +302,6 @@ namespace RE {
             if (ref)
                ref->handleRefObject.DecRefHandle();
          };
-         //
-         struct flag_already_implemented {};
       public:
          refr_ptr() {};
          refr_ptr(RE::TESObjectREFR* a) : ref(a) { _inc(); }
@@ -326,11 +326,11 @@ namespace RE {
          //
          ~refr_ptr();
          //
-         TESObjectREFR* abandon(); // stops refcounting the pointer, and returns it
-         TESObjectREFR* copy_bare();
-         inline TESObjectREFR* get() const { return this->ref; };
-         inline ::TESObjectREFR* get_base() const { return (::TESObjectREFR*) this->ref; };
-         inline void set_from_already_incremented(TESObjectREFR* a) { this->ref = a; };
+         TESObjectREFR* abandon() noexcept; // stops refcounting the pointer, and returns it
+         TESObjectREFR* copy_bare(); // increments the refcount and then returns the bare pointer
+         inline TESObjectREFR* get() const noexcept { return this->ref; };
+         inline ::TESObjectREFR* get_base() const noexcept { return (::TESObjectREFR*) this->ref; };
+         inline void set_from_already_incremented(TESObjectREFR* a) noexcept { this->ref = a; };
          void set_from_handle(const UInt32 handle); // does NOT exchange the handle; uses a copy
          void set_from_handle(UInt32* handle); // exchanges the handle
          inline void swap(refr_ptr& other) noexcept {

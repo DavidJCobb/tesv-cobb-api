@@ -14,7 +14,7 @@ namespace RE {
          UInt32         unk18; // 18 // low byte, at the very least, is flags or a bool
          TESObjectCELL* unk1C; // 1C
          UInt32         unk20; // 20
-         void*          unk24[4]; // 24 // quadrants
+         void*          unk24[4]; // 24 // quadrants // each is over 0x9000 bytes large. i'm not joking
          //
          MEMBER_FN_PREFIX(TESObjectLAND);
          DEFINE_MEMBER_FN(Subroutine004BAFB0, void, 0x004BAFB0, void* argOutTwoFloats);

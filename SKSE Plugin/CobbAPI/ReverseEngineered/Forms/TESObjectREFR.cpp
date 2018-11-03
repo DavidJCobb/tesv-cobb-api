@@ -460,7 +460,7 @@ namespace RE {
    bool refr_ptr::operator!() {
       return ref == nullptr;
    }
-   TESObjectREFR* refr_ptr::abandon() {
+   TESObjectREFR* refr_ptr::abandon() noexcept {
       auto r = this->ref;
       this->ref = nullptr;
       return r;

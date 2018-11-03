@@ -129,7 +129,7 @@ namespace RE {
             UInt32 unk58;
             UInt32 unk5C = 0;
          } unk170; // 170
-         UInt32 unk1D0 = 0;
+         float northRotation = 0; // 1D0
          UInt32 unk1D4 = 0;
          //
          MEMBER_FN_PREFIX(TESWorldSpace);
@@ -138,6 +138,11 @@ namespace RE {
          DEFINE_MEMBER_FN(GetCellAtMergedCoordinates, RE::TESObjectCELL*, 0x004375D0, UInt32); // Argument is: 0xXXXXYYYY.
          DEFINE_MEMBER_FN(GetCellThatContainsPoint,   RE::TESObjectCELL*, 0x004F3410, NiPoint3*); // Assumed, but it's a pretty good assumption to make
          DEFINE_MEMBER_FN(GetWaterLevel,              float,              0x004F0930); // There is also a similar subroutine at 0x004F0900, but I don't know what it returns.
+         //
+         DEFINE_MEMBER_FN(AddToPersistentCell,       void,           0x004F5600, TESObjectREFR*);
+         DEFINE_MEMBER_FN(RemoveFromPersistentCell,  void,           0x004F0A80, TESObjectREFR*); // purpose assumed; needs verification
+         DEFINE_MEMBER_FN(GetOrCreatePersistentCell, TESObjectCELL*, 0x004F4420);
+         DEFINE_MEMBER_FN(SetPersistentCell,         void,           0x004F3F10, TESObjectCELL*);
          //
          DEFINE_MEMBER_FN(Subroutine004F5330, void*, 0x004F5330, UInt32, UInt32); // Arguments are cell coordinates.
 

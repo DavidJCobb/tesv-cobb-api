@@ -633,6 +633,10 @@ namespace RE {
          DEFINE_MEMBER_FN(UpdateStaggerTimer, void, 0x007200B0, Actor* myActor, float timeElapsed);
          //
          DEFINE_MEMBER_FN(MakeAwareOf, ActorKnowledge*, 0x00709A20, Actor* myActor, Actor* otherActor);
+         //
+         // For documentation purposes; do not call:
+         //
+         DEFINE_MEMBER_FN(LoadSavedata, void, 0x007119E0, Actor*, BGSLoadGameBuffer*);
    };
 
    class ActorState : public IMovementState {
@@ -704,6 +708,11 @@ namespace RE {
          UInt8 GetFlyingState() { // same as the condition, but 5 seems to mean "not allowed to fly"
             return (this->flags04 & 0x140000) == 0x140000;
          }
+         //
+         // For documentation purposes; do not call:
+         //
+         MEMBER_FN_PREFIX(ActorState);
+         DEFINE_MEMBER_FN(LoadSavedata, void, 0x006F11D0, BGSLoadGameBuffer*);
    };
 
    class ActorValueOwner { // sizeof == 0x4 // interface
@@ -954,7 +963,7 @@ namespace RE {
          NiPoint3 unk0B4; // 0B4
          UInt32   unk0C0; // 0C0
          UInt32   unk0C4; // 0C4
-         UInt32   unk0C8; // 0C8
+         BGSLocation* editorLocation; // 0C8
          ActorMover*    unk0CC; // 0CC
          MovementControllerNPC* unk0D0; // 0D0 // This uses the same class even for the player. // Papyrus Actor.SetPlayerControls(bool) operates on this.
          UInt32   unk0D4; // D4
@@ -963,7 +972,7 @@ namespace RE {
          SpellArray addedSpells;                // 0FC
          ActorMagicCaster*	unk108[4]; // 108
          TESForm* equippedItems[4]; // 118 // equipped items or spells; see 0x006ED753
-         TESForm* equippedShout; // 128
+         TESForm* equippedShout; // 128 // not validated by the game after being loaded from the savegame; if the player were to equip a shout, upgrade the mod it came from, and the upgrade removed the shout and put something else in that form ID, you'd run into problems
          UInt32	unk12C; // 12C
          TESRace* race;   // 130
          float 	unk134; // 134
@@ -992,7 +1001,13 @@ namespace RE {
             MEMBER_FN_PREFIX(ActorValueState);
             DEFINE_MEMBER_FN(AreAllZero, bool,  0x006F20C0);
             DEFINE_MEMBER_FN(GetSum,     float, 0x006F2090); // returns the net offset, i.e. buffs + nerfs
-            DEFINE_MEMBER_FN(Load,       void,  0x006F2140, BGSLoadGameBuffer*);
+            DEFINE_MEMBER_FN(Load,       void,  0x006F2140, BGSLoadFormBuffer*);
+            DEFINE_MEMBER_FN(Reset,      void,  0x0058C4F0); // sets all floats to zero
+            DEFINE_MEMBER_FN(Save,       void,  0x006F20F0, BGSSaveFormBuffer*); // writes (int)(3), and then writes its three floats; in theory, you can write a smaller int "n" and store just the first "n" floats (with the rest being treated as zero); however, "n" must not exceed 3
+            //
+            // === SAVEDATA LAYOUT ============================================================================================
+            // UInt32         count       Number of floats written to the savegame. Must not exceed 3. Must be at least 1.
+            // float[count]   modifiers   The floats. If (count) is less than 3, then the remaining floats will be set to zero.
          };
          struct Struct006F2190 { // sizeof == 0x10
             //
@@ -1006,10 +1021,14 @@ namespace RE {
             ActorValueState* unk0C = nullptr; // 0C // array
             //
             MEMBER_FN_PREFIX(Struct006F2190);
+            DEFINE_MEMBER_FN(DestroyFirstList,     void,             0x006F21C0); // sets unk04 to nullptr and empties out unk00
+            DEFINE_MEMBER_FN(DestroyLists,         void,             0x006F2230);
+            DEFINE_MEMBER_FN(Destructor,           void,             0x006F22B0); // calls DestroyLists and then frees StringCache::Refs.
             DEFINE_MEMBER_FN(GetStateObjectFor,    ActorValueState*, 0x006F22D0, UInt32 actorValueIndex);
             DEFINE_MEMBER_FN(InsertIntoSecondList, ActorValueState*, 0x006F2340, UInt32 actorValueIndex);
-            DEFINE_MEMBER_FN(Load,                 void,             0x006F3450, BGSLoadGameBuffer*);
+            DEFINE_MEMBER_FN(Load,                 void,             0x006F3450, BGSLoadFormBuffer*);
             DEFINE_MEMBER_FN(RemoveFromSecondList, void,             0x006F2520, UInt32 actorValueIndex);
+            DEFINE_MEMBER_FN(Save,                 void,             0x006F2720, BGSSaveFormBuffer*);
             DEFINE_MEMBER_FN(GetBaseValueFor,      bool,             0x006F2870, UInt32 actorValueIndex, float* out); // gets a float from unk04 based on the avIndex's position in unk00; returns false if not found
             DEFINE_MEMBER_FN(SetBaseValueFor,      void,             0x006F28D0, UInt32 actorValueIndex, float value);
             DEFINE_MEMBER_FN(Subroutine006F2A80,   void,             0x006F2A80, UInt32 actorValueIndex);
@@ -1061,7 +1080,13 @@ namespace RE {
          ActorValueState avStateMagicka;     // 15C
          ActorValueState avStateStamina;     // 168
          ActorValueState avStateVoicePoints; // 174
-         UInt32 unk180[(0x198 - 0x180) >> 2]; // for 180, see code circa 0x006EC46E
+         float  unk180; // 180 // see code circa 0x006EC46E
+         UInt32 unk184; // 184
+         UInt32 unk188[(0x194 - 0x188) >> 2];
+         UInt8  unk194; // 194 // loaded from the savedata as a single byte; see Actor::Unk_0F
+         UInt8  unk195; // 195
+         UInt8  unk196; // 196
+         UInt8  unk197; // 197
          UInt32 unk198; // 198 // bitmask
 
          MEMBER_FN_PREFIX(Actor);

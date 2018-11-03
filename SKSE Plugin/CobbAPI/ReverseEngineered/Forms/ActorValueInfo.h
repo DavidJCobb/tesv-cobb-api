@@ -29,6 +29,8 @@ namespace RE {
    //    threshold (just don't change the current actor value, or you'll cause 
    //    recursion!).
    //
+   typedef float (*OverrideAVBase)(ActorValueOwner*, UInt32 avIndex);
+   //
    class ActorValueInfo : public TESForm {
       public:
          enum { kTypeID = kFormType_ActorValueInfo };
@@ -53,21 +55,26 @@ namespace RE {
             //    change at run-time and are always pulled from the actorbase. This is 
             //    intentional; the checks are at 0x006DF8B6.
             //
-            kAVFlag_Unk000002 = 0x000002, // every magic skill
-            kAVFlag_Unk000010 = 0x000010, // every skill
-            kAVFlag_Unk000020 = 0x000020, // Magicka, PerceptionCondition, Stamina,
-            kAVFlag_Unk000040 = 0x000040, // // if set, the Actor's BaseAV is added to the ActorBase's BaseAV
+            //  - None of the "Variable##" values have any flags set.
+            //
+            //  - Health only uses 0x040000 and 0x080000.
+            //
+            kAVFlag_Unk000002 = 0x000002, // possibly "Is Magic/Spell School"       // every magic skill except Enchanting
+            kAVFlag_Unk000010 = 0x000010, // possibly "Is Skill" or "Has Perk Tree" // every skill
+            kAVFlag_Unk000020 = 0x000020, // IS NOT THE "PERSISTENT" FLAG           // Magicka, [Stat]Condition, Stamina,
+            kAVFlag_Unk000040 = 0x000040, // if set, then the base value = (computeBaseFunc) result + ActorBase value; doesn't seem to actually be used by anything, though
             kAVFlag_Unk000080 = 0x000080,
-            kAVFlag_Unk000100 = 0x000100, // Aggression, Assistance, Confidence, Mood, Morality, 
-            kAVFlag_Unk000200 = 0x000200, // // controls whether something in ActorValueOwner::Unk_06 is forced to positive or negative
-            kAVFlag_Unk000800 = 0x000800, // CarryWeight, CritChance, DamageResist, HealRate, Mass, MeleeDamage, PerceptionCondition, SpeedMult, StaminaRate, UnarmedDamage, VoiceRate,
-            kAVFlag_Unk002000 = 0x002000, // IgnoreCrippledLimbs, PerceptionCondition, 
-            kAVFlag_ScriptsCantModify = 0x004000, // Aggression, Assistance, Confidence, Mood, Morality,
-            kAVFlag_Unk008000 = 0x008000, // DetectLifeRange, DiseaseResist, ElectricResist, Fame, FireResist, FrostResist, IgnoreCrippledLimbs, Infamy, Invisibility, JumpingBonus, MagicResist, NightEye, Paralysis, PoisonResist, Telekinesis, WardDeflection, WardPower, WaterBreathing, WaterWalking, // ActorProcessManager is involved when working with these AVs' current values
-            kAVFlag_Unk020000 = 0x020000, // PerceptionCondition, 
-            kAVFlag_Unk040000 = 0x040000, // every skill, Aggression, Assistance, CarryWeight, HealRate, Health, Invisibility, Magicka, MagickaRate, Morality, Paralysis, SpeedMult, Stamina, StaminaRate, VoicePoints, VoiceRate, WardDeflection, WardPower, // ActorProcessManager is involved when working with these AVs' maximums
-            kAVFlag_Unk080000 = 0x080000, // every skill, Health, Magicka, OneHanded, Stamina, VoicePoints, // see 006DF9A9
+            kAVFlag_IsEnum    = 0x000100, // If true, then the only permitted values are integers in the range of [0, enumValueCount); this seems to only be enforced by Papyrus and console commands, though.
+            kAVFlag_IsNegative = 0x000200, // if set, then the value is inverted: damaging increases the value and restoring decreases it (the value passed in will be negated before it gets passed into ActorValueOwner), and damage modifiers are positive (with a minimum of zero) instead of being negative (with a maximum of zero) // only used for MovementNoiseMult and ShoutRecoveryMult
+            kAVFlag_Unk000800 = 0x000800, // IS NOT THE "PERSISTENT" FLAG           // BowSpeedBonus, CarryWeight, CritChance, DamageResist, HealRate, Mass, MeleeDamage, [Stat]Condition, SpeedMult, StaminaRate, UnarmedDamage, VoiceRate,
+            kAVFlag_Unk002000 = 0x002000, // IS NOT THE "PERSISTENT" FLAG           // DEPRECATED05, IgnoreCrippledLimbs, [Stat]Condition, 
+            kAVFlag_ScriptsCantModify = 0x004000, // Papyrus APIs reject attempts to set AVs that have this flag.
+            kAVFlag_Unk008000 = 0x008000, // DetectLifeRange, DiseaseResist, DragonSouls, ElectricResist, Fame, FireResist, FrostResist, IgnoreCrippledLimbs, Infamy, Invisibility, JumpingBonus, MagicResist, NightEye, Paralysis, PoisonResist, Telekinesis, WardDeflection, WardPower, WaterBreathing, WaterWalking,
+            kAVFlag_Unk020000 = 0x020000, // IS NOT THE "PERSISTENT" FLAG           // PerceptionCondition, 
+            kAVFlag_Unk040000 = 0x040000, // IS NOT THE "PERSISTENT" FLAG           // every skill, Aggression, Assistance, CarryWeight, HealRate, Health, Invisibility, Magicka, MagickaRate, Morality, Paralysis, SpeedMult, Stamina, StaminaRate, VoicePoints, VoiceRate, WardDeflection, WardPower, // ActorProcessManager is involved when working with these AVs' current values
+            kAVFlag_Unk080000 = 0x080000, // possibly "Is Persistent"               // every skill, Health, Magicka, Stamina, VoicePoints, // ActorProcessManager is involved when working with these AVs' maximums
             kAVFlag_DoNotReduceInGodMode = 0x100000, // see virtual float PlayerCharacter::IncerceptActorValueChange(...)
+            kAVFlag_Unk200000 = 0x200000,
          };
          enum AVType : UInt32 {
             kAVType_Attribute       = 0, // e.g. Health, HealRate
@@ -83,8 +90,8 @@ namespace RE {
          const char*      name;            // 30 - second ctor argument
          StringCache::Ref unk34;           // 34
          UInt32           actorValueFlags; // 38
-         AVType           unk3C;           // 3C
-         void*            unk40;           // 40 // function pointer, apparently to return the base value when it can vary (e.g. HealRate pulls from the actor's race)
+         AVType           type;            // 3C
+         OverrideAVBase*  computeBaseFunc; // 40 // optional; used to return the base value when it can vary (e.g. HealRate pulls from the actor's race); note that if the AV doesn't have flags 0x80 or 0x800, it will only use this for the player, and all other actors pull from their ActorBase
          UInt32           unk44;           // 44 // unknown; minimum allowed value is 0xF
          UInt32           unk48[0x0F];     // 48 // initialized to 0xA4
          UInt32           enumValueCount;  // 84
@@ -104,15 +111,16 @@ namespace RE {
    static_assert(offsetof(ActorValueInfo, unkB0) >= 0xB0, "RE::ActorValueInfo::unkB0 is too early.");
    static_assert(offsetof(ActorValueInfo, unkB0) <= 0xB0, "RE::ActorValueInfo::unkB0 is too late.");
 
+   DEFINE_SUBROUTINE_EXTERN(bool, ComputeDynamicBaseActorValue, 0x005AD640, ActorValueOwner* subject, UInt32 avIndex, float* out); // calls the appropriate (computeBaseFunc), if any; returns true if a variable value is computed
    //
    // I'm listing these here, but it's probably a bad idea to go around defining custom actor values. AVs have fixed 
    // form IDs, and I'm not sure how the game generates those. There may not be room for new AVs even if the places 
    // they're stored can expand.
    //
-   DEFINE_SUBROUTINE(ActorValueInfo*, DefineActorValueInfo,    0x005AD710, void*, UInt32 index, char* name, UInt32, UInt32 flags, void* subroutine, UInt32);
-   DEFINE_SUBROUTINE(void,            DefineActorValueEnum,    0x005AD080, ActorValueInfo*, ...); // defines enum values (char*) for an enum actor value
-   DEFINE_SUBROUTINE(ActorValueInfo*, GetActorValueByIndex,    0x005AD350, UInt32 index);
-   DEFINE_SUBROUTINE(UInt32,          IndexOfActorValueByName, 0x005AD5F0, const char* name);
+   DEFINE_SUBROUTINE_EXTERN(ActorValueInfo*, DefineActorValueInfo,    0x005AD710, void*, UInt32 index, char* name, UInt32, UInt32 flags, void* subroutine, UInt32);
+   DEFINE_SUBROUTINE_EXTERN(void,            DefineActorValueEnum,    0x005AD080, ActorValueInfo*, ...); // defines enum values (char*) for an enum actor value
+   DEFINE_SUBROUTINE_EXTERN(ActorValueInfo*, GetActorValueByIndex,    0x005AD350, UInt32 index);
+   DEFINE_SUBROUTINE_EXTERN(UInt32,          IndexOfActorValueByName, 0x005AD5F0, const char* name);
 
    typedef void(*ActorValueChangeHandler)(Actor*, UInt32 avIndex, float oldVal, float changedBy, UInt32 unk);
    extern ActorValueChangeHandler* const g_actorValueChangeHandlers; // as in: (g_actorValueChangeHandlers[avIndex])(...);

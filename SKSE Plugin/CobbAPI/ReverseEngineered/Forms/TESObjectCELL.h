@@ -8,7 +8,7 @@ class BGSAcousticSpace;
 class BGSMusicType;
 class TESImageSpace;
 namespace RE {
-   struct MapMarkerOperation;
+   struct MapMarkerOperation; // see TESWorldSpace.h
    class TESObjectREFR; // Forward-declare instead of #including, so the compiler doesn't choke on a circular dependency
    class TESWorldSpace;
    class TESObjectCELL : public TESForm {
@@ -17,7 +17,7 @@ namespace RE {
          enum { kTypeID = kFormType_Cell };
          //
          // Parents:
-         TESFullName					fullName;	// 14
+         TESFullName fullName; // 14
          //
          // Members:
          struct UnknownData {
@@ -39,15 +39,33 @@ namespace RE {
             kLightingTemplateUsageFlag_LightFadeDistances = 1024,
          };
 
+         struct MaxHeightData { // MHDT subrecord
+            float offset; // 00
+            UInt8 data[32][32]; // 04
+         };
+
          struct CellData {};
          struct ExteriorData : CellData { // sizeof == 0x1C; see 004C18E4
+            struct Struct0063A0B0 { // sizeof == 0x4 // TVDT subrecord
+               struct Struct0062DB00{ // sizeof == 0xC
+                  void*  unk00;
+                  void*  unk04; // data read verbatim from the ESP file
+                  UInt32 count; // == ((TVDT subrecord size * 8 + 31) / 32); if > 1, then unk04 == unk00 == malloc(count * 4) i.e. they're the same pointer; else unk04 is a single data field
+               };
+               Struct0062DB00* unk00;
+
+               MEMBER_FN_PREFIX(Struct0063A0B0);
+               DEFINE_MEMBER_FN(Load, void, 0x0062DB50, BGSLoadFormBuffer*);
+            };
+            //
             SInt32 cellX; // 00 // TESObjectCELL has an exterior-specific getter: 0x004C0450
             SInt32 cellY; // 04 // TESObjectCELL has an exterior-specific getter: 0x004C0470
-            void*  unk08;
-            void*  unk0C;
+            MaxHeightData*  maxHeightData; // 08 // raw contents of MHDT subrecord, read verbatim
+            Struct0063A0B0* occlusionData; // 0C
             float  unitX; // 10 // TESObjectCELL has an exterior-specific getter: 0x004C04D0
             float  unitY; // 14 // TESObjectCELL has an exterior-specific getter: 0x004C04F0
-            UInt32 unk18;
+            UInt8  forceHideLandQuads; // 18 // one bit per quad
+            UInt8  pad19[3];
          };
          struct InteriorData : CellData { // sizeof == 0x60; constructor at 0x004AD710; this is XCLL data literally copied verbatim from the ESP/ESM
             InteriorData() {};
@@ -120,7 +138,7 @@ namespace RE {
          BaseExtraList  extraData; // 34
          CellData*      unk3C;		    // 3C // NOTE: This data's values have different meanings for interior and exterior cells.
          TESObjectLAND* unk40;		    // 40
-         float          waterLevel;     // 44
+         float          waterLevel;     // 44 // XCLW subrecord
          void*          unk48;		    // 48 // related to navmesh data!
          tArray<RE::TESObjectREFR*> objectList; // 4C
          UnkArray       unk58;			// 58
@@ -171,21 +189,24 @@ namespace RE {
          DEFINE_MEMBER_FN(GetCellCoordinates, void,  0x004C0490, SInt32*, SInt32*); // Gets the cell-coordinates of an exterior cell. (Interior cells don't use these values.)
          DEFINE_MEMBER_FN(SetCellCoordinates, void,  0x004C0550, SInt32,  SInt32);  // Sets the cell-coordinates of an exterior cell. (Interior cells don't use these values.)
          DEFINE_MEMBER_FN(GetUnitCoordinates, void,  0x004C0510, float*,  float*);  // Gets the unit-coordinates of an exterior cell. (Interior cells don't use these values.)
+         DEFINE_MEMBER_FN(GetNorthRotation,   float, 0x004C0FC0);
          DEFINE_MEMBER_FN(GetWaterLevel,      float, 0x004C0710); // Returns water level, checking the parent world if needed; returns FLOAT_MAX if no water level. (Interior cells don't have a water level.)
          //
          DEFINE_MEMBER_FN(Subroutine004C05A0, UInt32, 0x004C05A0); // Interiors: returns (this->unk88 + 0x54). Exteriors: returns (this->parentWorld->unkBC).
          DEFINE_MEMBER_FN(Subroutine004C05C0, UInt32, 0x004C05C0); // Interiors: returns (this->unk88 + 0x64). Exteriors: returns (this->parentWorld->unkC0).
          DEFINE_MEMBER_FN(Subroutine004C0650, void,   0x004C0650, UInt32, UInt32); // Func(-1, 0) queues the cell to reset.
-         DEFINE_MEMBER_FN(Subroutine004C1820, void, 0x004C1820);
-         DEFINE_MEMBER_FN(Subroutine004C2470, void, 0x004C2470); // loops over all objects in cell; performs unknown operation on 3D; unloads 3D
-         DEFINE_MEMBER_FN(Subroutine004C25D0, void, 0x004C25D0); // loops over all objects in cell; performs unknown operation on any that aren't: disabled; deleted; or doors that are marked as destroyed
-         DEFINE_MEMBER_FN(Subroutine004C2660, void, 0x004C2660, bool); // loops over all objects in cell; performs one of two unknown operations on them based on bool
-         DEFINE_MEMBER_FN(Subroutine004C26F0, void, 0x004C26F0, float, float, float, float, UInt32); // loops over all objects in cell; performs unknown operation them involving mathematical checks on their positions
-         DEFINE_MEMBER_FN(Subroutine004C28F0, void, 0x004C28F0); // loops over all objects in cell; performs unknown operation them
-         DEFINE_MEMBER_FN(Subroutine004C29A0, void, 0x004C29A0); // loops over all objects in cell; performs unknown operation them
-         DEFINE_MEMBER_FN(Subroutine004C2B00, char*, 0x004C2B00); // returns the cell's name(?), or "Wilderness" if it's a nameless exterior cell
-         DEFINE_MEMBER_FN(Subroutine004C31B0, void, 0x004C31B0, UInt32, UInt32, UInt32); // something to do with whether the cell's been seen; nearby subroutines (scroll up) also are related
-         DEFINE_MEMBER_FN(Subroutine004C32C0, void, 0x004C32C0); // loops over all objects in cell; performs unknown operation them
+         DEFINE_MEMBER_FN(ResetUnk3C,         void,   0x004C1820);
+         DEFINE_MEMBER_FN(Subroutine004C2470, void,   0x004C2470); // loops over all objects in cell; performs unknown operation on 3D; unloads 3D
+         DEFINE_MEMBER_FN(Subroutine004C25D0, void,   0x004C25D0); // loops over all objects in cell; performs unknown operation on any that aren't: disabled; deleted; or doors that are marked as destroyed
+         DEFINE_MEMBER_FN(Subroutine004C2660, void,   0x004C2660, bool); // loops over all objects in cell; performs one of two unknown operations on them based on bool
+         DEFINE_MEMBER_FN(Subroutine004C26F0, void,   0x004C26F0, float, float, float, float, UInt32); // loops over all objects in cell; performs unknown operation on them involving mathematical checks on their positions
+         DEFINE_MEMBER_FN(Subroutine004C28F0, void,   0x004C28F0); // loops over all objects in cell; performs unknown operation them
+         DEFINE_MEMBER_FN(Subroutine004C29A0, void,   0x004C29A0); // loops over all objects in cell; performs unknown operation them
+         DEFINE_MEMBER_FN(Subroutine004C2B00, char*,  0x004C2B00); // returns the cell's name(?), or "Wilderness" if it's a nameless exterior cell
+         DEFINE_MEMBER_FN(Subroutine004C31B0, void,   0x004C31B0, UInt32, UInt32, UInt32); // something to do with whether the cell's been seen; nearby subroutines (scroll up) also are related
+         DEFINE_MEMBER_FN(Subroutine004C32C0, void,   0x004C32C0); // loops over all objects in cell; performs unknown operation them
+         //
+         DEFINE_MEMBER_FN(ModifyPersistentFlag, void, 0x004C0CC0, bool); // persistent flag?
    };
-   static_assert(offsetof(TESObjectCELL, parentWorld) == 0x84, "Data layout incorrect for RE::TESObjectCELL: bad parentWorld."); // IntelliSense chokes on this; ignore the squiggly red lines.
+   static_assert(offsetof(TESObjectCELL, parentWorld) == 0x84, "Data layout incorrect for RE::TESObjectCELL: bad parentWorld.");
 };

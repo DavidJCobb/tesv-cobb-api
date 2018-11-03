@@ -10,7 +10,29 @@ class TESActorBaseData : public BaseFormComponent { // sizeof == 0x38
       virtual UInt32	GetUnk20(void);
 
       enum {
-         kFlag_PCLevelMult = 0x80
+         kFlag_Female        = 0x00000001,
+         kFlag_Essential     = 0x00000002,
+         kFlag_IsPreset      = 0x00000004,
+         kFlag_Respawn       = 0x00000008,
+         kFlag_AutoCalcStats = 0x00000010,
+         kFlag_Unique        = 0x00000020,
+         kFlag_DoesntAffectStealthMeter = 0x00000040,
+         kFlag_PCLevelMult   = 0x00000080,
+         kFlag_UsesTemplate  = 0x00000100,
+         //
+         kFlag_Protected     = 0x00000800,
+         //
+         kFlag_Summonable    = 0x00004000,
+         //
+         kFlag_DoesntBleed   = 0x00010000,
+         //
+         kFlag_BleedoutOverride    = 0x00040000,
+         kFlag_OppositeGenderAnims = 0x00080000,
+         kFlag_SimpleActor         = 0x00100000,
+         //
+         kFlag_IsGhost = 0x20000000,
+         //
+         kFlag_IsInvulnerable = 0x80000000,
       };
 
       UInt32				flags;	// 04 - init'd to 0

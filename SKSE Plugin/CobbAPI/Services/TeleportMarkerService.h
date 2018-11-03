@@ -56,7 +56,7 @@ class TeleportMarkerService {
       bool GetMarkerOriginalCoordinates(TESObjectREFR* door, Coordinates* out); // effectively const, except that it uses our lock
       bool GetMarkerModifiedCoordinates(TESObjectREFR* door, Coordinates* out); // effectively const, except that it uses our lock
       bool MoveMarker(TESObjectREFR* door, NiPoint3 pos, NiPoint3 rot);
-      bool MoveMarkerRelativeTo(TESObjectREFR* door, NiPoint3* offsetFromPos, NiPoint3* offsetFromRot, NiPoint3* offsetToPos, NiPoint3* offsetToRot);
+      bool MoveMarkerRelativeTo(TESObjectREFR* door, const NiPoint3& offsetFromPos, const NiPoint3& offsetFromRot, const NiPoint3& offsetToPos, const NiPoint3& offsetToRot);
       bool MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* door, TESObjectREFR* destination = nullptr);
       void ResetMarker(TESObjectREFR* door);
       void ResetAllMarkers();

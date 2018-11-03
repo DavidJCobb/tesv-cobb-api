@@ -100,7 +100,7 @@ bool TeleportMarkerService::MoveMarker(TESObjectREFR* door, NiPoint3 pos, NiPoin
    }
    return true;
 };
-bool TeleportMarkerService::MoveMarkerRelativeTo(TESObjectREFR* door, NiPoint3* offsetFromPos, NiPoint3* offsetFromRot, NiPoint3* offsetToPos, NiPoint3* offsetToRot) {
+bool TeleportMarkerService::MoveMarkerRelativeTo(TESObjectREFR* door, const NiPoint3& offsetFromPos, const NiPoint3& offsetFromRot, const NiPoint3& offsetToPos, const NiPoint3& offsetToRot) {
    if (!door)
       return false;
    if (door->formID >> 0x18 == 0xFF)
@@ -110,9 +110,9 @@ bool TeleportMarkerService::MoveMarkerRelativeTo(TESObjectREFR* door, NiPoint3* 
       return false;
    Cobb::Coordinates desired;
    {
-      Cobb::GetRelativeCoordinates(&desired, offsetFromPos, offsetFromRot, &(data->markerPosition), &(data->markerRotation), true, true);
+      Cobb::GetRelativeCoordinates(desired, offsetFromPos, offsetFromRot, data->markerPosition, data->markerRotation, true, true);
       NiPoint3 rotation = (NiPoint3)desired.rot;
-      Cobb::ApplyRelativeCoordinates(&desired, offsetToPos, offsetToRot, &(desired.pos), &rotation, true, desired.rot.isRadians);
+      Cobb::ApplyRelativeCoordinates(desired, offsetToPos, offsetToRot, desired.pos, rotation, true, desired.rot.isRadians);
    }
    desired.rot.ConvertToRadians();
    return this->MoveMarker(door, desired.pos, (NiPoint3)desired.rot);
@@ -172,9 +172,9 @@ bool TeleportMarkerService::MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* d
             }
          }
       }
-      Cobb::GetRelativeCoordinates(&desired, &doorEditorPos, &doorEditorRot, &markerOriginalPos, &markerOriginalRot, true, true);
+      Cobb::GetRelativeCoordinates(desired, doorEditorPos, doorEditorRot, markerOriginalPos, markerOriginalRot, true, true);
       NiPoint3 rotation = (NiPoint3)desired.rot;
-      Cobb::ApplyRelativeCoordinates(&desired, &(destination->pos), &(destination->rot), &(desired.pos), &rotation, true, desired.rot.isRadians);
+      Cobb::ApplyRelativeCoordinates(desired, destination->pos, destination->rot, desired.pos, rotation, true, desired.rot.isRadians);
    }
    destination->handleRefObject.DecRef(); // LookupREFRByHandle incremented the refcount
    desired.rot.ConvertToRadians();

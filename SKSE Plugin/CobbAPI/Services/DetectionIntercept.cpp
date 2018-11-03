@@ -8,7 +8,14 @@ RegistrationHandle Feature::add(RE::Actor* actor) {
    CreateRefHandleByREFR(&handle, (TESObjectREFR*) actor);
    return this->add(handle);
 };
-RegistrationHandle Feature::add(RefHandle handle) {
+RegistrationHandle Feature::add(RE::Actor* actor, const char* tag) {
+   if (!actor)
+      return registration_not_found;
+   RefHandle handle = *g_invalidRefHandle;
+   CreateRefHandleByREFR(&handle, (TESObjectREFR*) actor);
+   return this->add(handle, tag);
+};
+RegistrationHandle Feature::add(RefHandle handle, const char* tag) {
    if (handle == *g_invalidRefHandle)
       return registration_not_found;
    //
@@ -28,7 +35,10 @@ RegistrationHandle Feature::add(RefHandle handle) {
       return index;
    }
    SInt32 i = this->firstEmpty;
-   this->registrations[i] = Registration(handle);
+   this->registrations[i] = Registration(handle, tag);
+   if (tag) {
+      this->byStringTag[tag].push_back(i);
+   }
    this->firstEmpty = this->_find_next_empty(i);
    return i;
 };
@@ -60,7 +70,38 @@ void Feature::remove(RefHandle handle, RegistrationHandle index) {
       r.enabled = false;
       if (this->firstEmpty > index)
          this->firstEmpty = index;
+      if (r.tag) {
+         try {
+            const std::string tag(r.tag);
+            auto& list = this->byStringTag.at(tag);
+            list.erase(std::remove(list.begin(), list.end(), index), list.end());
+            if (!list.size())
+               this->byStringTag.erase(tag);
+         } catch (std::out_of_range) {};
+      }
    }
+};
+void Feature::remove_all_of(const char* tag) {
+   if (!tag)
+      return;
+   feature_lock_guard scopedLock(this->lock);
+   try {
+      auto& indices = this->byStringTag.at(tag);
+      auto  size    = indices.size();
+      for (size_t i = 0; i < size; i++) {
+         const RegistrationHandle index = indices[i];
+         if (index < 0)
+            continue;
+         auto& r = this->registrations[index];
+         if (r.enabled) {
+            auto& actors = this->affectedActors;
+            actors.erase(std::remove(actors.begin(), actors.end(), r.actor), actors.end());
+         }
+         r.enabled = false;
+         if (this->firstEmpty > index)
+            this->firstEmpty = index;
+      }
+   } catch (std::out_of_range) {};
 };
 void Feature::force_remove(RefHandle handle) {
    feature_lock_guard scopedLock(this->lock);

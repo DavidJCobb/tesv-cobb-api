@@ -55,17 +55,11 @@ namespace Cobb {
             this->z = z;
             this->isRadians = isRadians;
          };
-         Euler(NiPoint3* pos, bool isRadians = true) {
-            this->x = pos->x;
-            this->y = pos->y;
-            this->z = pos->z;
+         Euler(const NiPoint3& pos, bool isRadians = true) {
+            this->x = pos.x;
+            this->y = pos.y;
+            this->z = pos.z;
             this->isRadians = isRadians;
-         }
-         Euler(Euler* copy) {
-            this->x = copy->x;
-            this->y = copy->y;
-            this->z = copy->z;
-            this->isRadians = copy->isRadians;
          }
          //
          void ConvertToDegrees();
@@ -232,63 +226,60 @@ namespace Cobb {
       Euler    rot;
       //
       Coordinates() {};
-      Coordinates(NiPoint3* pos, Euler* rot) : rot(rot) {
-         this->pos.x = pos->x;
-         this->pos.y = pos->y;
-         this->pos.z = pos->z;
+      Coordinates(const NiPoint3& pos, const Euler& rot) : rot(rot) {
+         this->pos.x = pos.x;
+         this->pos.y = pos.y;
+         this->pos.z = pos.z;
       }
-      Coordinates(NiPoint3* pos, NiPoint3* rot, bool isRadians = true) : rot(rot, isRadians) {
-         this->pos.x = pos->x;
-         this->pos.y = pos->y;
-         this->pos.z = pos->z;
+      Coordinates(const NiPoint3& pos, const NiPoint3& rot, bool isRadians = true) : rot(rot, isRadians) {
+         this->pos.x = pos.x;
+         this->pos.y = pos.y;
+         this->pos.z = pos.z;
       };
-      Coordinates(Coordinates* other) : pos(other->pos), rot(other->rot) {};
+      Coordinates(const Coordinates& other) : pos(other.pos), rot(other.rot) {};
    };
 
-   static Coordinates* GetRelativeCoordinates(Coordinates* out, Coordinates* parent, Coordinates* target) {
-      if (out == target) {
-         target = &(Coordinates(target));
-      }
+   static Coordinates& GetRelativeCoordinates(Coordinates& out, const Coordinates& parent, const Coordinates& target) {
       {  // Get output rotation.
-         Quaternion qParent = (Quaternion) parent->rot;
-         Quaternion qTarget = (Quaternion) target->rot;
-         out->rot = (Euler)(qParent.Inverse() * qTarget);
+         Quaternion qParent = (Quaternion) parent.rot;
+         Quaternion qTarget = (Quaternion) target.rot;
+         out.rot = (Euler)(qParent.Inverse() * qTarget);
       }
       {  // Get output position.
-         Cobb::Matrix mGlobal = ((Cobb::Matrix)parent->rot).Transpose();
-         out->pos = mGlobal.MultiplyByColumn(target->pos);
+         Cobb::Matrix mGlobal = ((Cobb::Matrix)parent.rot).Transpose();
+         out.pos = mGlobal.MultiplyByColumn(target.pos);
          //
          // We need to convert the parent's world-relative position to parent-relative coordinates 
          // and then subtract it from our outputPosition.
          //
-         NiPoint3 parentPositionLocal = mGlobal.MultiplyByColumn(parent->pos);
-         out->pos -= parentPositionLocal;
+         NiPoint3 parentPositionLocal = mGlobal.MultiplyByColumn(parent.pos);
+         out.pos -= parentPositionLocal;
       }
       return out;
    };
-   static Coordinates* GetRelativeCoordinates(Coordinates* out, NiPoint3* parentPos, NiPoint3* parentRot, NiPoint3* targetPos, NiPoint3* targetRot, bool abParentIsRadians = true, bool abTargetIsRadians = true) {
+   static Coordinates& GetRelativeCoordinates(Coordinates& out, const NiPoint3& parentPos, const NiPoint3& parentRot, const NiPoint3& targetPos, const NiPoint3& targetRot, bool abParentIsRadians = true, bool abTargetIsRadians = true) {
       Coordinates parent(parentPos, parentRot, abParentIsRadians);
       Coordinates target(targetPos, targetRot, abTargetIsRadians);
-      return GetRelativeCoordinates(out, &parent, &target);
+      return GetRelativeCoordinates(out, parent, target);
    };
-   static Coordinates* ApplyRelativeCoordinates(Coordinates* out, Coordinates* parent, Coordinates* offset) {
+   static Coordinates& ApplyRelativeCoordinates(Coordinates& out, const Coordinates& parent, const Coordinates& offset) {
       {  // Construct position.
-         if (offset->pos.x != 0 || offset->pos.y != 0 || offset->pos.z != 0) {
-            out->pos = ((Matrix)parent->rot).MultiplyByColumn(offset->pos) + parent->pos;
+         if (offset.pos.x != 0 || offset.pos.y != 0 || offset.pos.z != 0) {
+            out.pos = ((Matrix)parent.rot).MultiplyByColumn(offset.pos) + parent.pos;
          } else {
-            out->pos = parent->pos;
+            out.pos = parent.pos;
          }
       }
       {  // Construct rotation.
-         Quaternion qParent = (Quaternion) parent->rot;
-         Quaternion qOffset = (Quaternion) offset->rot;
-         out->rot = (Euler)(qParent * qOffset);
+         Quaternion qParent = (Quaternion) parent.rot;
+         Quaternion qOffset = (Quaternion) offset.rot;
+         out.rot = (Euler)(qParent * qOffset);
       }
       return out;
    };
-   static Coordinates* ApplyRelativeCoordinates(Coordinates* out, NiPoint3* parentPos, NiPoint3* parentRot, NiPoint3* offsetPos, NiPoint3* offsetRot, bool abParentIsRadians = true, bool abOffsetIsRadians = true) {
+   static Coordinates& ApplyRelativeCoordinates(Coordinates& out, const NiPoint3& parentPos, const NiPoint3& parentRot, const NiPoint3& offsetPos, const NiPoint3& offsetRot, bool abParentIsRadians = true, bool abOffsetIsRadians = true) {
       Coordinates parent(parentPos, parentRot, abParentIsRadians);
       Coordinates offset(offsetPos, offsetRot, abOffsetIsRadians);
-      return ApplyRelativeCoordinates(out, &parent, &offset);
+      return ApplyRelativeCoordinates(out, parent, offset);
    };
 };

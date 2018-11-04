@@ -127,6 +127,7 @@
     <ClCompile Include="Papyrus\CompoundOperations\SetMotionType.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\SpawnComplex.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\SpawnRel.cpp" />
+    <ClCompile Include="Papyrus\Detection.cpp" />
     <ClCompile Include="Papyrus\Editor.cpp" />
     <ClCompile Include="Papyrus\Form.cpp" />
     <ClCompile Include="Papyrus\Furniture.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="Services\TeleportMarkerService.cpp" />
     <ClCompile Include="Shared.cpp" />
     <ClCompile Include="Types\bounds.cpp" />
+    <ClCompile Include="Utilities\Dumps\ActorValueList.cpp" />
     <ClCompile Include="Utilities\Dumps\ASM.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +180,7 @@
     <ClInclude Include="Miscellaneous\utf8string.h" />
     <ClInclude Include="Papyrus\Actor.h" />
     <ClInclude Include="Papyrus\Cell.h" />
+    <ClInclude Include="Papyrus\Detection.h" />
     <ClInclude Include="Papyrus\Form.h" />
     <ClInclude Include="Papyrus\Array.h" />
     <ClInclude Include="Papyrus\CompoundOperations\SetMotionType.h" />
@@ -208,16 +211,21 @@
     <ClInclude Include="ReverseEngineered\Objects\ActiveEffect.h" />
     <ClInclude Include="ReverseEngineered\Objects\Alias.h" />
     <ClInclude Include="ReverseEngineered\Objects\BGSPrimitive.h" />
+    <ClInclude Include="ReverseEngineered\Objects\Navmesh.h" />
     <ClInclude Include="ReverseEngineered\Objects\Sky.h" />
     <ClInclude Include="ReverseEngineered\Player\PlayerCharacter.h" />
     <ClInclude Include="ReverseEngineered\Player\PlayerSkills.h" />
     <ClInclude Include="ReverseEngineered\Systems\012E32E8.h" />
     <ClInclude Include="ReverseEngineered\Systems\012E59D4.h" />
     <ClInclude Include="ReverseEngineered\Systems\01B115D8.h" />
+    <ClInclude Include="ReverseEngineered\Systems\BSTaskPool.h" />
     <ClInclude Include="ReverseEngineered\Systems\EquipManager.h" />
     <ClInclude Include="ReverseEngineered\Systems\ExteriorCellLoaderTask.h" />
     <ClInclude Include="ReverseEngineered\Systems\GameInput.h" />
     <ClInclude Include="ReverseEngineered\Systems\ReferenceEffects.h" />
+    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSLoadGameBuffer.h" />
+    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSSaveFormBuffer.h" />
+    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSSaveLoadManager.h" />
     <ClInclude Include="ReverseEngineered\Systems\Sound.h" />
     <ClInclude Include="ReverseEngineered\Systems\TESCamera.h" />
     <ClInclude Include="ReverseEngineered\Systems\01B2E724.h" />
@@ -225,6 +233,8 @@
     <ClInclude Include="ReverseEngineered\Systems\ActorAI\base.h" />
     <ClInclude Include="ReverseEngineered\Systems\DefaultObjects.h" />
     <ClInclude Include="ReverseEngineered\Systems\Timing.h" />
+    <ClInclude Include="ReverseEngineered\Types.h" />
+    <ClInclude Include="ReverseEngineered\UI\MessageBoxCallbacks.h" />
     <ClInclude Include="Services\CellInteriorDataService.h" />
     <ClInclude Include="Services\DetectionIntercept.h" />
     <ClInclude Include="Services\DisplayOptionService.h" />
@@ -269,6 +279,7 @@
     <ClInclude Include="ReverseEngineered\Systems\Navmesh.h" />
     <ClInclude Include="ReverseEngineered\Systems\ThreadLocalStorage.h" />
     <ClInclude Include="Shared.h" />
+    <ClInclude Include="Utilities\Dumps\ActorValueList.h" />
     <ClInclude Include="Utilities\Dumps\ASM.h" />
     <ClInclude Include="Utilities\Dumps\ExtraData\Base.h" />
     <ClInclude Include="Utilities\Dumps\ExtraData\ExtraTeleport.h" />

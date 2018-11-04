@@ -1,6 +1,12 @@
 #include "DetectionIntercept.h"
 #include <algorithm>
 
+namespace {
+   typedef DetectionInterceptService::Feature Feature;
+   typedef DetectionInterceptService::RegistrationHandle RegistrationHandle;
+   typedef DetectionInterceptService::RefHandle RefHandle;
+};
+
 RegistrationHandle Feature::add(RE::Actor* actor) {
    if (!actor)
       return registration_not_found;
@@ -30,7 +36,9 @@ RegistrationHandle Feature::add(RefHandle handle, const char* tag) {
    this->affectedActors.push_back(handle);
    if (this->firstEmpty >= this->registrations.size()) {
       index = this->registrations.size();
-      this->registrations.emplace_back(handle);
+      this->registrations.emplace_back(handle, tag);
+      if (tag)
+         this->byStringTag[tag].push_back(index);
       this->firstEmpty = this->registrations.size();
       return index;
    }
@@ -102,6 +110,13 @@ void Feature::remove_all_of(const char* tag) {
             this->firstEmpty = index;
       }
    } catch (std::out_of_range) {};
+};
+void Feature::force_remove(RE::Actor* actor) {
+   if (!actor)
+      return;
+   RefHandle handle = *g_invalidRefHandle;
+   CreateRefHandleByREFR(&handle, (TESObjectREFR*)actor);
+   this->force_remove(handle);
 };
 void Feature::force_remove(RefHandle handle) {
    feature_lock_guard scopedLock(this->lock);

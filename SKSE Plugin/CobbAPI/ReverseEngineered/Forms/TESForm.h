@@ -64,7 +64,7 @@ namespace RE {
          //
          virtual void         Unk_04(void);		// reset/init? would leak pointers if called on a live object
          virtual void         Unk_05();		// release pointers?
-         virtual bool         LoadForm(BGSLoadFormBuffer*); // 06
+         virtual bool         LoadForm(BGSLoadFormBuffer*); // 06 // Loads the form from the ESP/ESM files. Note that if the form has fields referring to other forms, those may be loaded as just UInt32 form IDs at first, in which case they'll be resolved during TESForm::InitItem.
          virtual bool         Unk_07(UInt32 arg); // 07 // no-op for Actor
          virtual bool         Unk_08(BGSLoadFormBuffer*); // 08 // for Actor, just calls LoadForm
          virtual TESForm*     Unk_09(UInt32 arg1, void * arg2);

@@ -1,6 +1,7 @@
 #pragma once
 #include "ReverseEngineered/Forms/TESObjectREFR.h"
 #include "ReverseEngineered/NetImmerse/objects.h"
+#include "ReverseEngineered/Types.h"
 #include "skse/NiObjects.h"
 
 class BGSDialogueBranch;
@@ -13,6 +14,36 @@ namespace RE {
    class CombatTargetSelector; // extends NiRefObject
    class StandardDetectionListener;
    class TESPackage;
+
+   enum ActorValueModifier {
+      //
+      // Actor values (hereafter "AVs") can have three modifiers: permanent, temporary, and damage. An AV's 
+      // current value is equal to the sum of its base value and all three modifiers.
+      //
+      //  - The Permanent Modifier is used for any changes to an actor value that don't have the "Recover" flag 
+      //    set. 
+      //
+      //     * Abilities and worn enchantments, typically.
+      //
+      //     * ForceActorValue("Stat", n) sets the permanent modifier for "Stat" to "n" minus the current value 
+      //       of "Stat." Note that the current value is influenced by all modifiers, including the permanent 
+      //       modifier prior to the ForceActorValue call.
+      //
+      //  - The Temporary Modifier is used for PeakValueModifierEffects that have the "Recover" flag set. These 
+      //    would be "Fortify" and "Reduce" potions and spells that dispel after a time limit.
+      //
+      //  - The Damage Modifier is used for any damage taken to the stat. For example, casting a spell "damages" 
+      //    your magicka. Damage modifiers are negative values for most stats, but there are two exceptions: the 
+      //    MovementNoiseMult and ShoutRecoveryMult AVs "damage" upward, which makes sense, gien that increases 
+      //    in those stats are "bad."
+      //
+      // The three modifiers for a given AV are stored as simple totals; there is no information that allows one 
+      // to trace the forces that have changed them.
+      //
+      kAVModifier_Permanent = 0, // "permanent modifier" from CK wiki
+      kAVModifier_Temporary = 1, // "temporary modifier" from CK wiki
+      kAVModifier_Damage    = 2, // "damage    modifier" from CK wiki
+   };
 
    struct Struct007AC960; // sizeof == 0x30
    struct Struct007BE6A0; // sizeof == 0x118
@@ -565,6 +596,7 @@ namespace RE {
             MEMBER_FN_PREFIX(Struct00730290);
             DEFINE_MEMBER_FN(Subroutine007300E0, void, 0x007300E0, UInt32 avIndex);
             DEFINE_MEMBER_FN(Subroutine00730130, void, 0x00730130, UInt32 avIndex);
+            DEFINE_MEMBER_FN(FlagActorValuesAsDirty, void, 0x00730180);
             DEFINE_MEMBER_FN(Subroutine007300B0, void, 0x007300B0, UInt32 avIndex, UInt32); // sets a flag00040000ActorValues entry's (dirty) to false; sets unk04 to the arg
          };
 
@@ -637,6 +669,10 @@ namespace RE {
          // For documentation purposes; do not call:
          //
          DEFINE_MEMBER_FN(LoadSavedata, void, 0x007119E0, Actor*, BGSLoadGameBuffer*);
+         //
+         // Unknown:
+         //
+         DEFINE_MEMBER_FN(FlagUnk30ActorValuesAsDirty, void, 0x006F4870);
    };
 
    class ActorState : public IMovementState {
@@ -696,17 +732,17 @@ namespace RE {
          UInt32	flags04;
          UInt32	flags08;
 
-         inline FurnitureState GetFurnitureState() {
+         inline FurnitureState GetFurnitureState() const {
             return (FurnitureState) ((this->flags04 >> 0xE) & 0xF);
          }
-         inline bool IsUnconscious() {
+         inline bool IsUnconscious() const {
             return (this->flags04 & 0x01E00000) == 0x00600000;
          };
-         bool IsWeaponDrawn() {
+         bool IsWeaponDrawn() const {
             return (flags08 >> 5 & 7) >= 3;
          }
-         UInt8 GetFlyingState() { // same as the condition, but 5 seems to mean "not allowed to fly"
-            return (this->flags04 & 0x140000) == 0x140000;
+         UInt8 GetFlyingState() const { // same as the condition, but 5 seems to mean "not allowed to fly"
+            return (this->flags04 >> 0x12) & 5;
          }
          //
          // For documentation purposes; do not call:
@@ -725,7 +761,7 @@ namespace RE {
          virtual float GetBase(UInt32 avIndex); // 03
          virtual void  SetBase(UInt32 avIndex, float value); // 04
          virtual void  ModBase(UInt32 avIndex, float changeBy); // 05
-         virtual void  Unk_06(UInt32 arg0, UInt32 avIndex, float changeBy); // 06 // Force/Mod AV?
+         virtual void  ModifyModifier(ActorValueModifier modifier, UInt32 avIndex, float changeBy); // 06
          virtual void  SetCurrent(UInt32 avIndex, float value); // 07 // just calls SetBase; wtf?
          virtual bool  Unk_08(void); // 08
 
@@ -918,7 +954,7 @@ namespace RE {
             kFlags_Flag1_00000200   = 0x00000200,
             kFlags_Flag1_00004000   = 0x00004000,
             kFlags_Flag1_00008000   = 0x00008000,
-            kFlags_Flag1_00040000   = 0x00040000, // related to the actor being in cell water, or in lava; checked by a condition meant for the latter
+            kFlags_Flag1_00040000   = 0x00040000, // related to the Waterbreathing magic effect. also related to the actor being in cell water, or in lava; checked by a condition meant for the latter
             kFlags_Flag1_01000000   = 0x01000000,
             kFlags_IsPlayerTeammate = 0x04000000,
             kFlags_IsGuard          = 0x40000000,
@@ -987,16 +1023,7 @@ namespace RE {
             //
             // Constructor at 0x00474D80. Labeled in my disassembler as Struct00474D80.
             //
-            enum {
-               //
-               // Worth noting that these indices appear to correspond to ActorValueOwner::Unk_06's first argument, 
-               // which we know to be an enum.
-               //
-               kIndex_Buff = 0, // "permanent modifier" from CK wiki? // Used if the AV has been buffed  above its maximum. floats[0] == current value - base value
-               kIndex_Unk  = 1, // "temporary modifier" from CK wiki? // 
-               kIndex_Nerf = 2, // "damage    modifier" from CK wiki? // Used if the AV has been damaged below its maximum. floats[2] == current value - base value
-            };
-            float floats[3]; // 00
+            float modifiers[3]; // 00 // indices are from the ActorValueModifier enum
             //
             MEMBER_FN_PREFIX(ActorValueState);
             DEFINE_MEMBER_FN(AreAllZero, bool,  0x006F20C0);
@@ -1011,14 +1038,44 @@ namespace RE {
          };
          struct Struct006F2190 { // sizeof == 0x10
             //
-            // Some kind of actor value state object. Note that it will never hold state 
-            // objects for health, magicka, stamina, or voicepoints, because those are 
-            // held elsewhere on the Actor.
+            // Holds a map of actor value indices to floats, and another map of actor 
+            // value indices to ActorValueState objects. Note that it will never hold 
+            // state objects for health, magicka, stamina, or voicepoints, because 
+            // those are held elsewhere on the Actor.
             //
+            // ActorValues only exist in here if they are being tracked or modified in 
+            // some way. If an ActorValueState object's floats all become zero, it is 
+            // destroyed and removed from the list here.
+            //
+            template <typename T> struct _Map {
+               StringCache::Ref keys;
+               T* values;
+               //
+               T* operator[](UInt8 key) const {
+                  const UInt8* data = this->keys.data;
+                  UInt8  bl = data[0];
+                  size_t i  = 0;
+                  if (bl < key + 1)
+                     while (bl && bl < key + 1)
+                        bl = data[++i];
+                  {
+                     RE::simple_lock_rev_guard scopedLock((RE::SimpleLockReversed)0x01B39110); // same lock as in vanilla
+                     if (bl == key + 1)
+                        return &this->values[i];
+                     return nullptr;
+                  }
+               };
+            };
+            //
+            _Map<float>           baseValues; // 00
+            _Map<ActorValueState> modifiers;  // 08
+            //
+            /*//
             StringCache::Ref unk00; // 00 // the const char* is actually a byte array matching actor value indices to indices in unk04; this->unk04[index of AV index in unk00] == float
             float* unk04 = nullptr; // 04 // array of base actor values
             StringCache::Ref unk08; // 08 // map actor value indices to state list indices
             ActorValueState* unk0C = nullptr; // 0C // array
+            //*/
             //
             MEMBER_FN_PREFIX(Struct006F2190);
             DEFINE_MEMBER_FN(DestroyFirstList,     void,             0x006F21C0); // sets unk04 to nullptr and empties out unk00

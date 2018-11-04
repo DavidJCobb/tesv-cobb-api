@@ -54,7 +54,7 @@ float ActorValueOwner::GetCurrent(UInt32 avIndex) { // virtual 0x01
          bl = true;
    }
    float esp0C;
-   if (bl && eax->TESV_00730080(avIndex, &esp0C)) // retrives the AV from the ActorProcessManager if the APM-side data isn't flagged "dirty"
+   if (bl && eax->TESV_00730080(avIndex, &esp0C)) // retrieves the AV from the ActorProcessManager if the APM-side data isn't flagged "dirty"
       return esp0C;
    //
    // some thread-local-storage stuff...
@@ -82,7 +82,7 @@ float ActorValueOwner::GetMaximum(UInt32 avIndex) { // virtual 0x02
    float esp0C = 0.0F;
    if (bl) {
       eax = (Actor!this)->processManager->unk30;
-      if (eax->TESV_00730100(avIndex, &esp0C)) // retrives the AV from the ActorProcessManager if the APM-side data isn't flagged "dirty"
+      if (eax->TESV_00730100(avIndex, &esp0C)) // retrieves the AV from the ActorProcessManager if the APM-side data isn't flagged "dirty"
          return esp0C;
    }
    float esp14 = (Actor!this)->TESV_006DED10(avIndex);

@@ -27,4 +27,5 @@ Bool Function GetLightsWater     (ObjectReference akLightReference) Global Nativ
 ;
 ; These are experimental, and changes made do not persist.
 ;
-Function SetFade(ObjectReference akLightReference, Float afFade, Bool abRelative = False) Global Native
+Function SetFade   (ObjectReference akLightReference, Float afFade,   Bool abRelative = False, Bool abReserved = False) Global Native
+Function SetRadius (ObjectReference akLightReference, Float afRadius, Bool abRelative = False, Bool abReserved = False) Global Native

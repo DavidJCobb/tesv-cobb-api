@@ -1,5 +1,35 @@
 Scriptname CobbAPIActor Hidden
 
+; Actor values (hereafter "AVs") can have three modifiers: permanent, temporary, and damage. An AV's 
+; current value is equal to the sum of its base value and all three modifiers.
+;
+;  - The Permanent Modifier is used for any changes to an actor value that don't have the "Recover" flag 
+;    set. 
+;
+;     * Abilities and worn enchantments, typically.
+;
+;     * ForceActorValue("Stat", n) sets the permanent modifier for "Stat" to "n" minus the current value 
+;       of "Stat." Note that the current value is influenced by all modifiers, including the permanent 
+;       modifier prior to the ForceActorValue call.
+;
+;  - The Temporary Modifier is used for PeakValueModifierEffects that have the "Recover" flag set. These 
+;    would be "Fortify" and "Reduce" potions and spells that dispel after a time limit.
+;
+;  - The Damage Modifier is used for any damage taken to the stat. For example, casting a spell "damages" 
+;    your magicka. Damage modifiers are negative values for most stats, but there are two exceptions: the 
+;    MovementNoiseMult and ShoutRecoveryMult AVs "damage" upward, which makes sense, gien that increases 
+;    in those stats are "bad."
+;
+; The three modifiers for a given AV are stored as simple totals; there is no information that allows one 
+; to trace the forces that have changed them.
+;
+; When functions allow you to specify a modifier as a parameter, the available values are:
+;
+;    0 = Permanent
+;    1 = Temporary
+;    2 = Damage
+;
+Float Function GetActorValueModifier   (Actor akSubject, Int aiActorValue, Int aiModifierType) Global Native
 Float Function GetActorValueRegenDelay (Actor akSubject, Int aiActorValue) Global Native ; Only meaningful for health/magicka/stamina; returns zero otherwise.
 
 Float Function GetBleedoutTimer (Actor akSubject) Global Native ; returns 0.0 if the actor is not in bleedout

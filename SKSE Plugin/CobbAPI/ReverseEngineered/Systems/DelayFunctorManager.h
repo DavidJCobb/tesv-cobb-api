@@ -278,15 +278,15 @@ namespace RE {
       UInt32     unk04;
       BSTCommonScrapHeapMessageQueue* unk08;
 
-      /*inline static Unknown0* GetKnownInstance() { // Should be correct, but the stupid compiler compiles it as {xor eax, 01B38308} which is obviously WRONG
+      /*inline static Unknown0* GetKnownInstance() { // Should be correct, but compiles as {xor eax, 01B38308} which is wrong
       return *((Unknown0**)0x01B38308);
       }*/
    };
-   __declspec(naked) Unknown01B38308* GetUnknown01B38308Instance() { // asm getter, because the compiler craps out wrong asm when I try to do it literally any other way
+   __declspec(naked) Unknown01B38308* GetUnknown01B38308Instance() { // asm getter, because the compiler can't seem to handle this properly
       __asm {
          mov eax, 0x01B38308;
          mov eax, [eax];
-         ret;
+         retn;
       }
    }
 

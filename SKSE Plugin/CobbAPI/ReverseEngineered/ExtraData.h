@@ -822,6 +822,7 @@ namespace RE {
          DEFINE_MEMBER_FN(SetExtraGhost,                    ExtraGhost*,      0x0040C940, bool isGhost); // Sets the ghost flag. Creates the new extra-data if needed.
          DEFINE_MEMBER_FN(SetExtraLock,                     ExtraLock*,       0x0040C560, void*);        // Deletes the unk08 on any existing lock data, and then sets a new unk08 pointer. Creates the new extra-data if needed.
          DEFINE_MEMBER_FN(SetExtraMapMarkerData,            void,             0x0040F960, ExtraMapMarker::Data*); // If argument is NULL, deletes existing data.
+         DEFINE_MEMBER_FN(SetExtraRadius,                   void,             0x00412A70, float value);  // Sets radius data. Creates new data if needed, or destroys it if setting to 0.
          DEFINE_MEMBER_FN(SetExtraSoul,                     ExtraSoul*,       0x0040C820, UInt8 value);  // Sets soul data. Creates the new extra-data if needed.
          DEFINE_MEMBER_FN(SetExtraStartingWorldOrCell,      void,             0x00414DA0, void* startingWorldOrCell); // If argument is NULL, deletes existing data.
          DEFINE_MEMBER_FN(SetExtraTimeLeft,                 ExtraTimeLeft*,   0x0040C6E0, UInt32);       // Creates the new extra-data if needed.

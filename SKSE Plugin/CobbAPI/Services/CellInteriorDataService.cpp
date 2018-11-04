@@ -44,9 +44,10 @@ void CellInteriorDataService::StoreDefaults(FormID id, RE::TESObjectCELL* cell) 
    //
    auto extra = (RE::BaseExtraList*) &(cell->extraData);
    //
-   // For some reason, during TESForm::LoadForm, the cell extra-data types store 
-   // form IDs rather than form pointers. I don't know when those form IDs are 
-   // resolved.
+   // During TESForm::LoadForm, the cell extra-data types store form IDs rather than 
+   // pointers, since the pointed-to forms may not have been loaded yet. According to 
+   // shadeMe, they get resolved in TESForm::InitItem (referred to as TESForm::Link 
+   // in some xSE versions).
    //
    /*// Straightforward but slow code.
    RE::IExtraDataSingleFormID* data;

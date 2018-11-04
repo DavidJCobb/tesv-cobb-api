@@ -1090,6 +1090,7 @@ namespace RE {
             DEFINE_MEMBER_FN(SetBaseValueFor,      void,             0x006F28D0, UInt32 actorValueIndex, float value);
             DEFINE_MEMBER_FN(Subroutine006F2A80,   void,             0x006F2A80, UInt32 actorValueIndex);
             //
+            /*//
             ActorValueState* Pseudocode_GetStateObjectFor(UInt32 actorValueIndex) const {
                const char* data = this->unk08.data;
                char   bl = data[0];
@@ -1129,6 +1130,7 @@ namespace RE {
                *out = 0.0F;
                return false;
             }
+            //*/
          };
          //
          Struct006F2190 unk13C; // 13C

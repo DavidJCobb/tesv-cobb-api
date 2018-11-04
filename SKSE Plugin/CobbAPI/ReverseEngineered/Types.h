@@ -2,7 +2,7 @@
 #include "skse/GameTypes.h"
 
 namespace RE {
-   /*template<class T> struct tList {
+   template<class T> struct tList {
       //
       // The SKSE team did an iterator-LIKE implementation for tLists. 
       // This class definition straightforwardly matches Bethesda's 
@@ -17,7 +17,7 @@ namespace RE {
          Node* prev;
       };
       Node items;
-   };*/
+   };
    class SimpleLockReversed {
       private:
          UInt32 lockCount = 0;

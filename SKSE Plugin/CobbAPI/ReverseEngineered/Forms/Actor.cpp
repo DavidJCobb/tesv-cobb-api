@@ -69,8 +69,8 @@ namespace RE {
 
    void Actor::SetHeadTracking(bool abEnabled) {
       if (abEnabled)
-         this->actorState.flags08 |= kFlag_EnableHeadtracking;
+         this->actorState.flags08 |= ActorState::kFlag_EnableHeadtracking;
       else
-         this->actorState.flags08 &= ~kFlag_EnableHeadtracking;
+         this->actorState.flags08 &= ~ActorState::kFlag_EnableHeadtracking;
    };
 };

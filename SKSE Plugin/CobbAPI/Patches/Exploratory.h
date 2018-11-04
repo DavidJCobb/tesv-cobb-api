@@ -17,7 +17,7 @@ namespace CobbPatches {
          float currentHP = target->actorValueOwner.GetCurrent(0x18);
          float currentMG = target->actorValueOwner.GetCurrent(0x19);
          if (currentMG + *result >= 0.0F) {
-            target->actorValueOwner.Unk_06(2, 0x19, *result);
+            target->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, 0x19, *result);
             *result = 0.0F;
             return;
          }
@@ -25,7 +25,7 @@ namespace CobbPatches {
          // Say we have 50 magicka and are losing 70 health: 50 + -70 = -20
          //
          float healthMod = currentMG + *result;
-         target->actorValueOwner.Unk_06(2, 0x19, -currentMG);
+         target->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, 0x19, -currentMG);
          *result = healthMod;
       };
       _declspec(naked) void Outer() {

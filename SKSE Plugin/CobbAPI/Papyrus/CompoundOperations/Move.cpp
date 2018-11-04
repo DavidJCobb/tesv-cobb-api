@@ -150,7 +150,7 @@ namespace CobbPapyrus {
                      RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
                      if (destination) {
                         if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes) {
-                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), &originalPos, &originalRot, &finalPos, &(e.rot));
+                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, e.rot);
                         } else if (this->alsoMoveTeleportMarkers == kMoveTeleport_EditorOffset) {
                            TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(subject.get_base(), destination.get_base());
                         }

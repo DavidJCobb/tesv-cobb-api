@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ReverseEngineered/ExtraData.h"
+#include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Forms/TESForm.h"
 
 #include "skse/GameObjects.h"
@@ -15,9 +16,154 @@ class ExtraMapMarker;
 class MovementParameters;
 class TESContainer;
 namespace RE {
+   class BSHandleRefObject;
    class InventoryEntryData;
    class TESObjectCELL; // Forward-declare instead of #including, so the compiler doesn't choke on a circular dependency
    class TESWorldSpace;
+   class TESObjectREFR;
+   class refr_ptr;
+
+   DEFINE_SUBROUTINE_EXTERN(BGSDestructibleObjectForm*, GetBGSDestructibleObjectFormForRef, 0x00448090, TESObjectREFR*);
+   DEFINE_SUBROUTINE_EXTERN(void, Update3DBasedOnHarvestedFlag, 0x00455BD0, TESObjectREFR*, NiNode* root); // finds and updates the NiSwitchNode in the model
+
+   // These are likely part of a larger struct.
+   //
+   extern tList<TESObjectREFR*>* const g_referencesPendingDisable;
+   extern tList<TESObjectREFR*>* const g_referencesPendingEnable;
+   extern tList<TESObjectREFR*>* const g_referencesPendingDeletion;
+
+   class RefHandleSystem {
+      //
+      // Basic concept:
+      //
+      //  - Handles can be used to refer to TESObjectREFRs that are not currently 
+      //    loaded (whereas pointers would break when references are unloaded).
+      //
+      //  - Handles can be used as identifiers within savedata, whereas pointers 
+      //    obviously cannot. Granted, I'm not sure why one wouldn't use form IDs.
+      //
+      //  - Because handles are (at least in theory) reusable, it's possible that 
+      //    a handle could be released "out from under" one system and then assign-
+      //    ed to another TESObjectREFR. The "validation value" built into the 
+      //    handles appears to guard against this.
+      //
+      //  - Because indices range from 1 to 0xFFFFF, there can be 1,048,575 handles 
+      //    active at any given moment. The statically-allocated array of (Entry) 
+      //    structs needed to store these should consume 8388600 bytes (just under 
+      //    8MB). Not bad!
+      //
+      // Miscellaneous notes:
+      //
+      //  - CreateRefHandleByREFR increases the reference's refcount.
+      //
+      //  - ExchangeHandleForRef and GetRefByHandle increase the reference's ref-
+      //    count by virtue of using a smart pointer.
+      //
+      //  - The TESObjectREFR constructor calls CreateRefHandleByREFR on the newly-
+      //    created reference, so it will have a handle and a non-zero refcount 
+      //    immediately upon creation.
+      //
+      //     - Curiously, TESObjectREFRs are not allocated inside of an array. I 
+      //       suppose that's needed since they can vary in size (i.e. the Actor and 
+      //       PlayerCharacter subclasses), but it does lose one of the benefits of 
+      //       using handles.
+      //
+      public:
+         enum {
+            kMask_Index      = 0x000FFFFF,
+            kMask_IsInUse    = 0x04000000,
+            kMask_ReuseCount = 0x03F00000,
+            kMask_ReuseUnit  = 0x00100000,
+         };
+         struct Entry {
+            UInt32 refHandle; // 00
+            BSHandleRefObject* refObject; // 04 // TODO: this is actually a smart pointer that modifies the BSHandleRefObject::m_uiRefCount.
+         };
+         //
+         Entry entries[kMask_Index + 1]; // sizeof == 0x00800000
+         RE::UnknownLock01 lock; // offset == 0x00800000
+         //
+         // Technically, this struct has no member functions; everything is a static method.
+         //
+         inline static RefHandleSystem* GetInstance() {
+            return (RefHandleSystem*) 0x01310638;
+         };
+         //
+         static Entry* GetEntries() { // access as result[0], result[1], ...
+            return RefHandleSystem::GetInstance()->GetEntries();
+         };
+         inline static UInt32 GetIndex(UInt32 refHandle) {
+            return refHandle & kMask_Index;
+         };
+         inline static UInt32 GetValidationValue(UInt32 refHandle) {
+            //
+            // The validation value gets incremented every time the index is reused.
+            //
+            return refHandle & kMask_ReuseCount;
+         };
+         inline static UInt32 IncrementValidationValue(UInt32 refHandle) {
+            auto eax = (refHandle + kMask_ReuseUnit) & kMask_ReuseCount;
+            return eax | (refHandle & ~kMask_ReuseCount);
+         };
+         inline static bool IsHandleInUse(UInt32 refHandle) { // not fully confirmed, but best guess
+            return !!(refHandle & kMask_IsInUse);
+         };
+         //
+         // SKSE identifies this as "LookupREFRByHandle," but it actually exchanges 
+         // the handle -- that is, the handle you pass in is set to nullptr.
+         // 
+         // Don't use this! Just call the SKSE LookupREFRByHandle. This version exists 
+         // for documentation purposes only, and could be wrong.
+         //
+         static bool ExchangeHandleForRef(UInt32* refHandlePtr, refr_ptr);
+         //
+         // SKSE identifies this as "LookupREFRObjectByHandle," and their definition 
+         // states that it yields a BSHandleRefObject. This is incorrect! It yields a 
+         // TESObjectREFR, and is almost exactly identical to the other function; the 
+         // only apparent difference is that it doesn't modify the handle you pass in.
+         // 
+         // Don't use this! Just call the SKSE LookupREFRObjectByHandle. This version 
+         // exists for documentation purposes only, and could be wrong.
+         //
+         static bool GetRefByHandle(UInt32* refHandlePtr, refr_ptr);
+         //
+         // Don't use this! Just call the SKSE CreateRefHandleByREFR. This version 
+         // exists for documentation purposes only, and could be wrong.
+         //
+         static UInt32* CreateRefHandleByREFR(UInt32* refHandlePtr, TESObjectREFR* ref); // returns refHandlePtr
+         //
+         // Don't use this! It's just here for documentation.
+         static void Init(); // at 0x006930C0 // Called on application startup.
+         // Don't use this! It's just here for documentation.
+         static void Subroutine0043C400(UInt32& refHandlePtr); // at 0x0043C400
+         // Don't use this! It's just here for documentation.
+         static void Subroutine00474B60(); // at 0x00474B60
+         // Don't use this! It's just here for documentation.
+         static void Subroutine0079DDF0(UInt32& refHandlePtr); // at 0x0079DDF0
+   };
+   class BSHandleRefObject : public NiRefObject {
+      public:
+         enum {
+            kMask_RefCount = 0x3FF,
+            kFlag_HandleIsActive = 0x400,
+         };
+         //
+         UInt32 GetRefCount() const {
+            return m_uiRefCount & kMask_RefCount;
+         }
+         UInt32 GetRefHandle() const {
+            return m_uiRefCount >> 0xB;
+         };
+         //
+         TESObjectREFR* GetReference() const {
+            return (TESObjectREFR*)(this - 0x14); // BSHandleRefObject is a multiple-parent of TESObjectREFR
+         };
+         //
+         void DecRefHandle() {
+            if ((InterlockedDecrement(&m_uiRefCount) & kMask_RefCount) == 0)
+               DeleteThis();
+         }
+   };
 
    class IMovementInterface { // sizeof == 0x4
       public:
@@ -287,9 +433,6 @@ namespace RE {
          DEFINE_MEMBER_FN(GetExtraEnableStateChildren,      RE::ExtraEnableStateChildren::Entry*, 0x004EA870);
          DEFINE_MEMBER_FN(GetExtraEnableStateParentFlag1,   bool, 0x004EA860);
    };
-   //
-   //extern DEFINE_SUBROUTINE(BGSDestructibleObjectForm*, GetBGSDestructibleObjectFormForRef, 0x00448090, TESObjectREFR*);
-   //extern DEFINE_SUBROUTINE(void, Update3DBasedOnHarvestedFlag, 0x00455BD0, TESObjectREFR*, NiNode* root); // finds and updates the NiSwitchNode in the model
    
    class refr_ptr { // smart pointer for TESObjectREFRs
       protected:

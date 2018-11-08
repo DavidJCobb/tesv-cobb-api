@@ -27,6 +27,34 @@ namespace RE {
          DEFINE_MEMBER_FN(lock,   void, 0x00A4AEE0);
          DEFINE_MEMBER_FN(unlock, void, 0x00A4B0F0);
    };
+   class UnknownLock01 {
+      //
+      // lockCount is handled differently from SimpleLockReversed.
+      //
+      private:
+         UInt32 lockCount = 0;
+         UInt32 threadID;
+      public:
+         MEMBER_FN_PREFIX(UnknownLock01);
+         DEFINE_MEMBER_FN(lock,   void, 0x00A4AF50);
+         DEFINE_MEMBER_FN(unlock, void, 0x00A4B100);
+         //
+         class guard {
+            private:
+               UnknownLock01* lock = nullptr;
+            public:
+               inline guard(UnknownLock01* l) : lock(l) { // must not be nullptr
+                  CALL_MEMBER_FN(this->lock, lock)();
+               };
+               inline guard(UnknownLock01& l) : lock(&l) {
+                  CALL_MEMBER_FN(this->lock, lock)();
+               };
+               inline ~guard() {
+                  CALL_MEMBER_FN(this->lock, unlock)();
+               };
+         };
+   };
+   //
    class simple_lock_rev_guard { // similar to std::lock_guard but for SimpleLock
       private:
          SimpleLockReversed* lock = nullptr;

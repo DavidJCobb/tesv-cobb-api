@@ -45,7 +45,7 @@ namespace RE {
             UInt32 time[kNumTimeOfDay];
          };
          struct General { // sizeof == 0x13
-            UInt8	unk00[3];
+            UInt8	unk00[3]; // unk00[0] == wind speed, reportedly
             UInt8	transDelta;				// Div 1000
             UInt8	sunGlare;				// Div 256
             UInt8	sunDamage;				// Div 256

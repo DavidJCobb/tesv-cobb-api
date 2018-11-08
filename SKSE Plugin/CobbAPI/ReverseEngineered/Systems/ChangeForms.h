@@ -8,7 +8,7 @@ namespace RE {
       public:
          struct Data {
             UInt32 flags = 0;
-            UInt32 unk04 = 0;
+            UInt32 unk04 = 0; // error log strings in the game refer to this as a "buffer" or an "unloaded buffer" // it's passed as Arg1 to 0067ECF0
             //
             enum ChangeFlagsFORM {
                FORM_FLAGS = 0x00000001
@@ -100,7 +100,6 @@ namespace RE {
                EXTRA_ENCOUNTER_ZONE = 0x20000000,
                // ?                 = 0x40000000,
                EXTRA_GAME_ONLY      = 0x80000000
-
             };
          };
          UInt32      formID = 0;
@@ -115,45 +114,23 @@ namespace RE {
    class ChangeFormManager {
       public:
          struct Unk04 {
-            UInt32 pad00;
+            UInt32 unk00;
             UInt32 unk04; // some kind of hash or key used to find where ChangeForms are stored?
-            UInt32 unk08; // ChangeForm count? or maybe the opposite: a variable meaning "number of new ChangeForms we have room for"
-            UInt32 pad0C;
-            ChangeForm* unk10; // or really, anything a ChangeForm's next pointer would be allowed to point to (e.g. sentinel objects)
-            UInt32 pad14;
+            UInt32 count; // 08 // number of ChangeForms stored
+            UInt32 unk0C;
+            ChangeForm* unk10; // 10
+            UInt32 unk14;
             UInt32 unk18;
             //
-            bool Subroutine007385A0(UInt32 myUnk18, UnknownChangeFormHashOrKey unknown, UInt32* formID, ChangeForm::Data* outData) {
-               bool result = false;
-               __asm {
-                  push outData;
-                  push formID;
-                  push unknown;
-                  push myUnk18;
-                  mov eax, 0x007385A0;
-                  mov ecx, this;
-                  call eax;
-                  mov result, al;
-               };
-               return result;
-            };
+            MEMBER_FN_PREFIX(Unk04);
+            DEFINE_MEMBER_FN(Subroutine007385A0, bool, 0x007385A0, UInt32 myUnk18, UnknownChangeFormHashOrKey, UInt32* formID, ChangeForm::Data* outData);
          };
          struct Lock {
-            void Increment() {
-               __asm {
-                  mov eax, 0x00A4AF50;
-                  mov ecx, this;
-                  call eax;
-               };
-            };
-            void Decrement() {
-               __asm {
-                  mov eax, 0x00A4B100;
-                  mov ecx, this;
-                  call eax;
-               };
-            };
+            MEMBER_FN_PREFIX(Lock);
+            DEFINE_MEMBER_FN(lock,   void, 0x00A4AF50);
+            DEFINE_MEMBER_FN(unlock, void, 0x00A4B100);
          };
+         //
          UInt32 pad00;
          Unk04  unk04;
          Lock   unk20;

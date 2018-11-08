@@ -13,10 +13,10 @@ namespace RE {
          enum { kTypeID = 0 };	// special-case
          //
          enum {
-            //
+            kFormFlag_Unk00000001 = 0x00000001, // set when marking for delete, but could be more general
             kFormFlag_Unk00000002 = 0x00000002, // "modified?" // setting this on a REFR also sets it on its CELL, if the refr doesn't have flag 0x8000; setting it on a CELL sets it on the cell's parent WRLD
             //
-            kFormFlag_IsDeleted   = 0x00000020,
+            kFormFlag_IsDeleted   = 0x00000020, // indicates that deletion has already been carried out
             kFlagPlayerKnows  = 0x000040,
             kFlagUnk_0x400    = 0x000400,
             kFlagUnk_0x800    = 0x000800,
@@ -40,6 +40,8 @@ namespace RE {
             kRefrFlag_CastsShadows       = 0x00000200, // for LIGH references
             kRefrFlag_Persistent         = 0x00000400,
             kRefrFlag_Disabled           = 0x00000800, // same flag is used in ESPs for "initially disabled"
+            //
+            kRefrFlag_Unk00040000        = 0x00040000, // possibly "marked for disable"
             //
             kRefrFlag_LightNeverFades    = 0x00010000,
             kRefrFlag_DontLightLandscape = 0x00020000, // for LIGH references
@@ -72,8 +74,8 @@ namespace RE {
          virtual void         UnmarkChanged(UInt32 changeFlags); // 0B
          virtual bool         Unk_0C(UInt32 arg); // no-op for Actor
          virtual bool         Unk_0D(BGSSaveFormBuffer*); // 0D // possibly a "should save?" function // called by BGSSaveLoadManager::SaveGame_HookTarget+0x264 // TESObjectREFR has override; Actor doesn't
-         virtual void         Unk_0E(BGSSaveFormBuffer*); // 0E // handles actually saving the form's data // called by BGSSaveLoadManager::SaveGame_HookTarget+0x2DC if the Unk_0D call returns true
-         virtual void         Unk_0F(void* savedata); // restores form state from savedata. for TESObjectREFR*, restores extra data, flora flags and 3D state, etc.
+         virtual void         WriteSavedata(BGSSaveFormBuffer*); // 0E // handles actually saving the form's data // called by BGSSaveLoadManager::SaveGame_HookTarget+0x2DC if the Unk_0D call returns true
+         virtual void         ReadSavedata(void* savedata); // 0F // restores form state from savedata. for TESObjectREFR*, restores extra data, flora flags and 3D state, etc.
          virtual void         Unk_10(UInt32 arg);
          virtual void         Unk_11(UInt32 arg);
          virtual void         Unk_12(UInt32 arg);
@@ -93,17 +95,17 @@ namespace RE {
          virtual bool         Unk_20(void);              // 20
          virtual void         SetFormFlag00000020(bool set); // 21
          virtual bool         Unk_22();                  // 22 // This function was inserted into the VTBL after the SKSE team last mapped it.
-         virtual void         Unk_23(UInt32);            // 23 // This function was inserted into the VTBL after the SKSE team last mapped it.
+         virtual void         SetDeletedFlag(bool); // 23 // Just sets the flag; doesn't carry out any other tasks. // This function was inserted into the VTBL after the SKSE team last mapped it.
          virtual void         SetFormFlag00000002(bool set); // 24
          virtual void         Unk_25();
          virtual void         Unk_26(BGSLoadFormBuffer*); // 26 // loads OBND?
-         virtual bool         CanBePlaced(); // 27 // actually, probably not Has3D
-         virtual bool         Unk_28();
-         virtual bool         Unk_29(); // 29 // actually, probably Has3D
-         virtual bool         Unk_2A(); // 2A // no-op; returns false
+         virtual bool         CanBePlaced(); // 27
+         virtual bool         Unk_28(); // 28
+         virtual bool         Unk_29(); // 29
+         virtual bool         IsWaterActivator(); // 2A // returns true if the form (or its base) is a TESObjectACTI with a water type
          virtual TESObjectREFR* Unk_2B(); // 2B // Appears to be a cast of some kind. Identical to 2C for most subclasses I've checked.
          virtual TESObjectREFR* Unk_2C(); // 2C // Appears to be a cast of some kind. 2C is usually used; what's the difference between it and 2B?
-         virtual UInt32       Unk_2D();
+         virtual UInt32       Unk_2D(); // 2D
          virtual const char*  GetFullName(UInt32 arg); // 2E
          virtual void         CopyFrom(TESForm* srcForm); // 2F // guessed
          virtual void         Unk_30(UInt32 arg0, UInt32 arg1, UInt32 arg2);
@@ -139,6 +141,9 @@ namespace RE {
          UInt16   unk10;    // 10 // more flags
          UInt8    formType;	// 12
          UInt8    pad13;    // 13
+
+         MEMBER_FN_PREFIX(TESForm);
+         DEFINE_MEMBER_FN(SetFormFlags_Internal, void, 0x00450A60, UInt32 flagsMask, bool clearOrSet);
    };
    //static DEFINE_SUBROUTINE(::BGSDestructibleObjectForm*, GetBGSDestructibleObjectForm, 0x00448090, RE::TESForm*);
    DEFINE_SUBROUTINE_EXTERN(::BGSKeywordForm*, GetKeywordListFor, 0x0044B2D0, ::TESForm*);

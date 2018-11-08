@@ -79,69 +79,69 @@ namespace RE {
             ActorBaseDeathCount* next;
          };
          //
-	      UInt32 unk04;
-	      UInt32 unk08;
-	      UInt32 unk0C;
-	      UInt32 unk10;
-	      UInt32 unk14;
-	      UInt32 unk18;
-	      UInt32 unk1C;
-	      UInt32 unk20;
-	      UInt32 unk24;
-	      UInt32 unk28;
-	      UInt32 unk2C;
+         UInt32 unk04;
+         UInt32 unk08;
+         UInt32 unk0C;
+         UInt32 unk10;
+         UInt32 unk14;
+         UInt32 unk18;
+         UInt32 unk1C;
+         UInt32 unk20;
+         UInt32 unk24;
+         UInt32 unk28;
+         UInt32 unk2C;
          UInt32 unk30;
-	      BSTEventSink<BSResource::ArchiveStreamOpenedEvent> unk34;
+         BSTEventSink<BSResource::ArchiveStreamOpenedEvent> unk34;
          BSTEventSink<PositionPlayerEvent> unk38;
-	      UInt32 unk3C;
+         UInt32 unk3C;
          GridCellArray* gridCellArray; // 40
-	      NiNode* objectLODRoot; // 44
-	      NiNode* landLOD; // 48
-	      NiNode* waterLOD; // 4C
-	      UInt32 tempNodeManager; // BSTempNodeManager
-	      UInt32 unk54;
-	      UInt32 unk58;
-	      UInt32 currentCellGridX; // 5C // == 7FFFFFFF if interior // sometimes read as an SInt16 // cell X?
-	      UInt32 currentCellGridY; // 60 // == 7FFFFFFF if interior // sometimes read as an SInt16 // cell Y?
-	      UInt32 unk64; // 7FFFFFFF
-	      UInt32 unk68; // 7FFFFFFF
-	      TESObjectCELL* currentCell; // 6C
-	      TESObjectCELL**  interiorCellBuffer; // idk, visited cells perhaps?
-	      UInt32 unk74;
-	      UInt32 unk78; // 0
-	      UInt32 unk7C; // 0
-	      UInt32 unk80; // 7FFFFFFF
-	      UInt32 unk84; // 7FFFFFFF
-	      UInt32 unk88;
-	      UInt32 unk8C;
-	      UInt32 unk90;
+         NiNode* objectLODRoot; // 44
+         NiNode* landLOD; // 48
+         NiNode* waterLOD; // 4C
+         UInt32 tempNodeManager; // BSTempNodeManager
+         UInt32 unk54;
+         UInt32 unk58;
+         UInt32 currentCellGridX; // 5C // == 7FFFFFFF if interior // sometimes read as an SInt16 // cell X?
+         UInt32 currentCellGridY; // 60 // == 7FFFFFFF if interior // sometimes read as an SInt16 // cell Y?
+         UInt32 unk64; // 7FFFFFFF
+         UInt32 unk68; // 7FFFFFFF
+         TESObjectCELL* currentCell; // 6C
+         TESObjectCELL**  interiorCellBuffer; // idk, visited cells perhaps?
+         UInt32 unk74;
+         UInt32 unk78; // 0
+         UInt32 unk7C; // 0
+         UInt32 unk80; // 7FFFFFFF
+         UInt32 unk84; // 7FFFFFFF
+         UInt32 unk88;
+         UInt32 unk8C;
+         UInt32 unk90;
          Sky*   sky; // Sky
-	      UInt32 imageSpaceModifier; // ImageSpaceModifierInstanceForm // pointer?
-	      UInt32 unk9C; // ImageSpaceModifierInstanceDOF ** ??
-	      UInt32 unkA0;
-	      UInt32 unkA4;
-	      UInt8  unkA8;
-	      UInt8  unkA9;
-	      UInt8  unkAA;
-	      UInt8  unkAB;
-	      UInt8  unkAC;
-	      UInt8  unkAD;
-	      UInt8  unkAE;
-	      UInt8  unkAF;
-	      UInt8  unkB0;
-	      UInt8  padB1[3];
-	      float  unkB4; // 4579A000
+         UInt32 imageSpaceModifier; // ImageSpaceModifierInstanceForm // pointer?
+         UInt32 unk9C; // ImageSpaceModifierInstanceDOF ** ??
+         UInt32 unkA0;
+         UInt32 unkA4;
+         UInt8  unkA8;
+         UInt8  unkA9;
+         UInt8  unkAA;
+         UInt8  unkAB;
+         UInt8  unkAC;
+         UInt8  unkAD;
+         UInt8  unkAE;
+         UInt8  unkAF;
+         UInt8  unkB0;
+         UInt8  padB1[3];
+         float  unkB4; // 4579A000
          float  unkB8; // 457D2000
-	      TESWorldSpace* worldSpace;       // BC // TESWorldSpace
+         TESWorldSpace* worldSpace;       // BC // TESWorldSpace
          ActorBaseDeathCount deathCounts; // C0
-	      UInt32 queuedFile;               // C8 // QueuedFile
-	      NiSourceTexture* someTexture;    // CC
-	      UInt32 queuedFile1;              // D0 // QueuedFile
-	      UInt32 queuedFile2;              // D4
-	      UInt32 unkD8;                    // D8 // BSFadeNode ** ??
-	      UInt32 unkDC;                    // DC
-	      UInt32 navMeshInfoMap;           // E0 // NavMeshInfoMap
-	      LoadedAreaBound* loadedAreaBound;
+         UInt32 queuedFile;               // C8 // QueuedFile
+         NiSourceTexture* someTexture;    // CC
+         UInt32 queuedFile1;              // D0 // QueuedFile
+         UInt32 queuedFile2;              // D4
+         UInt32 unkD8;                    // D8 // BSFadeNode ** ??
+         UInt32 unkDC;                    // DC
+         UInt32 navMeshInfoMap;           // E0 // NavMeshInfoMap
+         LoadedAreaBound* loadedAreaBound;
          //
          MEMBER_FN_PREFIX(TES);
          DEFINE_MEMBER_FN(CheckCellLoaded,         bool,    0x004312C0, TESObjectCELL* cellToCheck, UInt32 usuallyZero);
@@ -149,7 +149,7 @@ namespace RE {
          DEFINE_MEMBER_FN(GetActorBaseDeathCount,  SInt16,  0x004322E0, TESActorBase*);
          DEFINE_MEMBER_FN(GetCurrentCell,          TESObjectCELL*, 0x00433490); // checks currentCell and currentCellGrid(X|Y); can return nullptr
          DEFINE_MEMBER_FN(ModActorBaseDeathCount,  void,    0x00433BF0, TESActorBase*, SInt16 changeByHowMuch);
-         DEFINE_MEMBER_FN(Subroutine004317A0,      void*,   0x004317A0);
+         DEFINE_MEMBER_FN(GetCurrentWorldspace,    TESWorldSpace*, 0x004317A0);
          DEFINE_MEMBER_FN(Subroutine004320C0,      void*,   0x004320C0, TESObjectCELL*, UInt32);
          //
          ::TESObjectCELL** CopyGridCells(UInt32* count) const;

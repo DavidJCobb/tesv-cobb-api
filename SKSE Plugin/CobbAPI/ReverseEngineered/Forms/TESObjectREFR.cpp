@@ -5,6 +5,7 @@
 #include "skse/Utilities.h"
 
 #include "ReverseEngineered/Miscellaneous.h"
+#include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Forms/TESObjectCELL.h"
 #include "ReverseEngineered/Forms/TESWorldSpace.h"
 #include "ReverseEngineered/NetImmerse/havok.h"
@@ -72,6 +73,246 @@ namespace RE {
          }
       }
    };
+
+   // -----------------------------------------------------------------------------------------------------------------------------------
+
+   DEFINE_SUBROUTINE(BGSDestructibleObjectForm*, GetBGSDestructibleObjectFormForRef, 0x00448090, TESObjectREFR*);
+   DEFINE_SUBROUTINE(void, Update3DBasedOnHarvestedFlag, 0x00455BD0, TESObjectREFR*, NiNode* root); // finds and updates the NiSwitchNode in the model
+   
+   extern tList<TESObjectREFR*>* const g_referencesPendingDisable  = (tList<TESObjectREFR*>*)0x01B10C80;
+   extern tList<TESObjectREFR*>* const g_referencesPendingEnable   = (tList<TESObjectREFR*>*)0x01B10C88;
+   extern tList<TESObjectREFR*>* const g_referencesPendingDeletion = (tList<TESObjectREFR*>*)0x01B10C90;
+
+   // -----------------------------------------------------------------------------------------------------------------------------------
+
+   bool RefHandleSystem::ExchangeHandleForRef(UInt32* refHandlePtr, refr_ptr out) {
+      auto handle = *refHandlePtr;
+      if (handle) {
+         auto ebx = RefHandleSystem::GetValidationValue(handle);
+         auto esi = RefHandleSystem::GetIndex(handle);
+         TESObjectREFR* ref = nullptr;
+         {
+            auto eax = RefHandleSystem::GetEntries()[esi].refObject;
+            if (eax)
+               ref = eax->GetReference();
+         }
+         out = ref;
+         //
+         // Validate the passed-in handle:
+         //
+         auto storedHandle = RefHandleSystem::GetEntries()[esi].refHandle;
+         if (storedHandle & kMask_IsInUse) {
+            if (RefHandleSystem::GetValidationValue(storedHandle) == ebx) {
+               if (out->handleRefObject.GetRefHandle() == esi)
+                  //
+                  // Handle is valid.
+                  //
+                  return true;
+            }
+         }
+         *refHandlePtr = 0;
+      }
+      out = nullptr;
+      return false;
+      //
+      // Technically, all branches that return do it as: return (out == nullptr).
+   };
+   bool RefHandleSystem::GetRefByHandle(UInt32* refHandlePtr, refr_ptr out) {
+      auto handle = *refHandlePtr;
+      if (handle) {
+         auto ebx = RefHandleSystem::GetValidationValue(handle);
+         auto esi = RefHandleSystem::GetIndex(handle);
+         TESObjectREFR* ref = nullptr;
+         {
+            auto eax = RefHandleSystem::GetEntries()[esi].refObject;
+            if (eax)
+               ref = eax->GetReference();
+         }
+         out = ref;
+         //
+         // Validate the passed-in handle:
+         //
+         auto storedHandle = RefHandleSystem::GetEntries()[esi].refHandle;
+         if (storedHandle & kMask_IsInUse) {
+            if (RefHandleSystem::GetValidationValue(storedHandle) == ebx) {
+               if (out->handleRefObject.GetRefHandle() == esi)
+                  //
+                  // Handle is valid.
+                  //
+                  return true;
+            }
+         }
+      }
+      out = nullptr; // inlined
+      return false;
+      //
+      // Technically, all branches that return do it as: return (out == nullptr).
+   };
+   UInt32* RefHandleSystem::CreateRefHandleByREFR(UInt32* refHandlePtr, TESObjectREFR* ref) {
+      constexpr SInt32* const unk = (SInt32*)0x0131050C;
+      //
+      *refHandlePtr = 0;
+      if (!ref)
+         return refHandlePtr;
+      auto eax = ref->handleRefObject.m_uiRefCount;
+      if (eax & 0x400) {
+         auto index = RefHandleSystem::GetIndex(eax);
+         auto edx = RefHandleSystem::GetEntries()[index].refHandle;
+         *refHandlePtr = RefHandleSystem::GetValidationValue(edx) | index;
+         return refHandlePtr;
+      }
+      if (*unk == -1) {
+         *refHandlePtr = 0;
+         return refHandlePtr;
+      }
+      {
+         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         //
+         auto edx = &(RefHandleSystem::GetEntries()[*unk]);
+         eax = RefHandleSystem::IncrementValidationValue(edx->refHandle) | kMask_IsInUse;
+         //
+         // eax = that same handle, but with its validation value incremented by one.
+         //
+         edx->refHandle = eax;
+         //
+         auto ecx = *unk | (eax & kMask_ReuseCount);
+         *refHandlePtr = ecx;
+         //
+         {  // This is actually handled by a smart pointer method, but I'm too lazy to define the smart pointer struct
+            BSHandleRefObject* p = &ref->handleRefObject;
+            edx->refObject->DecRefHandle();
+            p->IncRef();
+            edx->refObject = p;
+         }
+         ref->handleRefObject.m_uiRefCount = ref->handleRefObject.GetRefCount() | (*unk >> 0xB) | 0x400;
+         //
+         eax = RefHandleSystem::GetIndex(RefHandleSystem::GetEntries()[*unk].refHandle);
+         if (eax == *unk) {
+            *unk = -1;
+            *(SInt32*)(0x01310510) = -1;
+         }
+         *unk = eax;
+      }
+   };
+   //
+   void RefHandleSystem::Init() {
+      memset(RefHandleSystem::GetEntries(), 0, 0x00800000);
+      UInt32 i = 0;
+      do {
+         auto entry = &RefHandleSystem::GetEntries()[i];
+         entry->refHandle ^= ((entry->refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+      } while (++i <= kMask_Index);
+      *(SInt32*)(0x01310510) = -1;
+   };
+   void RefHandleSystem::Subroutine0043C400(UInt32& refHandlePtr) {
+      //
+      // Definitely seems like it destroys a refHandle, but I can't figure out what 
+      // those two xor-based bit-merges at the bottom are for.
+      //
+      // It's called from a variety of places, some of which may be involved in 
+      // destroying a reference and others (like the "Say" console command) that 
+      // almost certainly aren't.
+      //
+      auto handle = refHandlePtr;
+      if (!handle)
+         return;
+      {
+         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         auto  list  = RefHandleSystem::GetEntries();
+         auto& entry = list[handle & kMask_Index];
+         if (!(entry.refHandle & kMask_IsInUse))
+            return;
+         if ((entry.refHandle ^ handle) & kMask_ReuseCount)
+            return;
+         entry.refHandle &= ~kMask_IsInUse;
+         auto refObj = entry.refObject;
+         if (refObj) {
+            refObj->m_uiRefCount &= 0x3FF; // clear handle and flags
+            refObj->DecRefHandle();
+            entry.refObject = nullptr;
+         }
+         //
+         if (*(SInt32*)(0x01310510) == -1) {
+            *(SInt32*)(0x01310510) = handle;
+         } else {
+            auto& a = list[*(SInt32*)(0x01310510)];
+            a.refHandle ^= ((a.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+         }
+         entry.refHandle ^= ((entry.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+         *(SInt32*)(0x01310510) = handle;
+      }
+   };
+   void RefHandleSystem::Subroutine00474B60() {
+      RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+      //
+      auto   list = RefHandleSystem::GetEntries();
+      UInt32 i    = 0;
+      do {
+         auto& current = list[i];
+         if (!(current.refHandle & kMask_IsInUse))
+            continue;
+         auto refObj = current.refObject;
+         if (refObj) {
+            refObj->m_uiRefCount &= 0x3FF; // clear handle and flags
+            refObj->DecRefHandle();
+         }
+         current.refObject = nullptr;
+         current.refHandle &= ~kMask_IsInUse;
+         //
+         if (*(SInt32*)(0x01310510) == -1) {
+            *(SInt32*)(0x01310510) = i;
+         } else {
+            auto& a = list[*(SInt32*)(0x01310510)];
+            a.refHandle ^= ((a.refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+         }
+         current.refHandle ^= ((current.refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+         *(SInt32*)(0x01310510) = i;
+      } while (++i <= kMask_Index);
+   };
+   void RefHandleSystem::Subroutine0079DDF0(UInt32& refHandlePtr) {
+      //
+      // This seems like it validates a refHandle, and destroys it if it isn't 
+      // valid... except that it destroys the stored handle, not the one that 
+      // gets passed in. Doesn't that seem backwards? Like, wouldn't you want 
+      // to be able to pass old handles in to be checked, rather than passing 
+      // in new handles (obtained from where?!) to override stored ones?
+      //
+      auto handle = refHandlePtr;
+      if (!handle)
+         return;
+      {
+         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         auto  list  = RefHandleSystem::GetEntries();
+         auto& entry = list[handle & kMask_Index];
+         if (entry.refHandle & kMask_IsInUse) {
+            auto eax = entry.refHandle ^ refHandlePtr;
+            if (eax) {
+               //
+               // Handles have different flags or validation (reuse) counts.
+               //
+               auto refObj = entry.refObject;
+               if (refObj) {
+                  refObj->m_uiRefCount &= 0x3FF; // clear handle and flags
+                  refObj->DecRefHandle();
+                  entry.refObject = nullptr;
+               }
+               entry.refHandle &= ~kMask_IsInUse;
+               //
+               if (*(SInt32*)(0x01310510) == -1) {
+                  *(SInt32*)(0x0131050C) = handle;
+               } else {
+                  auto& a = list[*(SInt32*)(0x01310510)];
+                  a.refHandle ^= ((a.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+               }
+               entry.refHandle ^= ((entry.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+               *(SInt32*)(0x01310510) = handle;
+            }
+         }
+         refHandlePtr = 0;
+      }
+   };
+
+   // -----------------------------------------------------------------------------------------------------------------------------------
 
    void TESObjectREFR::CreateDetectionEvent(Actor* owner, SInt32 soundLevel) {
       struct ProcessManager {

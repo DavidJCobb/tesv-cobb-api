@@ -20,7 +20,7 @@ namespace RE {
             UInt8  unk00 = 0;
             UInt8  unk01 = 0;
             UInt8  unk02 = 0;
-            __declspec(align(1)) UInt32 unk03 = 0; // 03 // not aligned as is usual
+            __declspec(align(1)) UInt32 changeflags = 0; // 03 // not aligned as is usual
             UInt8  formType = 0; // 07
             UInt8  unk08 = 0;
          };
@@ -33,6 +33,7 @@ namespace RE {
          void*  unk1C = 0;
 
          MEMBER_FN_PREFIX(BGSSaveFormBuffer);
+         DEFINE_MEMBER_FN(Destructor, void, 0x00686C00);
          DEFINE_MEMBER_FN(Subroutine006869C0, void, 0x006869C0, UInt32 formID, UInt32, UInt32 formType, UInt32);
          DEFINE_MEMBER_FN(Subroutine00686AB0, void, 0x00686AB0, void*);
          DEFINE_MEMBER_FN(Subroutine00686C70, void, 0x00686C70, UInt32);

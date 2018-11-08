@@ -1055,9 +1055,8 @@ namespace RE {
                   const UInt8* data = this->keys.data;
                   UInt8  bl = data[0];
                   size_t i  = 0;
-                  if (bl < key + 1)
-                     while (bl && bl < key + 1)
-                        bl = data[++i];
+                  while (bl && bl < key + 1)
+                     bl = data[++i];
                   {
                      RE::simple_lock_rev_guard scopedLock((RE::SimpleLockReversed)0x01B39110); // same lock as in vanilla
                      if (bl == key + 1)
@@ -1088,7 +1087,7 @@ namespace RE {
             DEFINE_MEMBER_FN(Save,                 void,             0x006F2720, BGSSaveFormBuffer*);
             DEFINE_MEMBER_FN(GetBaseValueFor,      bool,             0x006F2870, UInt32 actorValueIndex, float* out); // gets a float from unk04 based on the avIndex's position in unk00; returns false if not found
             DEFINE_MEMBER_FN(SetBaseValueFor,      void,             0x006F28D0, UInt32 actorValueIndex, float value);
-            DEFINE_MEMBER_FN(Subroutine006F2A80,   void,             0x006F2A80, UInt32 actorValueIndex);
+            DEFINE_MEMBER_FN(Subroutine006F2A80,   void,             0x006F2A80, UInt8 actorValueIndex); // possibly "remove from first list"
             //
             /*//
             ActorValueState* Pseudocode_GetStateObjectFor(UInt32 actorValueIndex) const {
@@ -1141,7 +1140,9 @@ namespace RE {
          ActorValueState avStateVoicePoints; // 174
          float  unk180; // 180 // see code circa 0x006EC46E
          UInt32 unk184; // 184
-         UInt32 unk188[(0x194 - 0x188) >> 2];
+         UInt32 unk188; // 188
+         float  unk18C; // 18C // set to -1 when HeavyArmor or LightArmor values change
+         float  unk190; // 190 // set to -1 when HeavyArmor or LightArmor values change
          UInt8  unk194; // 194 // loaded from the savedata as a single byte; see Actor::Unk_0F
          UInt8  unk195; // 195
          UInt8  unk196; // 196
@@ -1159,6 +1160,7 @@ namespace RE {
          DEFINE_MEMBER_FN(ExecuteDoNothingPackage, void,        0x006AC890);
          DEFINE_MEMBER_FN(GetCurrentPackage,       TESPackage*, 0x006A9AD0); // TODO: Rename this here and in OllyDbg; it's NOT what Papyrus uses! It's used internally.
          DEFINE_MEMBER_FN(GetActorValueStateObj,   ActorValueState*, 0x006DE850, UInt32 avIndex);
+         DEFINE_MEMBER_FN(GetActorValueModifier, float,   0x006DE980, ActorValueModifier which, UInt32 avIndex);
          DEFINE_MEMBER_FN(GetActorValuePercentage, float,       0x006A8240);
          DEFINE_MEMBER_FN(GetActorValueRegenDelay, float,       0x006DEB40, UInt32 avIndex); // only valid for health/magicka/stamina
          DEFINE_MEMBER_FN(GetAimYaw,             float,   0x006C3420); // actor look direction? // Similar to GetHeading(0), but it accounts for the "AimHeadingCurrent" animation graph variable

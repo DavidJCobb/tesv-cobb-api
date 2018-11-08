@@ -120,6 +120,7 @@
     <ClCompile Include="Papyrus\Actor.cpp" />
     <ClCompile Include="Papyrus\Array.cpp" />
     <ClCompile Include="Papyrus\Cell.cpp" />
+    <ClCompile Include="Papyrus\CobbAPI.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\Base.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\CellSearcher.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\Move.cpp" />
@@ -180,6 +181,7 @@
     <ClInclude Include="Miscellaneous\utf8string.h" />
     <ClInclude Include="Papyrus\Actor.h" />
     <ClInclude Include="Papyrus\Cell.h" />
+    <ClInclude Include="Papyrus\CobbAPI.h" />
     <ClInclude Include="Papyrus\Detection.h" />
     <ClInclude Include="Papyrus\Form.h" />
     <ClInclude Include="Papyrus\Array.h" />
@@ -288,6 +290,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
+    <None Include="scripts\CobbAPI.psc" />
     <None Include="scripts\CobbAPIActor.psc" />
     <None Include="scripts\CobbAPIArray.psc" />
     <None Include="scripts\CobbAPIBatchMove.psc" />

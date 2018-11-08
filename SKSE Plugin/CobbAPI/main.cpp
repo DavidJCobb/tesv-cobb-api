@@ -28,6 +28,7 @@
 #include "Papyrus/Actor.h"
 #include "Papyrus/Array.h"
 #include "Papyrus/Cell.h"
+#include "Papyrus/CobbAPI.h"
 #include "Papyrus/Detection.h"
 #include "Papyrus/Editor.h"
 #include "Papyrus/Form.h"
@@ -74,7 +75,8 @@ void Callback_Serialization_Save(SKSESerializationInterface * intfc);
 void Callback_Serialization_Load(SKSESerializationInterface * intfc);
 void Callback_Serialization_FormDelete(UInt64 handle);
 
-static const char* g_pluginName = "CobbAPI";
+static const char*  g_pluginName    = "CobbAPI";
+const UInt32 g_pluginVersion = 0x00000001; // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
 
 static bool g_TESVVersionSupported = false;
 static bool g_SKSEVersionSupported = false;
@@ -92,18 +94,9 @@ extern "C" {
       //
       // Populate info structure.
       //
-      // Plug-in versions:
-      //   1 = 1.0
-      //   2 = 1.2
-      //   3 = 1.3
-      //   4 = 1.4
-      //   5 = 1.4.1 // NUMBERING SCHEME DIVERGES HERE
-      //
-      // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
-      //
       info->infoVersion = PluginInfo::kInfoVersion;
       info->name        = g_pluginName;
-      info->version     = 0x00000000;
+      info->version     = g_pluginVersion;
       {  // Log version number
          auto  v     = info->version;
          UInt8 main  = v >> 0x18;
@@ -214,6 +207,7 @@ extern "C" {
       //   UTILITIES:
       //-----------------------------------------------------------------------------------------------
       _RegisterAndEchoPapyrus(CobbPapyrus::Array::Register,          "Array");
+      _RegisterAndEchoPapyrus(CobbPapyrus::CobbAPI::Register,        "CobbAPI");
       _RegisterAndEchoPapyrus(CobbPapyrus::Detection::Register,      "Detection");
       _RegisterAndEchoPapyrus(CobbPapyrus::Game::Register,           "Game");
       _RegisterAndEchoPapyrus(CobbPapyrus::Rotations::Register,      "Rotations");
@@ -332,14 +326,10 @@ void Callback_Serialization_FormDelete(UInt64 handle) {
    // calls for leveled NPCs, unique NPCs, merchant chests, and even quests. It's really 
    // only safe to handle "deletion" callbacks for temporary forms.
    //
-   //_MESSAGE("CobbPos notified of form deletion. Handle: 0x%16X", handle);
-   UInt32 argUnknown = handle & 0xFFFFFFFF00000000;
-   UInt32 argFormID  = handle & 0x00000000FFFFFFFF;
+   //_MESSAGE("CobbAPI notified of form deletion. Handle: 0x%16X", handle);
+   UInt32 argUnknown = handle >> 0x20;
+   UInt32 argFormID  = (UInt32)handle;
    //
-   /*if (argFormID & 0xFF000000 == 0xFF000000)*/ { // Temporary form deleted.
-      WeakReferenceService& service = WeakReferenceService::GetInstance();
-      service.FormDeletedHandler(argFormID);
-   }
 };
 void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
    _MESSAGE("Saving...");

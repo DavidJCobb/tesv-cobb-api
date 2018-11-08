@@ -10,6 +10,7 @@
 #include "skse/Utilities.h"
 
 extern PluginHandle g_pluginHandle;
+extern const UInt32 g_pluginVersion;
 
 extern SKSEMessagingInterface*     g_ISKSEMessaging;
 extern SKSESerializationInterface* g_ISKSESerialization;

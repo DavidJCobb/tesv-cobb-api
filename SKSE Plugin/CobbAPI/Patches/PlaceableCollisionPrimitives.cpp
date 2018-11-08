@@ -73,7 +73,7 @@ namespace CobbPatches {
                      _MESSAGE(" - Loaded state flag is 0.");
                }
                {  // Unk_2A
-                  _MESSAGE(" - Unk_2A is %d.", ref->Unk_2A());
+                  _MESSAGE(" - IsWaterActivator is %d.", ref->IsWaterActivator());
                }
             };
             __declspec(naked) void Outer() {

@@ -10,6 +10,11 @@ class DetectionInterceptService {
       typedef UInt32 FormID;
       typedef SInt32 RegistrationHandle;
       static constexpr SInt32 registration_not_found = -1;
+      //
+      // TODO: It is vital that we set up a reliable hook for a form ID being freed (i.e. a 
+      // created reference being actively destroyed or simply not saved), and that this 
+      // service be able to react to that event and unregister these form IDs.
+      //
    public:
       static DetectionInterceptService& GetInstance() {
          static DetectionInterceptService instance;

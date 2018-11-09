@@ -1,7 +1,5 @@
 #include "Shared.h" // So we can share them to files that need them.
 
-#define COBB_NAVCUT_ENABLED 0
-
 #include "skse/PluginAPI.h"		// super
 #include "skse/skse_version.h"	// What version of SKSE is running?
 #include "skse/SafeWrite.h"
@@ -12,6 +10,7 @@
 #include <string>
 
 #include "Patches/Exploratory.h"
+#include "Patches/Detection.h"
 #include "Patches/CellDefaultData.h"
 #include "Patches/SetMotionType.h"
 #include "Patches/MessageQuitGame.h"
@@ -176,11 +175,10 @@ extern "C" {
       {  // Patches
          CobbPatches::Exploratory::Apply();
          CobbPatches::CellDefaultData::Apply();
+         CobbPatches::Detection::Apply();
          CobbPatches::MessageQuitGame::Apply();
          //CobbPatches::FormRestoreState::Apply(); // started in 1.6, but not yet ready
-         #if COBB_NAVCUT_ENABLED == 1
-            CobbPatches::PlaceableCollisionPrimitives::Apply(); // 2.0.5
-         #endif
+         CobbPatches::PlaceableCollisionPrimitives::Apply();
          CobbPatches::SetMotionType::Apply();
       }
       {  // Messaging callbacks.

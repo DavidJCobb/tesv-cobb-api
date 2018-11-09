@@ -85,11 +85,11 @@ namespace RE {
 
    // -----------------------------------------------------------------------------------------------------------------------------------
 
-   bool RefHandleSystem::ExchangeHandleForRef(UInt32* refHandlePtr, refr_ptr out) {
+   bool RefHandleSystem::ExchangeHandleForRef(BSUntypedPointerHandle* refHandlePtr, refr_ptr& out) {
       auto handle = *refHandlePtr;
       if (handle) {
-         auto ebx = RefHandleSystem::GetValidationValue(handle);
-         auto esi = RefHandleSystem::GetIndex(handle);
+         auto ebx = handle.reuse_bits();
+         auto esi = handle.index();
          TESObjectREFR* ref = nullptr;
          {
             auto eax = RefHandleSystem::GetEntries()[esi].refObject;
@@ -101,8 +101,8 @@ namespace RE {
          // Validate the passed-in handle:
          //
          auto storedHandle = RefHandleSystem::GetEntries()[esi].refHandle;
-         if (storedHandle & kMask_IsInUse) {
-            if (RefHandleSystem::GetValidationValue(storedHandle) == ebx) {
+         if (storedHandle.is_in_use()) {
+            if (storedHandle.reuse_bits() == ebx) {
                if (out->handleRefObject.GetRefHandle() == esi)
                   //
                   // Handle is valid.
@@ -117,11 +117,11 @@ namespace RE {
       //
       // Technically, all branches that return do it as: return (out == nullptr).
    };
-   bool RefHandleSystem::GetRefByHandle(UInt32* refHandlePtr, refr_ptr out) {
+   bool RefHandleSystem::GetRefByHandle(BSUntypedPointerHandle* refHandlePtr, refr_ptr& out) {
       auto handle = *refHandlePtr;
       if (handle) {
-         auto ebx = RefHandleSystem::GetValidationValue(handle);
-         auto esi = RefHandleSystem::GetIndex(handle);
+         auto ebx = handle.reuse_bits();
+         auto esi = handle.index();
          TESObjectREFR* ref = nullptr;
          {
             auto eax = RefHandleSystem::GetEntries()[esi].refObject;
@@ -133,8 +133,8 @@ namespace RE {
          // Validate the passed-in handle:
          //
          auto storedHandle = RefHandleSystem::GetEntries()[esi].refHandle;
-         if (storedHandle & kMask_IsInUse) {
-            if (RefHandleSystem::GetValidationValue(storedHandle) == ebx) {
+         if (storedHandle.is_in_use()) {
+            if (storedHandle.reuse_bits() == ebx) {
                if (out->handleRefObject.GetRefHandle() == esi)
                   //
                   // Handle is valid.
@@ -146,9 +146,9 @@ namespace RE {
       out = nullptr; // inlined
       return false;
       //
-      // Technically, all branches that return do it as: return (out == nullptr).
+      // Technically, all branches that return do it as: return (out != nullptr).
    };
-   UInt32* RefHandleSystem::CreateRefHandleByREFR(UInt32* refHandlePtr, TESObjectREFR* ref) {
+   BSUntypedPointerHandle* RefHandleSystem::CreateRefHandleByREFR(BSUntypedPointerHandle* refHandlePtr, TESObjectREFR* ref) {
       constexpr SInt32* const unk = (SInt32*)0x0131050C;
       //
       *refHandlePtr = 0;
@@ -156,26 +156,28 @@ namespace RE {
          return refHandlePtr;
       auto eax = ref->handleRefObject.m_uiRefCount;
       if (eax & 0x400) {
-         auto index = RefHandleSystem::GetIndex(eax);
+         auto index = eax >> 0xB;
          auto edx = RefHandleSystem::GetEntries()[index].refHandle;
-         *refHandlePtr = RefHandleSystem::GetValidationValue(edx) | index;
+         *refHandlePtr = edx.reuse_bits() | index;
          return refHandlePtr;
       }
-      if (*unk == -1) {
+      if (*nextIndex == -1) {
          *refHandlePtr = 0;
          return refHandlePtr;
       }
       {
-         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         RE::UnknownLock01::guard scopedLock(RefHandleSystem::GetInstance()->lock);
          //
-         auto edx = &(RefHandleSystem::GetEntries()[*unk]);
-         eax = RefHandleSystem::IncrementValidationValue(edx->refHandle) | kMask_IsInUse;
+         auto edx = &(RefHandleSystem::GetEntries()[*nextIndex]);
+         BSUntypedPointerHandle eax = edx->refHandle;
+         eax.increment_reuse_count();
+         eax.set_in_use();
          //
          // eax = that same handle, but with its validation value incremented by one.
          //
          edx->refHandle = eax;
          //
-         auto ecx = *unk | (eax & kMask_ReuseCount);
+         auto ecx = *nextIndex | eax.reuse_bits();
          *refHandlePtr = ecx;
          //
          {  // This is actually handled by a smart pointer method, but I'm too lazy to define the smart pointer struct
@@ -184,14 +186,14 @@ namespace RE {
             p->IncRef();
             edx->refObject = p;
          }
-         ref->handleRefObject.m_uiRefCount = ref->handleRefObject.GetRefCount() | (*unk >> 0xB) | 0x400;
+         ref->handleRefObject.m_uiRefCount = ref->handleRefObject.GetRefCount() | (*nextIndex << 0xB) | 0x400;
          //
-         eax = RefHandleSystem::GetIndex(RefHandleSystem::GetEntries()[*unk].refHandle);
-         if (eax == *unk) {
-            *unk = -1;
-            *(SInt32*)(0x01310510) = -1;
+         eax = RefHandleSystem::GetEntries()[*nextIndex].refHandle.index();
+         if (eax == *nextIndex) {
+            *nextIndex = -1;
+            *lastIndex = -1;
          }
-         *unk = eax;
+         *nextIndex = eax;
       }
    };
    //
@@ -200,31 +202,24 @@ namespace RE {
       UInt32 i = 0;
       do {
          auto entry = &RefHandleSystem::GetEntries()[i];
-         entry->refHandle ^= ((entry->refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+         entry->refHandle.set_index(i); // inlined: entry->refHandle ^= ((entry->refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
       } while (++i <= kMask_Index);
-      *(SInt32*)(0x01310510) = -1;
+      *lastIndex = -1;
    };
-   void RefHandleSystem::Subroutine0043C400(UInt32& refHandlePtr) {
-      //
-      // Definitely seems like it destroys a refHandle, but I can't figure out what 
-      // those two xor-based bit-merges at the bottom are for.
-      //
-      // It's called from a variety of places, some of which may be involved in 
-      // destroying a reference and others (like the "Say" console command) that 
-      // almost certainly aren't.
-      //
+   void RefHandleSystem::ReleaseHandle(const BSUntypedPointerHandle& refHandlePtr) {
       auto handle = refHandlePtr;
       if (!handle)
          return;
       {
-         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         RE::UnknownLock01::guard scopedLock(RefHandleSystem::GetInstance()->lock);
          auto  list  = RefHandleSystem::GetEntries();
-         auto& entry = list[handle & kMask_Index];
-         if (!(entry.refHandle & kMask_IsInUse))
+         auto  index = handle.index();
+         auto& entry = list[index];
+         if (!entry.refHandle.is_in_use())
             return;
          if ((entry.refHandle ^ handle) & kMask_ReuseCount)
             return;
-         entry.refHandle &= ~kMask_IsInUse;
+         entry.refHandle.set_unused();
          auto refObj = entry.refObject;
          if (refObj) {
             refObj->m_uiRefCount &= 0x3FF; // clear handle and flags
@@ -232,24 +227,23 @@ namespace RE {
             entry.refObject = nullptr;
          }
          //
-         if (*(SInt32*)(0x01310510) == -1) {
-            *(SInt32*)(0x01310510) = handle;
+         if (*lastIndex == -1) {
+            *nextIndex = index;
          } else {
-            auto& a = list[*(SInt32*)(0x01310510)];
-            a.refHandle ^= ((a.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+            list[*lastIndex].refHandle.set_index(index); // inlined
          }
-         entry.refHandle ^= ((entry.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
-         *(SInt32*)(0x01310510) = handle;
+         entry.refHandle.set_index(index); // inlined
+         *lastIndex = index;
       }
    };
-   void RefHandleSystem::Subroutine00474B60() {
-      RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+   void RefHandleSystem::ClearActiveHandles() {
+      RE::UnknownLock01::guard scopedLock(RefHandleSystem::GetInstance()->lock);
       //
       auto   list = RefHandleSystem::GetEntries();
       UInt32 i    = 0;
       do {
          auto& current = list[i];
-         if (!(current.refHandle & kMask_IsInUse))
+         if (!current.refHandle.is_in_use())
             continue;
          auto refObj = current.refObject;
          if (refObj) {
@@ -257,34 +251,27 @@ namespace RE {
             refObj->DecRefHandle();
          }
          current.refObject = nullptr;
-         current.refHandle &= ~kMask_IsInUse;
+         current.refHandle.set_unused();
          //
-         if (*(SInt32*)(0x01310510) == -1) {
-            *(SInt32*)(0x01310510) = i;
+         if (*lastIndex == -1) {
+            *nextIndex = i;
          } else {
-            auto& a = list[*(SInt32*)(0x01310510)];
-            a.refHandle ^= ((a.refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+            list[*lastIndex].refHandle.set_index(i); // inlined
          }
-         current.refHandle ^= ((current.refHandle ^ i) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
-         *(SInt32*)(0x01310510) = i;
+         current.refHandle.set_index(i); // inlined
+         *lastIndex = i;
       } while (++i <= kMask_Index);
    };
-   void RefHandleSystem::Subroutine0079DDF0(UInt32& refHandlePtr) {
-      //
-      // This seems like it validates a refHandle, and destroys it if it isn't 
-      // valid... except that it destroys the stored handle, not the one that 
-      // gets passed in. Doesn't that seem backwards? Like, wouldn't you want 
-      // to be able to pass old handles in to be checked, rather than passing 
-      // in new handles (obtained from where?!) to override stored ones?
-      //
+   void RefHandleSystem::ReleaseAndLoseHandle(BSUntypedPointerHandle& refHandlePtr) {
       auto handle = refHandlePtr;
       if (!handle)
          return;
       {
-         RE::UnknownLock01::guard scopedLock((RE::UnknownLock01*) 0x01B10638);
+         RE::UnknownLock01::guard scopedLock(RefHandleSystem::GetInstance()->lock);
          auto  list  = RefHandleSystem::GetEntries();
-         auto& entry = list[handle & kMask_Index];
-         if (entry.refHandle & kMask_IsInUse) {
+         auto  index = handle.index();
+         auto& entry = list[index];
+         if (entry.refHandle.is_in_use()) {
             auto eax = entry.refHandle ^ refHandlePtr;
             if (eax) {
                //
@@ -296,16 +283,15 @@ namespace RE {
                   refObj->DecRefHandle();
                   entry.refObject = nullptr;
                }
-               entry.refHandle &= ~kMask_IsInUse;
+               entry.refHandle.set_unused();
                //
-               if (*(SInt32*)(0x01310510) == -1) {
-                  *(SInt32*)(0x0131050C) = handle;
+               if (*lastIndex == -1) {
+                  *nextIndex = index;
                } else {
-                  auto& a = list[*(SInt32*)(0x01310510)];
-                  a.refHandle ^= ((a.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
+                  list[*lastIndex].refHandle.set_index(index); // inlined
                }
-               entry.refHandle ^= ((entry.refHandle ^ handle) & kMask_Index); // (a & ~mask) | (b & mask) === a ^ ((a ^ b) & mask)
-               *(SInt32*)(0x01310510) = handle;
+               entry.refHandle.set_index(index); // inlined
+               *lastIndex = index;
             }
          }
          refHandlePtr = 0;

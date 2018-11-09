@@ -923,7 +923,7 @@ namespace RE {
          virtual ActorMover* ResetUnkCC(); // 124 // creates unkCC (first destroying it if it already exists) and returns the new instance
          virtual void DestroyUnkCC();      // 125 // destroys unkCC
          virtual bool Unk_126(UInt32, UInt32); // 126 // related to menus and to the actor's "ghost" and "is running" flags
-         virtual float IncerceptActorValueChange(UInt32 avIndex, float avChangingBy); // 127 // Called whenever an AV is about to change; returning a value overrides by how much the AV will change. Return (avChangingBy) verbatim to do nothing.
+         virtual float IncerceptActorValueChange(UInt32 avIndex, float avChangingBy); // 127 // Called whenever an AV is about to be damaged or restored; returning a value overrides by how much the AV's damage modifier will change. Return (avChangingBy) verbatim to do nothing.
 
          class SpellArray { // sizeof == 0x0C // actually just a tArray with special functionality
             public:

@@ -7,7 +7,7 @@
 
 class DetectionInterceptService {
    public:
-      typedef UInt32 RefHandle;
+      typedef UInt32 FormID;
       typedef SInt32 RegistrationHandle;
       static constexpr SInt32 registration_not_found = -1;
    public:
@@ -21,15 +21,15 @@ class DetectionInterceptService {
       class Feature {
          protected:
             struct Registration {
-               RefHandle   actor    = *g_invalidRefHandle;
+               FormID      actor    = 0;
                UInt32      refCount = 0;
                const char* tag      = nullptr;
                bool        enabled  = true; // set to false if you forcibly remove an actor
                //
                Registration() {};
-               Registration(RefHandle a, const char* b) : actor(a), tag(b), refCount(1) {};
+               Registration(FormID a, const char* b) : actor(a), tag(b), refCount(1) {};
                inline bool is_empty() const {
-                  return this->actor == *g_invalidRefHandle && !this->refCount;
+                  return !this->actor && !this->refCount;
                };
             };
          public:
@@ -37,26 +37,26 @@ class DetectionInterceptService {
             Feature(const Feature&) = delete; // no copying
             //
             RegistrationHandle add(RE::Actor* actor);
-            RegistrationHandle add(RefHandle handle, const char* tag = nullptr);
+            RegistrationHandle add(FormID formID, const char* tag = nullptr);
             RegistrationHandle add(RE::Actor* actor, const char* tag);
             void remove(RE::Actor* actor, RegistrationHandle);
-            void remove(RefHandle handle, RegistrationHandle);
+            void remove(FormID formID, RegistrationHandle);
             void remove_all_of(const char* tag);
             void force_remove(RE::Actor* actor);
-            void force_remove(RefHandle handle);
+            void force_remove(FormID formID);
             //
             bool contains(RE::Actor* actor) const;
             void reset(); // just wipes the lists; only use this when switching between playthroughs
          protected:
-            std::vector<Registration>    registrations;
-            std::vector<RefHandle>       affectedActors;
+            std::vector<Registration> registrations;
+            std::vector<FormID>       affectedActors;
             std::unordered_map<std::string, std::vector<RegistrationHandle>> byStringTag;
             mutable std::recursive_mutex lock;
             RegistrationHandle           firstEmpty = 0;
             //
             typedef std::lock_guard<decltype(lock)> feature_lock_guard;
             //
-            RegistrationHandle _find_enabled_only(RefHandle handle) const; // doesn't lock
+            RegistrationHandle _find_enabled_only(FormID formID) const; // doesn't lock
             RegistrationHandle _find_next_empty(RegistrationHandle startAt) const; // doesn't lock
       };
    public:

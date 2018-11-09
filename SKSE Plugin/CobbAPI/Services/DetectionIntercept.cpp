@@ -4,46 +4,42 @@
 namespace {
    typedef DetectionInterceptService::Feature Feature;
    typedef DetectionInterceptService::RegistrationHandle RegistrationHandle;
-   typedef DetectionInterceptService::RefHandle RefHandle;
+   typedef DetectionInterceptService::FormID FormID;
 };
 
 RegistrationHandle Feature::add(RE::Actor* actor) {
    if (!actor)
       return registration_not_found;
-   RefHandle handle = *g_invalidRefHandle;
-   CreateRefHandleByREFR(&handle, (TESObjectREFR*) actor);
-   return this->add(handle);
+   return this->add(actor->formID);
 };
 RegistrationHandle Feature::add(RE::Actor* actor, const char* tag) {
    if (!actor)
       return registration_not_found;
-   RefHandle handle = *g_invalidRefHandle;
-   CreateRefHandleByREFR(&handle, (TESObjectREFR*) actor);
-   return this->add(handle, tag);
+   return this->add(actor->formID, tag);
 };
-RegistrationHandle Feature::add(RefHandle handle, const char* tag) {
-   if (handle == *g_invalidRefHandle)
+RegistrationHandle Feature::add(FormID formID, const char* tag) {
+   if (formID == 0)
       return registration_not_found;
    //
    feature_lock_guard scopedLock(this->lock);
    //
-   auto index = this->_find_enabled_only(handle);
+   auto index = this->_find_enabled_only(formID);
    if (index != registration_not_found) {
       this->registrations[index].refCount++;
       return index;
    }
    //
-   this->affectedActors.push_back(handle);
+   this->affectedActors.push_back(formID);
    if (this->firstEmpty >= this->registrations.size()) {
       index = this->registrations.size();
-      this->registrations.emplace_back(handle, tag);
+      this->registrations.emplace_back(formID, tag);
       if (tag)
          this->byStringTag[tag].push_back(index);
       this->firstEmpty = this->registrations.size();
       return index;
    }
    SInt32 i = this->firstEmpty;
-   this->registrations[i] = Registration(handle, tag);
+   this->registrations[i] = Registration(formID, tag);
    if (tag) {
       this->byStringTag[tag].push_back(i);
    }
@@ -55,24 +51,22 @@ void Feature::remove(RE::Actor* actor, RegistrationHandle index) {
       return;
    if (index < 0 || index >= this->registrations.size())
       return;
-   RefHandle handle = *g_invalidRefHandle;
-   CreateRefHandleByREFR(&handle, (TESObjectREFR*)actor);
-   this->remove(handle, index);
+   this->remove(actor->formID, index);
 };
-void Feature::remove(RefHandle handle, RegistrationHandle index) {
+void Feature::remove(FormID formID, RegistrationHandle index) {
    if (index < 0 || index >= this->registrations.size())
       return;
    //
    feature_lock_guard scopedLock(this->lock);
    //
    auto& r = this->registrations[index];
-   if (r.actor != handle)
+   if (r.actor != formID)
       return;
    r.refCount--;
    if (r.refCount <= 0) {
       if (r.enabled) {
          auto& actors = this->affectedActors;
-         actors.erase(std::remove(actors.begin(), actors.end(), handle), actors.end());
+         actors.erase(std::remove(actors.begin(), actors.end(), formID), actors.end());
       }
       r.actor   = *g_invalidRefHandle;
       r.enabled = false;
@@ -114,44 +108,40 @@ void Feature::remove_all_of(const char* tag) {
 void Feature::force_remove(RE::Actor* actor) {
    if (!actor)
       return;
-   RefHandle handle = *g_invalidRefHandle;
-   CreateRefHandleByREFR(&handle, (TESObjectREFR*)actor);
-   this->force_remove(handle);
+   this->force_remove(actor->formID);
 };
-void Feature::force_remove(RefHandle handle) {
+void Feature::force_remove(FormID formID) {
    feature_lock_guard scopedLock(this->lock);
    //
    auto& l = this->registrations;
    for (auto it = l.begin(); it != l.end(); ++it) {
       auto& r = *it;
-      if (r.enabled && r.actor == handle)
+      if (r.enabled && r.actor == formID)
          r.enabled = false;
    }
    auto& actors = this->affectedActors;
-   actors.erase(std::remove(actors.begin(), actors.end(), handle), actors.end());
+   actors.erase(std::remove(actors.begin(), actors.end(), formID), actors.end());
 };
 bool Feature::contains(RE::Actor* actor) const {
    if (!actor)
       return false;
-   RefHandle handle = *g_invalidRefHandle;
-   CreateRefHandleByREFR(&handle, (TESObjectREFR*)actor);
    //
    feature_lock_guard scopedLock(this->lock);
    //
    auto& actors = this->affectedActors;
-   return std::find(actors.begin(), actors.end(), handle) != actors.end();
+   return std::find(actors.begin(), actors.end(), actor->formID) != actors.end();
 };
 void Feature::reset() {
    feature_lock_guard scopedLock(this->lock);
    this->affectedActors.clear();
    this->registrations.clear();
 };
-RegistrationHandle Feature::_find_enabled_only(RefHandle handle) const {
+RegistrationHandle Feature::_find_enabled_only(FormID formID) const {
    auto& r = this->registrations;
    for (auto it = r.begin(); it != r.end(); ++it) {
       if (!it->enabled)
          continue;
-      if (it->actor == handle)
+      if (it->actor == formID)
          return it - r.begin();
    }
    return registration_not_found;

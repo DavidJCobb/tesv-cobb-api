@@ -179,7 +179,7 @@ extern "C" {
       {  // Patches
          CobbPatches::Exploratory::Apply();
          CobbPatches::CellDefaultData::Apply();
-         CobbPatches::Detection::Apply();
+         //CobbPatches::Detection::Apply(); // Do this later, so that we can tell whether ESODeath is present and patched-in
          CobbPatches::MessageQuitGame::Apply();
          //CobbPatches::FormRestoreState::Apply(); // started in 1.6, but not yet ready
          CobbPatches::PlaceableCollisionPrimitives::Apply();
@@ -272,7 +272,7 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
          g_ISKSEMessaging->RegisterListener(g_pluginHandle, "CobbAPI", Callback_Messaging_Cobb); // maybe in the future
       }
    } else if (message->type == SKSEMessagingInterface::kMessage_PostPostLoad) {
-      //
+      CobbPatches::Detection::Apply(); // Done here so we can tell if ESODeath is present and patched-in
    } else if (message->type == SKSEMessagingInterface::kMessage_DataLoaded) {
       CobbPatches::PlaceableCollisionPrimitives::OnFormsLoaded();
    } else if (message->type == SKSEMessagingInterface::kMessage_NewGame) {
@@ -328,9 +328,9 @@ void Callback_Serialization_FormDelete(UInt64 handle) {
    // calls for leveled NPCs, unique NPCs, merchant chests, and even quests. It's really 
    // only safe to handle "deletion" callbacks for temporary forms.
    //
-   //_MESSAGE("CobbAPI notified of form deletion by SKSE VM hook. Form ID: 0x%08X", handle);
    UInt32 argUnknown = handle >> 0x20;
    UInt32 argFormID  = (UInt32)handle;
+   //_MESSAGE("CobbAPI notified of form deletion by SKSE VM hook. Form ID: 0x%08X", argFormID);
    //
    if (argFormID >= 0xFF000000)
       DetectionInterceptService::GetInstance().OnFormDestroyed(argFormID);
@@ -371,7 +371,7 @@ void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
       {  // Save detection-intercept registrations.
          DetectionInterceptService& service = DetectionInterceptService::GetInstance();
          if (!service.IsEmpty()) {
-            if (intfc->OpenRecord(ce_signature_DetectionIntercept, TeleportMarkerService::kSaveVersion)) {
+            if (intfc->OpenRecord(ce_signature_DetectionIntercept, DetectionInterceptService::kSaveVersion)) {
                _MESSAGE("Saving detection-intercept registrations...");
                service.Save(intfc);
             } else

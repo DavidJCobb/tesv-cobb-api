@@ -6,6 +6,8 @@ Say you need to be able to refer to an arbitrary object, but you also
 need to be sure that you won't prevent it from being deleted. A typical 
 variable simply won't do. Use this instead.
 
+NOV 12 2018: This is a years-old draft, and probably won't make it to production.
+
 /;
 
 Int             Function Set (ObjectReference akSelf, ObjectReference akTarget) Global Native

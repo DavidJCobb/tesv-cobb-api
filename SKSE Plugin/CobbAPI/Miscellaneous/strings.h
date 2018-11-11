@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 namespace cobb {
    extern bool string_has_content(const char* str); // any characters besides '\0' and std::isspace-positive glyphs
@@ -22,6 +23,35 @@ namespace cobb {
    // flag is zero (in which case it's taken as part of the width field e.g. "%-0d").
    //
    extern __declspec(noinline) bool validate_format(const std::string& format, const std::string& tokens);
+
+   struct char_traits_insensitive : public std::char_traits<char> {
+      inline static bool eq(char c1, char c2) {
+         return tolower(c1) == tolower(c2);
+      }
+      inline static bool ne(char c1, char c2) {
+         return tolower(c1) != tolower(c2);
+      }
+      inline static bool lt(char c1, char c2) {
+         return tolower(c1) <  tolower(c2);
+      }
+      inline static int compare(const char* s1, const char* s2, size_t n) {
+         return _memicmp(s1, s2, n);
+      }
+      inline static const char* find(const char* s, int n, char a) {
+         while (n-- > 0 && tolower(*s) != tolower(a))
+            ++s;
+         return s;
+      }
+   };
+   typedef std::basic_string<char, char_traits_insensitive> istring;
+
+   struct char_traits_lower : public char_traits_insensitive {
+      inline static void assign(char& r, const char& a) {
+         r = tolower(a);
+      };
+   };
+   typedef std::basic_string<char, char_traits_lower> lowerstring;
+
 
    /*class istring : public std::string {
       //

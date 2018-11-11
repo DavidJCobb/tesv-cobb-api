@@ -11,10 +11,6 @@ class DetectionInterceptService {
       typedef SInt32 RegistrationHandle;
       static constexpr SInt32 registration_not_found = -1;
       //
-      // TODO: It is vital that we set up a reliable hook for a form ID being freed (i.e. a 
-      // created reference being actively destroyed or simply not saved), and that this 
-      // service be able to react to that event and unregister these form IDs.
-      //
    public:
       static DetectionInterceptService& GetInstance() {
          static DetectionInterceptService instance;
@@ -51,7 +47,11 @@ class DetectionInterceptService {
             void force_remove(FormID formID);
             //
             bool contains(RE::Actor* actor) const;
+            bool empty() const;
             void reset(); // just wipes the lists; only use this when switching between playthroughs
+            //
+            bool Save(SKSESerializationInterface* intfc);
+            bool Load(SKSESerializationInterface* intfc, UInt32 version);
          protected:
             std::vector<Registration> registrations;
             std::vector<FormID>       affectedActors;
@@ -69,6 +69,12 @@ class DetectionInterceptService {
       Feature unseeingActors;
       //
       void GetActorStatus(RE::Actor*, bool& outUnseen, bool& outUnseeing) const;
+      bool IsEmpty() const;
+      void OnFormDestroyed(UInt32 formID);
       void Reset();
       bool ShouldCancelDetection(RE::Actor* seeker, RE::Actor* target) const;
+      //
+      enum { kSaveVersion = 1 };
+      bool Save(SKSESerializationInterface* intfc);
+      bool Load(SKSESerializationInterface* intfc, UInt32 version);
 };

@@ -19,7 +19,7 @@
 
 #include "Services/Messaging.h"
 #include "Services/CellInteriorDataService.h"
-#include "Services/DisplayOptionService.h"
+#include "Services/DetectionIntercept.h"
 #include "Services/RevealService.h"
 #include "Services/TeleportMarkerService.h"
 #include "Services/WeakReferenceService.h"
@@ -29,7 +29,6 @@
 #include "Papyrus/Cell.h"
 #include "Papyrus/CobbAPI.h"
 #include "Papyrus/Detection.h"
-#include "Papyrus/Editor.h"
 #include "Papyrus/Form.h"
 #include "Papyrus/Furniture.h"
 #include "Papyrus/Game.h"
@@ -42,7 +41,6 @@
 #include "Papyrus/SimpleSearches.h"
 #include "Papyrus/String.h"
 #include "Papyrus/Utility.h"
-#include "Papyrus/WeakReference.h" // 1.4.2 (unfinished; maybe won't ever be finished)
 #include "Papyrus/Worldspace.h"
 #include "Papyrus/CompoundOperations/CellSearcher.h"
 #include "Papyrus/CompoundOperations/Move.h"
@@ -79,6 +77,12 @@ const UInt32 g_pluginVersion = 0x00000001; // 0xAABBCCDD = AA.BB.CC.DD with valu
 
 static bool g_TESVVersionSupported = false;
 static bool g_SKSEVersionSupported = false;
+
+constexpr UInt32 ce_signature_StorablePersistentObjects = 'COMG';
+constexpr UInt32 ce_signature_CellInteriorData   = 'CLIN';
+constexpr UInt32 ce_signature_DetectionIntercept = 'DCTI';
+constexpr UInt32 ce_signature_WeakReference      = 'CWRS'; // unused
+constexpr UInt32 ce_signature_TeleportMarkers    = 'CTMS';
 
 extern "C" {
    //
@@ -206,13 +210,11 @@ extern "C" {
       //-----------------------------------------------------------------------------------------------
       _RegisterAndEchoPapyrus(CobbPapyrus::Array::Register,          "Array");
       _RegisterAndEchoPapyrus(CobbPapyrus::CobbAPI::Register,        "CobbAPI");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Detection::Register,      "Detection");
       _RegisterAndEchoPapyrus(CobbPapyrus::Game::Register,           "Game");
       _RegisterAndEchoPapyrus(CobbPapyrus::Rotations::Register,      "Rotations");
       _RegisterAndEchoPapyrus(CobbPapyrus::SimpleSearches::Register, "SimpleSearches");
       _RegisterAndEchoPapyrus(CobbPapyrus::String::Register,         "String");
       _RegisterAndEchoPapyrus(CobbPapyrus::Utility::Register,        "Utility");
-      _RegisterAndEchoPapyrus(CobbPapyrus::WeakReference::Register,  "WeakReference");
       //-----------------------------------------------------------------------------------------------
       //   EXTENSIONS TO NATIVE CLASSES:
       //-----------------------------------------------------------------------------------------------
@@ -241,7 +243,7 @@ extern "C" {
       //-----------------------------------------------------------------------------------------------
       //   SERVICES:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(CobbPapyrus::Editor::Register,        "Editor"); // generic methods for CobbPos
+      _RegisterAndEchoPapyrus(CobbPapyrus::Detection::Register,     "Detection");
       _RegisterAndEchoPapyrus(CobbPapyrus::RevealService::Register, "RevealService");
       //-----------------------------------------------------------------------------------------------
       //   PLUG-IN DEBUGGING:
@@ -276,11 +278,13 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
    } else if (message->type == SKSEMessagingInterface::kMessage_NewGame) {
       DEBUG_ONLY_MESSAGE("Message from SKSE is of type: kMessage_NewGame.");
       CellInteriorDataService::GetInstance().ResetAll();
+      DetectionInterceptService::GetInstance().Reset();
       WeakReferenceService::GetInstance().NewGame();
       TeleportMarkerService::GetInstance().NewGame();
       RevealService::GetInstance().MassReset();
    } else if (message->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
       CellInteriorDataService::GetInstance().ResetAll();
+      DetectionInterceptService::GetInstance().Reset();
       RevealService::GetInstance().MassReset();
    }
 };
@@ -324,43 +328,55 @@ void Callback_Serialization_FormDelete(UInt64 handle) {
    // calls for leveled NPCs, unique NPCs, merchant chests, and even quests. It's really 
    // only safe to handle "deletion" callbacks for temporary forms.
    //
-   //_MESSAGE("CobbAPI notified of form deletion. Handle: 0x%16X", handle);
+   //_MESSAGE("CobbAPI notified of form deletion by SKSE VM hook. Form ID: 0x%08X", handle);
    UInt32 argUnknown = handle >> 0x20;
    UInt32 argFormID  = (UInt32)handle;
    //
+   if (argFormID >= 0xFF000000)
+      DetectionInterceptService::GetInstance().OnFormDestroyed(argFormID);
 };
 void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
    _MESSAGE("Saving...");
 
    //SaveClassHelper(intfc, 'COMG', StorableObjectRegistryInstance());
-   if (intfc->OpenRecord('COMG', StorablePersistentObjectStorage::kSaveVersion)) {
+   if (intfc->OpenRecord(ce_signature_StorablePersistentObjects, StorablePersistentObjectStorage::kSaveVersion)) {
       _MESSAGE("Saving object storage...");
       StorableObjectStorageInstance().Save(intfc);
    } else
       _MESSAGE("Couldn't save our object storage. Record didn't open.");
-   if (intfc->OpenRecord('CLIN', CellInteriorDataService::kSaveVersion)) {
+   if (intfc->OpenRecord(ce_signature_CellInteriorData, CellInteriorDataService::kSaveVersion)) {
       _MESSAGE("Saving cell interior storage...");
       CellInteriorDataService::GetInstance().Save(intfc);
    } else
       _MESSAGE("Couldn't save our cell interior storage. Record didn't open.");
-   {  // Save weak references.
+   /*{  // Save weak references.
       WeakReferenceService& service = WeakReferenceService::GetInstance();
       if (!service.IsEmpty()) {
-         if (intfc->OpenRecord('CWRS', WeakReferenceService::kSaveVersion)) {
+         if (intfc->OpenRecord(ce_signature_WeakReference, WeakReferenceService::kSaveVersion)) {
             _MESSAGE("Saving weak references...");
-            WeakReferenceService::GetInstance().Save(intfc);
+            service.Save(intfc);
          } else
             _MESSAGE("Couldn't save weak references. Record didn't open.");
       }
-   }
+   }*/
    {  // Save teleport marker changes.
       TeleportMarkerService& service = TeleportMarkerService::GetInstance();
       if (!service.IsEmpty()) {
-         if (intfc->OpenRecord('CTMS', TeleportMarkerService::kSaveVersion)) {
+         if (intfc->OpenRecord(ce_signature_TeleportMarkers, TeleportMarkerService::kSaveVersion)) {
             _MESSAGE("Saving teleport marker changes...");
-            TeleportMarkerService::GetInstance().Save(intfc);
+            service.Save(intfc);
          } else
             _MESSAGE("Couldn't save teleport marker changes. Record didn't open.");
+      }
+      {  // Save detection-intercept registrations.
+         DetectionInterceptService& service = DetectionInterceptService::GetInstance();
+         if (!service.IsEmpty()) {
+            if (intfc->OpenRecord(ce_signature_DetectionIntercept, TeleportMarkerService::kSaveVersion)) {
+               _MESSAGE("Saving detection-intercept registrations...");
+               service.Save(intfc);
+            } else
+               _MESSAGE("Couldn't save detection-intercept registrations. Record didn't open.");
+         }
       }
    }
    _MESSAGE("Saving done!");
@@ -368,17 +384,17 @@ void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
 void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
    _MESSAGE("Loading...");
    //
-   UInt32	type;    // This IS correct. A UInt32 and a four-character ASCII string have the same length (and can be read interchangeably, it seems).
-   UInt32	version;
-   UInt32	length;
-   bool	error = false;
+   UInt32 type;    // This IS correct. A UInt32 and a four-character ASCII string have the same length (and can be read interchangeably, it seems).
+   UInt32 version;
+   UInt32 length;
+   bool   error = false;
    //
    bool executedTeleportMarkerService = false;
    //
    while (!error && intfc->GetNextRecordInfo(&type, &version, &length)) {
       DEBUG_ONLY_MESSAGE("Serialization: Loaded record of type, version, length: %c%c%c%c, %d, %d.", (char)(type >> 0x18), (char)(type >> 0x10), (char)(type >> 0x8), (char)type, version, length);
       switch (type) {
-         case 'COMG':
+         case ce_signature_StorablePersistentObjects:
             DEBUG_ONLY_MESSAGE("Loading object storage...");
             error = !StorableObjectStorageInstance().Load(intfc, version);
             if (error)
@@ -386,7 +402,7 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
             else
                _MESSAGE("Loaded object storage!");
             break;
-         case 'CLIN':
+         case ce_signature_CellInteriorData:
             DEBUG_ONLY_MESSAGE("Loading cell interior changes...");
             error = !CellInteriorDataService::GetInstance().Load(intfc, version);
             if (error)
@@ -394,7 +410,7 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
             else
                _MESSAGE("Loaded cell interior changes!");
             break;
-         case 'CTMS':
+         case ce_signature_TeleportMarkers:
             DEBUG_ONLY_MESSAGE("Loading teleport marker changes...");
             error = !TeleportMarkerService::GetInstance().Load(intfc, version);
             if (error)
@@ -403,13 +419,21 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
                _MESSAGE("Loaded teleport marker changes!");
             executedTeleportMarkerService = true;
             break;
-         case 'CWRS':
+         case ce_signature_WeakReference:
             DEBUG_ONLY_MESSAGE("Loading weak references...");
             error = !WeakReferenceService::GetInstance().Load(intfc, version);
             if (error)
                _MESSAGE("Loading weak references FAILED.");
             else
                _MESSAGE("Loaded weak references!");
+            break;
+         case ce_signature_DetectionIntercept:
+            DEBUG_ONLY_MESSAGE("Loading detection-intercept registrations...");
+            error = !DetectionInterceptService::GetInstance().Load(intfc, version);
+            if (error)
+               _MESSAGE("Loading detection-intercept registrations FAILED.");
+            else
+               _MESSAGE("Loaded detection-intercept registrations!");
             break;
          default:
             _MESSAGE("Loading: Unhandled type %c%c%c%c", (char)(type >> 0x18), (char)(type >> 0x10), (char)(type >> 0x8), (char)type);

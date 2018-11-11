@@ -9,6 +9,10 @@
 
 namespace CobbPapyrus {
    namespace Detection {
+      bool ServiceIsAvailable(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*) {
+         return DetectionInterceptService::GetInstance().isActive;
+      };
+      //
       bool ActorCannotSee(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor) {
          if (actor == nullptr)
             return false;
@@ -20,12 +24,28 @@ namespace CobbPapyrus {
          return DetectionInterceptService::GetInstance().unseenActors.contains(actor);
       }
       SInt32 PreventActorFromSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
-         ERROR_AND_RETURN_0_IF(actor == nullptr, "You cannot modify the \"unseeing\" status for a None actor.", registry, stackId);
-         return DetectionInterceptService::GetInstance().unseeingActors.add(actor, tag.data);
+         auto& service = DetectionInterceptService::GetInstance();
+         if (!service.isActive) {
+            registry->LogError("The DetectionInterceptService is not running.", stackId);
+            return -1;
+         }
+         if (actor == nullptr) {
+            registry->LogError("You cannot modify the \"unseeing\" status for a None actor.", stackId);
+            return -1;
+         }
+         return service.unseeingActors.add(actor, tag.data);
       }
       SInt32 PreventActorFromBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
-         ERROR_AND_RETURN_0_IF(actor == nullptr, "You cannot modify the \"unseen\" status for a None actor.", registry, stackId);
-         return DetectionInterceptService::GetInstance().unseenActors.add(actor, tag.data);
+         auto& service = DetectionInterceptService::GetInstance();
+         if (!service.isActive) {
+            registry->LogError("The DetectionInterceptService is not running.", stackId);
+            return -1;
+         }
+         if (actor == nullptr) {
+            registry->LogError("You cannot modify the \"unseen\" status for a None actor.", stackId);
+            return -1;
+         }
+         return service.unseenActors.add(actor, tag.data);
       }
       void ReturnActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, SInt32 handle) {
          ERROR_AND_RETURN_IF(actor == nullptr, "You cannot modify the \"unseeing\" status for a None actor.", registry, stackId);
@@ -61,6 +81,13 @@ namespace CobbPapyrus {
       };
 
       bool Register(VMClassRegistry* registry) {
+         registry->RegisterFunction(new NativeFunction0<StaticFunctionTag, bool>(
+            "ServiceIsAvailable",
+            "CobbAPIDetection",
+            ServiceIsAvailable,
+            registry
+         ));
+         registry->SetFunctionFlags("CobbAPIDetection", "ServiceIsAvailable", VMClassRegistry::kFunctionFlag_NoWait);
          registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, bool, RE::Actor*>(
             "ActorCannotSee",
             "CobbAPIDetection",

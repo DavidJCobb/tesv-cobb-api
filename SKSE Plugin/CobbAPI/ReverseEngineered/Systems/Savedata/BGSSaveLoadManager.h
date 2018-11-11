@@ -66,14 +66,21 @@ namespace RE {
          UInt32 unk3EC; // 3EC
          UInt32 unk3F0; // 3F0 // bitmask
 
-      private:
+      public:
          MEMBER_FN_PREFIX(BGSSaveLoadManager);
+      private:
          DEFINE_MEMBER_FN(Save_Internal, bool, 0x006814D0, const char * name, int unk1, UInt32 unk2);
          DEFINE_MEMBER_FN(Load_Internal, bool, 0x006821C0, const char * name, int unk1, UInt32 unk2, UInt32 unk3);
-
+         //
          DEFINE_MEMBER_FN(SaveGame_HookTarget, void, 0x00679200, const char * fileName);
          DEFINE_MEMBER_FN(LoadGame_HookTarget, bool, 0x0067B720, const char * fileName, bool unk0);
-
+         //
          DEFINE_MEMBER_FN(ProcessEvents_Internal, void, 0x00682400);
+         //
+      public:
+         DEFINE_MEMBER_FN(ChangeDataExistsForFormID, bool, 0x00677FA0, UInt32 formID); // calls ChangeFormManager::HasFormID
+         DEFINE_MEMBER_FN(RemoveChangeFlags,         void, 0x00678280, TESForm*, UInt32 flagsToRemove);
+         DEFINE_MEMBER_FN(Subroutine00678B50, void, 0x00678B50, TESObjectREFR* formID); // destroys the reference
+         DEFINE_MEMBER_FN(Subroutine00678EC0, void, 0x00678EC0, UInt32 formID); // acts on a loaded form
    };
 }

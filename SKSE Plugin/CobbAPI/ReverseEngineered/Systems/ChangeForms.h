@@ -116,13 +116,14 @@ namespace RE {
          struct Unk04 {
             UInt32 unk00;
             UInt32 unk04; // some kind of hash or key used to find where ChangeForms are stored?
-            UInt32 count; // 08 // number of ChangeForms stored
+            UInt32 count; // 08 // number of ChangeForms stored? or number available?
             UInt32 unk0C;
             ChangeForm* unk10; // 10
             UInt32 unk14;
             UInt32 unk18;
             //
             MEMBER_FN_PREFIX(Unk04);
+            DEFINE_MEMBER_FN(HasFormID, bool, 0x00676B70, UInt32* formID); // do not call directly
             DEFINE_MEMBER_FN(Subroutine007385A0, bool, 0x007385A0, UInt32 myUnk18, UnknownChangeFormHashOrKey, UInt32* formID, ChangeForm::Data* outData);
          };
          struct Lock {
@@ -138,26 +139,14 @@ namespace RE {
          MEMBER_FN_PREFIX(ChangeFormManager);
          DEFINE_MEMBER_FN(GetChangeFlags, UInt32*, 0x00676C20, UInt32* outFlags, UInt32 formID); // modifies *outFlags; returns outFlags.
          DEFINE_MEMBER_FN(GetChangeData,  bool,    0x00676BC0, UInt32 formID, ChangeForm::Data* outData); // returns true if successful
+         DEFINE_MEMBER_FN(HasFormID,      bool,    0x00676DB0, UInt32 formID);
+         //
+         // These are called during SaveGame_HookTarget:
+         //
+         DEFINE_MEMBER_FN(AddFlags,       void,    0x00677050, UInt32 formID, UInt32 flagsToAdd);
+         DEFINE_MEMBER_FN(RemoveFlags,    bool,    0x00677160, UInt32 formID, UInt32 flagsToRemove); // returns true if the changeform was wholly removed (i.e. all flags 0 and form is created)
    };
    static_assert(offsetof(ChangeFormManager, unk20) == 0x20, "ChangeFormManager::unk20 is at the wrong offset!");
-
-   class Unknown01B2E38C {
-      public:
-         UInt32 pad000[(0x088 - 0x000) / 4];
-         UInt32 unk088;
-         UInt32 pad08C[(0x3E8 - 0x08C) / 4];
-         ChangeFormManager* unk3E8;
-         UInt32 pad3EC;
-         UInt32 unk3F0; // flags
-         //
-         static Unknown01B2E38C* GetInstance() {
-            //
-            // This instance is used by the MarkChanged and UnmarkChanged methods on TESForms. Other 
-            // instances (either of this or of Unk3E8) appear to exist, but their purpose is unknown.
-            //
-            return *(Unknown01B2E38C**)0x01B2E38C;
-         };
-   };
 };
 
 /*namespace _____research {

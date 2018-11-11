@@ -7,7 +7,9 @@
 #include "skse/GameReferences.h"
 #include "skse/GameTypes.h"
 #include "skse/Utilities.h"
+#include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Systems/GameResources.h"
+#include "ReverseEngineered/Systems/Savedata/BGSSaveLoadManager.h"
 
 class bhkAabbPhantom;
 class TESObjectCELL;
@@ -305,18 +307,63 @@ namespace RE {
          tArray<BGSCollisionLayer*>   collisonLayers;
          tArray<BGSColorForm*>        colors;
          tArray<BGSReverbParameters*> reverbParams;       // 0650
-         UInt32 unks[0x0E];                               // 065C // 03 Cell** 06 TESGlobal**
-         ModList                      modList;            // 0694
+         UInt32  unks[(0x68C - 0x65C) / 4]; // 065C // 03 Cell** 06 TESGlobal**
+         UInt32  unk68C = 0; // 68C // "next ID" to load a form into? gets called by TESForm::TESForm(). gets set to 0xFF000800 after load?
+         UInt32  unk690;  // 690
+         ModList modList; // 694
          UInt32 moreunks[100];                            // 0A9C
          //
          MEMBER_FN_PREFIX(TESDataHandler);
          DEFINE_MEMBER_FN(GetFormByTypeAndIndex, TESForm*, 0x0043BCB0, UInt8 formType, UInt32 index);
-         DEFINE_MEMBER_FN(GetNextID,   void,   0x0043B6D0); // Arguments and return type unexamined. Name comes from a debug logging command.
+         DEFINE_MEMBER_FN(GetNextID,   UInt32, 0x0043B6D0); // Name comes from a debug logging command.
+         DEFINE_MEMBER_FN(IsFormIDNotTemporary, bool, 0x0043B790, UInt32 formID); // true if formID < 0xFF000000
          DEFINE_MEMBER_FN(LoadScripts, UInt32, 0x0043D100);
          //
          DEFINE_MEMBER_FN(Subroutine0043EF60, TESObjectCELL*, 0x0043EF60, UInt32, UInt32, TESWorldSpace*, UInt32);
          DEFINE_MEMBER_FN(Subroutine0043FEC0, void, 0x0043FEC0, TESForm*); // register an executable-created non-temporary form?
+
+         UInt32 inl_GetNextID() {
+            //
+            // This function is listed here for documentation purposes only.
+            //
+            RE::simple_lock_guard scopedLock((SimpleLock*)0x012E32D4);
+            while (true) {
+               //
+               // Loop over all form IDs within a given load order prefix, 
+               // starting at a stored value. If we hit the end of the range, 
+               // restart from the beginning of the range. If there isn't any 
+               // usable form ID, loop endlessly and hang.
+               //
+               do {
+                  auto edi = this->unk68C;
+                  auto eax = LookupFormByID(edi);
+                  if (!eax) {
+                     if (!CALL_MEMBER_FN(BGSSaveLoadManager::GetSingleton(), ChangeDataExistsForFormID)(edi)) {
+                        //
+                        // Found a free form ID. Increment the cached unk68C ID, and then return the 
+                        // found ID.
+                        //
+                        edi = this->unk68C;
+                        this->unk68C++;
+                        if ((this->unk68C & 0x00FFFFFF) >= 0x003FFFFF) {
+                           this->unk68C = (this->unk68C & 0xFF000000) + 0x800;
+                        }
+                        return edi;
+                     }
+                  }
+                  this->unk68C++;
+               } while ((this->unk68C & 0x00FFFFFF) < 0x003FFFFF);
+               //
+               // Restart search from form ID xx000800 within the same load 
+               // order prefix. Yes, this would just search endlessly if 
+               // the whole ID space were taken up.
+               //
+               this->unk68C = (this->unk68C & 0xFF000000) + 0x800;
+            }
+         };
    };
    static_assert(offsetof(DataHandler, spellItems) >= 0x110, "RE::TESDataHandler::spellItems is too early!");
    static_assert(offsetof(DataHandler, spellItems) <= 0x110, "RE::TESDataHandler::spellItems is too late!");
+   static_assert(offsetof(DataHandler, unk68C) >= 0x68C, "RE::TESDataHandler::unk68C is too early!");
+   static_assert(offsetof(DataHandler, unk68C) <= 0x68C, "RE::TESDataHandler::unk68C is too late!");
 };

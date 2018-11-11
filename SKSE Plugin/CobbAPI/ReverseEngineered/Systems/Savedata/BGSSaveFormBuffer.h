@@ -30,7 +30,7 @@ namespace RE {
          UInt32 unk08;
          UInt32 unk0C;
          BGSSaveLoadFormInfo info; // 10
-         void*  unk1C = 0;
+         TESForm* unk1C = nullptr;
 
          MEMBER_FN_PREFIX(BGSSaveFormBuffer);
          DEFINE_MEMBER_FN(Destructor, void, 0x00686C00);
@@ -42,5 +42,5 @@ namespace RE {
    //
    static_assert(sizeof(BGSSaveFormBuffer::BGSSaveLoadFormInfo) >= 0x9, "BGSSaveFormBuffer::BGSSaveLoadFormInfo is too small.");
    static_assert(sizeof(BGSSaveFormBuffer::BGSSaveLoadFormInfo) <= 0x9, "BGSSaveFormBuffer::BGSSaveLoadFormInfo is too large, or MSVC is trying to align its members.");
-   static_assert(offsetof(BGSSaveFormBuffer::BGSSaveLoadFormInfo, unk03) == 0x3, "BGSSaveFormBuffer::BGSSaveLoadFormInfo::unk03 is at the wrong offset, or MSVC is trying to align it.");
+   static_assert(offsetof(BGSSaveFormBuffer::BGSSaveLoadFormInfo, changeflags) == 0x3, "BGSSaveFormBuffer::BGSSaveLoadFormInfo::changeflags is at the wrong offset, or MSVC is trying to align it.");
 };

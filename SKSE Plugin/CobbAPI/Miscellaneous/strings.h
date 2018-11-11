@@ -43,57 +43,12 @@ namespace cobb {
          return s;
       }
    };
-   typedef std::basic_string<char, char_traits_insensitive> istring;
+   typedef std::basic_string<char, char_traits_insensitive> istring; // compares case-insensitively but stores the string as it was received
 
    struct char_traits_lower : public char_traits_insensitive {
       inline static void assign(char& r, const char& a) {
          r = tolower(a);
       };
    };
-   typedef std::basic_string<char, char_traits_lower> lowerstring;
-
-
-   /*class istring : public std::string {
-      //
-      // TODO: finish me; I want this so we can work around issues with case-sensitivity in 
-      // our String.cpp Papyrus methods
-      //
-      private:
-         typedef std::string base_container;
-      public:
-         //
-         // todo: constructors here
-         //
-         //
-         static value_type to_lower(const value_type subject) {
-            if (subject >= 'a' && subject <= 'z')
-               return subject - 0x20;
-            return subject;
-         };
-         //
-         size_type find(const value_type* p, size_type offset, size_type count) const {
-            _DEBUG_POINTER_IF(count != 0, p);
-            if (count == 0 && offset <= this->size())
-               return offset;
-            size_type nM;
-            if (offset > this->size() || count > (nM = this->size() - offset))
-               return std::string::npos;
-            value_type target = to_lower(*p);
-            for (auto it = this->begin() + offset; it != this->end(); ++it) {
-               if (target == to_lower(*it))
-                  return it - this->begin();
-            }
-            return std::string::npos;
-         };
-         size_type rfind(const value_type* p, size_type offset, size_type count) const {
-            _DEBUG_POINTER_IF(count != 0, p);
-            if (count == 0)
-               return (offset < this->size() ? offset : this->size());
-            if (count > this->size())
-               return std::string::npos;
-            value_type target = to_lower(*p);
-            static_assert(false, "how do we do this damn loop");
-            return std::string::npos;
-         };
-   };*/
+   typedef std::basic_string<char, char_traits_lower> lowerstring; // forces the string to a lowercase representation internally
 };

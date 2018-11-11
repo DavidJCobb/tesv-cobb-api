@@ -172,6 +172,7 @@ void Feature::_remove_element(RegistrationHandle index, bool updateAffected) {
          if (!list.size())
             this->byStringTag.erase(r.tag);
       } catch (std::out_of_range) {};
+      r.tag = "";
    }
 };
 void Feature::_shrink_to_fit() {
@@ -267,6 +268,8 @@ bool Feature::Load(SKSESerializationInterface* intfc, UInt32 version) {
          SERIALIZATION_ASSERT(intfc->ReadRecordData(buffer, length), "Failed to read registration %d's tag.", i);
          reg.tag.assign(buffer, length);
          delete buffer;
+         //
+         this->byStringTag[reg.tag].push_back(i);
       }
       reg.tag.shrink_to_fit();
       {  // Handle load order changes.

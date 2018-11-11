@@ -31,9 +31,13 @@ namespace CobbPatches {
          };
       };
       void Apply() {
-         //
-         // TODO: Do not apply if ESODeath is detected.
-         //
+         if (*(UInt8*)(0x00598979) == 0xE9) {
+            //
+            // Something else has patched our target site.
+            //
+            DetectionInterceptService::GetInstance().isActive = false;
+            return;
+         }
          WriteRelJump(0x00598979, (UInt32)&Outer);
       };
    };

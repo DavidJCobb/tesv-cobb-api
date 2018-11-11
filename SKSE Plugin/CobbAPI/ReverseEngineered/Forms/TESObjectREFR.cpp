@@ -10,6 +10,7 @@
 #include "ReverseEngineered/Forms/TESWorldSpace.h"
 #include "ReverseEngineered/NetImmerse/havok.h"
 #include "ReverseEngineered/Systems/ChangeForms.h"
+#include "ReverseEngineered/Systems/Savedata/BGSSaveLoadManager.h"
 
 namespace ReleaseDebug {
    //
@@ -402,11 +403,11 @@ namespace RE {
       return result;
    };
    UInt32 __declspec(noinline) TESObjectREFR::GetChangeFlags() { // TODO: This should probably be moved to TESForm*
-      Unknown01B2E38C* Unk01B2E38C = Unknown01B2E38C::GetInstance();
-      if (Unk01B2E38C == nullptr)
+      BGSSaveLoadManager* man = BGSSaveLoadManager::GetSingleton();
+      if (man == nullptr)
          return 0;
       UInt32 changeFlags;
-      CALL_MEMBER_FN(Unk01B2E38C->unk3E8, GetChangeFlags)(&changeFlags, this->formID);
+      CALL_MEMBER_FN(man->unk3E8, GetChangeFlags)(&changeFlags, this->formID);
       return changeFlags;
    };
    SInt32 TESObjectREFR::GetCurrentDestructionStage() {

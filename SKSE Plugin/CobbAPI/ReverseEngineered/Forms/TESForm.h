@@ -20,7 +20,7 @@ namespace RE {
             kFlagPlayerKnows  = 0x000040,
             kFlagUnk_0x400    = 0x000400,
             kFlagUnk_0x800    = 0x000800,
-            kFlagUnk_0x4000   = 0x004000,
+            kFlagUnk_0x4000   = 0x004000, // prevents the form from being saved
             kFlag_0x100000    = 0x100000, // Actor: is ignoring friendly hits
             kFlagIsMarker     = 0x800000,
          };

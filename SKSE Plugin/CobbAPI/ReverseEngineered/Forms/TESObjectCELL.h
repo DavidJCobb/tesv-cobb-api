@@ -170,6 +170,7 @@ namespace RE {
          DEFINE_MEMBER_FN(RemoveRefFromList, void, 0x004CB7B0, RE::TESObjectREFR* reference); // Calls CellRefLockEnter and CellRefLockExit for you.
          //
          DEFINE_MEMBER_FN(GetAcousticSpace,    BGSAcousticSpace*, 0x004C0760);
+         DEFINE_MEMBER_FN(GetEncounterZone,    BGSEncounterZone*, 0x004C2240); // checks unk88::unkA8, extra data, and parent worldspace
          DEFINE_MEMBER_FN(GetOwner,            void*, 0x004C4DC0); // Returns TESNPC* or TESFaction*.
          DEFINE_MEMBER_FN(GetMapMarkerHandles, void,  0x004C8230, MapMarkerOperation* out);
          DEFINE_MEMBER_FN(GetRegionList,       TESRegionList*, 0x004C23E0, bool createIfMissing);

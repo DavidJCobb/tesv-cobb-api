@@ -365,14 +365,14 @@ namespace RE {
          virtual void*  Unk_8B();
          virtual void	Unk_8C(UInt32);
          virtual void	Unk_8D(); // most likely returns NiNode*; some code conditionally uses it instead of GetNiNode
-         virtual void	Unk_8E(void);
-         virtual bool	Unk_8F();
+         virtual void*  Unk_8E();
+         virtual Projectile* AsProjectile(); // returns this
          virtual void	Unk_90(void);
          virtual void	Unk_91(void);
          virtual void	Unk_92(void);
          virtual void	Unk_93(void);
          virtual void	Unk_94(void);
-         virtual void	Unk_95(void);
+         virtual void	Unk_95(); // Actor::Unk_95 conditionally calls Actor::Subroutine006B5910, which checks the "never resets" flag on the actor's current encounter zone...
          virtual void	Unk_96(void);
          virtual TESObjectCELL* GetParentOrPersistentCell(); // 97 // used by 0x004D5EB0 (TESObjectREFR::GetParentWorldspace) when this->parentCell == NULL
          virtual void   Unk_98(TESObjectCELL*); // setter for parentCell?
@@ -449,6 +449,7 @@ namespace RE {
          DEFINE_MEMBER_FN(ClearDestruction,        void,             0x00449630);
          DEFINE_MEMBER_FN(DoesRespawn,             bool,             0x004D5270); // always false for created refs; checks base form flags for NPCs and containers, and the reference's NoRespawn form flag otherwise
          DEFINE_MEMBER_FN(GetBaseContainerData,    TESContainer*,    0x004D4A30); // returns &(this->baseForm.container) for NPCs and container references
+         DEFINE_MEMBER_FN(GetCurrentEncounterZone, BGSEncounterZone*, 0x004EA990); // checks extra-data, parent cell, and parent world, preferring the first found non-null
          DEFINE_MEMBER_FN(GetCurrentLocation,      BGSLocation*,     0x004D83C0);
          DEFINE_MEMBER_FN(GetDistance,             float,            0x004D7ED0, TESObjectREFR* other, bool evenIfDisabled, bool oftenFalse);
          DEFINE_MEMBER_FN(GetDistanceSquared,      float,            0x004D7ED0, TESObjectREFR* other, bool evenIfDisabled, bool oftenFalse);

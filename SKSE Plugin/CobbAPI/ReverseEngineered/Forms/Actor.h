@@ -782,7 +782,7 @@ namespace RE {
 
          virtual ~Actor();
          //
-         virtual void Unk_A2(TESForm* someBaseForm, bool, UInt32);
+         virtual void Unk_A2(TESForm* someBaseForm, bool, UInt32); // reportedly Actor::PlaySounds(TESForm* a_item, bool a_isPickup, bool a_unk);
          virtual float GetHeading(UInt32); // A3 // returns the yaw-rotation for actors that can't pitch/roll; otherwise, returns some mathy stuff
          virtual void Unk_A4(bool); // A4 // PlayerCharacter constructor calls this on itself
          virtual void DrawSheatheWeapon(bool draw); // A5
@@ -823,7 +823,7 @@ namespace RE {
          virtual void Unk_C8(void);
          virtual void OnArmorActorValueChanged(); // C9 // called when HeavyArmor or LightArmor AV base value changes
          virtual void Unk_CA(void);
-         virtual void Unk_CB(TESObjectREFR*, UInt32, UInt32, bool);
+         virtual void Unk_CB(TESObjectREFR*, UInt32, UInt32, bool); // reportedly PickUpItem(TESObjectREFR* a_item, UInt32 a_count, bool a_arg3, bool a_playSound);
          virtual void Unk_CC(void);
          virtual void Unk_CD(void);
          virtual void Unk_CE(void);
@@ -1139,7 +1139,7 @@ namespace RE {
          ActorValueState avStateStamina;     // 168
          ActorValueState avStateVoicePoints; // 174
          float  unk180; // 180 // see code circa 0x006EC46E
-         UInt32 unk184; // 184
+         SInt32 unk184; // 184
          UInt32 unk188; // 188
          float  unk18C; // 18C // set to -1 when HeavyArmor or LightArmor values change
          float  unk190; // 190 // set to -1 when HeavyArmor or LightArmor values change

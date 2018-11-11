@@ -99,7 +99,7 @@ namespace RE {
          float  unk14C = -2048.0F;
          UInt32 unk150 = 0;
          float  unk154 = 1.0F;
-         UInt32 unk158 = 0;
+         BGSEncounterZone* unk158 = nullptr;
          UInt32 unk15C = 0;
          TESTexture unk160; // 160
          TESTexture unk168; // 160

@@ -15,6 +15,18 @@ Scriptname CobbAPIDetection Hidden
 ; any given change. You can also forcibly unflag all handles associated with a 
 ; given tag. This is useful for uninstallation scripts and last-resort fixups.
 ;
+; ------------------------------------------------------------------------------
+;
+; In order to offer this functionality, CobbAPI has to patch a particular part 
+; of Skyrim's code in-memory. If the patch site has already been patched by 
+; another mod, such as my ESO Death and Resurrection, then CobbAPI will defer 
+; to that other mod: the DetectionInterceptService will not function, and you 
+; will not be able to add new registrations.
+;
+; Use the ServiceIsAvailable method to check whether the service is online.
+;
+Bool Function ServiceIsAvailable () Global Native
+
 Bool Function ActorCannotSee            (Actor akActor) Global Native
 Bool Function ActorCannotBeSeen         (Actor akActor) Global Native
 Int  Function PreventActorFromSeeing    (Actor akActor, String asTag = "") Global Native

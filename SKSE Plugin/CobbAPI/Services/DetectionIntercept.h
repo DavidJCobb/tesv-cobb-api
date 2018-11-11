@@ -2,6 +2,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <vector>
+#include "Miscellaneous/strings.h"
 #include "ReverseEngineered/Forms/Actor.h"
 #include "skse/GameReferences.h"
 
@@ -22,10 +23,10 @@ class DetectionInterceptService {
       class Feature {
          protected:
             struct Registration {
-               FormID      actor    = 0;
-               UInt32      refCount = 0;
-               const char* tag      = nullptr;
-               bool        enabled  = true; // set to false if you forcibly remove an actor
+               FormID actor    = 0;
+               UInt32 refCount = 0;
+               cobb::lowerstring tag;
+               bool   enabled  = true; // set to false if you forcibly remove an actor
                //
                Registration() {};
                Registration(FormID a, const char* b) : actor(a), tag(b), refCount(1) {};
@@ -55,16 +56,23 @@ class DetectionInterceptService {
          protected:
             std::vector<Registration> registrations;
             std::vector<FormID>       affectedActors;
-            std::unordered_map<std::string, std::vector<RegistrationHandle>> byStringTag;
+            std::unordered_map<cobb::lowerstring, std::vector<RegistrationHandle>> byStringTag;
             mutable std::recursive_mutex lock;
             RegistrationHandle           firstEmpty = 0;
             //
             typedef std::lock_guard<decltype(lock)> feature_lock_guard;
             //
-            RegistrationHandle _find_enabled_only(FormID formID) const; // doesn't lock
-            RegistrationHandle _find_next_empty(RegistrationHandle startAt) const; // doesn't lock
+            // These functions don't lock:
+            //
+            bool _has_any_of_actor(FormID formID) const; // returns true if there are any enabled registrations for this actor
+            RegistrationHandle _find_enabled_only(FormID formID, const char* tag) const; // finds the first enabled registration matching the criteria
+            RegistrationHandle _find_next_empty(RegistrationHandle startAt) const;
+            void _remove_element(RegistrationHandle index, bool updateAffected = true); // blanks out a registration; optionally calls _update_affected_state_after_removal
+            void _shrink_to_fit(); // shears "dead" registrations off of the end of the list
+            void _update_affected_state_after_removal(FormID formID); // removes formID from affectedActors if no alive registrations match it
       };
    public:
+      bool isActive = true;
       Feature unseenActors;
       Feature unseeingActors;
       //
@@ -74,7 +82,7 @@ class DetectionInterceptService {
       void Reset();
       bool ShouldCancelDetection(RE::Actor* seeker, RE::Actor* target) const;
       //
-      enum { kSaveVersion = 1 };
+      enum { kSaveVersion = 2 };
       bool Save(SKSESerializationInterface* intfc);
       bool Load(SKSESerializationInterface* intfc, UInt32 version);
 };

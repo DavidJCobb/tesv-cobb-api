@@ -9,6 +9,11 @@
 
 namespace CobbPapyrus {
    namespace Detection {
+      constexpr const char* ce_errorNoPersistForm  = "You must specify a \"persistence form,\" so that the DetectionInterceptService can detect when your mod is uninstalled and free your handle. You should use a form from your mod.";
+      constexpr const char* ce_errorServiceOffline = "The DetectionInterceptService is not running.";
+      constexpr const char* ce_errorUnseeingNone = "You cannot modify the \"unseeing\" status for a None actor.";
+      constexpr const char* ce_errorUnseenNone   = "You cannot modify the \"unseen\" status for a None actor.";
+      //
       bool ServiceIsAvailable(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*) {
          return DetectionInterceptService::GetInstance().isActive;
       };
@@ -23,44 +28,60 @@ namespace CobbPapyrus {
             return false;
          return DetectionInterceptService::GetInstance().unseenActors.contains(actor);
       }
-      SInt32 PreventActorFromSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
+      SInt32 PreventActorFromSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
          auto& service = DetectionInterceptService::GetInstance();
          if (!service.isActive) {
-            registry->LogError("The DetectionInterceptService is not running.", stackId);
+            registry->LogError(ce_errorServiceOffline, stackId);
             return -1;
          }
          if (actor == nullptr) {
-            registry->LogError("You cannot modify the \"unseeing\" status for a None actor.", stackId);
+            registry->LogError(ce_errorUnseeingNone, stackId);
             return -1;
          }
-         return service.unseeingActors.add(actor, tag.data);
+         if (persistenceForm == nullptr) {
+            registry->LogError(ce_errorNoPersistForm, stackId);
+            return -1;
+         }
+         if (persistenceForm->formID >= 0xFF000000) {
+            registry->LogError(ce_errorNoPersistForm, stackId);
+            return -1;
+         }
+         return service.unseeingActors.add(actor, persistenceForm, tag.data);
       }
-      SInt32 PreventActorFromBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
+      SInt32 PreventActorFromBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
          auto& service = DetectionInterceptService::GetInstance();
          if (!service.isActive) {
-            registry->LogError("The DetectionInterceptService is not running.", stackId);
+            registry->LogError(ce_errorServiceOffline, stackId);
             return -1;
          }
          if (actor == nullptr) {
-            registry->LogError("You cannot modify the \"unseen\" status for a None actor.", stackId);
+            registry->LogError(ce_errorUnseenNone, stackId);
             return -1;
          }
-         return service.unseenActors.add(actor, tag.data);
+         if (persistenceForm == nullptr) {
+            registry->LogError(ce_errorNoPersistForm, stackId);
+            return -1;
+         }
+         if (persistenceForm->formID >= 0xFF000000) {
+            registry->LogError(ce_errorNoPersistForm, stackId);
+            return -1;
+         }
+         return service.unseenActors.add(actor, persistenceForm, tag.data);
       }
       void ReturnActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, SInt32 handle) {
-         ERROR_AND_RETURN_IF(actor == nullptr, "You cannot modify the \"unseeing\" status for a None actor.", registry, stackId);
+         ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseeingNone, registry, stackId);
          DetectionInterceptService::GetInstance().unseeingActors.remove(actor, handle);
       };
       void ReturnActorToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, SInt32 handle) {
-         ERROR_AND_RETURN_IF(actor == nullptr, "You cannot modify the \"unseen\" status for a None actor.", registry, stackId);
+         ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseenNone, registry, stackId);
          DetectionInterceptService::GetInstance().unseenActors.remove(actor, handle);
       };
       void ForceActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor) {
-         ERROR_AND_RETURN_IF(actor == nullptr, "You cannot modify the \"unseeing\" status for a None actor.", registry, stackId);
+         ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseeingNone, registry, stackId);
          DetectionInterceptService::GetInstance().unseeingActors.force_remove(actor);
       };
       void ForceActorToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor) {
-         ERROR_AND_RETURN_IF(actor == nullptr, "You cannot modify the \"unseen\" status for a None actor.", registry, stackId);
+         ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseenNone, registry, stackId);
          DetectionInterceptService::GetInstance().unseenActors.force_remove(actor);
       };
       void ReturnTagToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString tag) {
@@ -100,13 +121,13 @@ namespace CobbPapyrus {
             ActorCannotBeSeen,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, SInt32, RE::Actor*, BSFixedString>(
+         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, SInt32, RE::Actor*, TESForm*, BSFixedString>(
             "PreventActorFromSeeing",
             "CobbAPIDetection",
             PreventActorFromSeeing,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, SInt32, RE::Actor*, BSFixedString>(
+         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, SInt32, RE::Actor*, TESForm*, BSFixedString>(
             "PreventActorFromBeingSeen",
             "CobbAPIDetection",
             PreventActorFromBeingSeen,

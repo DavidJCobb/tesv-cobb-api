@@ -6,7 +6,10 @@ Say you need to be able to refer to an arbitrary object, but you also
 need to be sure that you won't prevent it from being deleted. A typical 
 variable simply won't do. Use this instead.
 
-NOV 12 2018: This is a years-old draft, and probably won't make it to production.
+NOV 12 2018: This is a years-old draft, and probably won't make it to production. 
+If we want to make this work, it would have to work by caching the reference's 
+form ID and catching when the ID is freed (if temporary) or missing (if pre-placed 
+in a now-uninstalled mod).
 
 /;
 
@@ -32,8 +35,8 @@ Event OnCellLoad()
    ObjectReference kTemporary = CobbPosWeakReference.Get(Self, _iHandle)
    If !kTemporary
       CobbPosWeakReference.Delete(Self, _iHandle) ; the weak-reference hangs around even when the target is deleted. you need to drop it manually
-	  _iHandle = -1
-	  Return
+     _iHandle = -1
+     Return
    EndIf
    kTemporary.MoveTo(Self)
 EndEvent

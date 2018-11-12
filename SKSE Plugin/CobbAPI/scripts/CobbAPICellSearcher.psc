@@ -36,7 +36,7 @@ Function SetFilterMode (Int aiHandle, Int aiFilterMode) Global Native
 ; truthy (include in search) or falsy (exclude from search) value to change it.
 ;
 Function SetCriteriaA  (Int aiHandle, Int aiIncludeACTI = -1, Int aiIncludeCONT = -1, Int aiIncludeDOOR = -1, Int aiIncludeFURN = -1, Int aiIncludeLIGH = -1, Int aiIncludeMSTT = -1, Int aiIncludeNPC_ = -1, Int aiIncludeSTAT = -1, Int aiIncludeTREE = -1) Global Native
-Function SetCriteriaB  (Int aiHandle, Int aiIncludeItem = -1, Int aiReserved03, Int aiReserved04, Int aiReserved05, Int aiReserved06, Int aiReserved07, Int aiReserved08, Int aiReserved09, Int aiReserved10) Global Native
+Function SetCriteriaB  (Int aiHandle, Int aiIncludeItem = -1, Int aiReserved03 = -1, Int aiReserved04 = -1, Int aiReserved05 = -1, Int aiReserved06 = -1, Int aiReserved07 = -1, Int aiReserved08 = -1, Int aiReserved09 = -1, Int aiReserved10 = -1) Global Native
 
 Function SetExcludesPlayer    (Int aiHandle, Bool abExcludesPlayer) Global Native
 Function SetRequiresCollision (Int aiHandle, Bool abRequireCollision) Global Native

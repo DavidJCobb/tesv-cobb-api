@@ -1,5 +1,6 @@
 #include "DetectionIntercept.h"
 #include "skse/Serialization.h"
+#include "ReverseEngineered/Systems/ChangeForms.h"
 #include <algorithm>
 
 namespace {
@@ -10,23 +11,18 @@ namespace {
 //
 //
 //
-RegistrationHandle Feature::add(RE::Actor* actor) {
+RegistrationHandle Feature::add(RE::Actor* actor, TESForm* persistenceForm, const char* tag) {
    if (!actor)
       return registration_not_found;
-   return this->add(actor->formID);
+   return this->add(actor->formID, persistenceForm->formID >> 0x18, tag);
 };
-RegistrationHandle Feature::add(RE::Actor* actor, const char* tag) {
-   if (!actor)
-      return registration_not_found;
-   return this->add(actor->formID, tag);
-};
-RegistrationHandle Feature::add(FormID formID, const char* tag) {
+RegistrationHandle Feature::add(FormID formID, UInt8 loadOrderSlot, const char* tag) {
    if (formID == 0)
       return registration_not_found;
    //
    feature_lock_guard scopedLock(this->lock);
    //
-   auto index = this->_find_enabled_only(formID, tag);
+   auto index = this->_find_enabled_only(formID, loadOrderSlot, tag);
    if (index != registration_not_found) {
       this->registrations[index].refCount++;
       return index;
@@ -35,14 +31,14 @@ RegistrationHandle Feature::add(FormID formID, const char* tag) {
    this->affectedActors.push_back(formID);
    if (this->firstEmpty >= this->registrations.size()) {
       index = this->registrations.size();
-      this->registrations.emplace_back(formID, tag);
+      this->registrations.emplace_back(formID, loadOrderSlot, tag);
       if (tag)
          this->byStringTag[tag].push_back(index);
       this->firstEmpty = this->registrations.size();
       return index;
    }
    SInt32 i = this->firstEmpty;
-   this->registrations[i] = Registration(formID, tag);
+   this->registrations[i] = Registration(formID, loadOrderSlot, tag);
    if (tag) {
       this->byStringTag[tag].push_back(i);
    }
@@ -63,7 +59,7 @@ void Feature::remove(FormID formID, RegistrationHandle index) {
    feature_lock_guard scopedLock(this->lock);
    //
    auto& r = this->registrations[index];
-   if (r.actor != formID)
+   if ((r.actor != formID) && (r.actor || r.enabled))
       return;
    r.refCount--;
    if (r.refCount <= 0) {
@@ -82,7 +78,7 @@ void Feature::remove_all_of(const char* tag) {
          const RegistrationHandle index = indices[i];
          if (index < 0)
             continue;
-         this->_remove_element(index, true);
+         this->registrations[index].enabled = false;
       }
       this->_shrink_to_fit();
    } catch (std::out_of_range) {};
@@ -137,12 +133,12 @@ bool Feature::_has_any_of_actor(FormID formID) const {
    }
    return false;
 };
-RegistrationHandle Feature::_find_enabled_only(FormID formID, const char* tag) const {
+RegistrationHandle Feature::_find_enabled_only(FormID formID, UInt8 loadOrderSlot, const char* tag) const {
    auto& r = this->registrations;
    for (auto it = r.begin(); it != r.end(); ++it) {
       if (!it->enabled)
          continue;
-      if (it->actor == formID && it->tag == tag && it->refCount)
+      if (it->actor == formID && it->loadOrderSlot == loadOrderSlot && it->tag == tag && it->refCount)
          return it - r.begin();
    }
    return registration_not_found;
@@ -239,6 +235,7 @@ bool Feature::Save(SKSESerializationInterface* intfc) {
       SERIALIZATION_ASSERT(WriteData(intfc, &entry.actor), "Failed to write registration %d's actor formID.", i);
       SERIALIZATION_ASSERT(WriteData(intfc, &entry.refCount), "Failed to write registration %d's actor refcount.", i);
       SERIALIZATION_ASSERT(WriteData(intfc, &entry.enabled), "Failed to write registration %d's enabled flag.", i);
+      SERIALIZATION_ASSERT(WriteData(intfc, &entry.loadOrderSlot), "Failed to write registration %d's load order slot.", i);
       if (entry.tag.size()) {
          UInt32 length = entry.tag.size();
          SERIALIZATION_ASSERT(WriteData(intfc, &length), "Failed to write registration %d's tag length.", i);
@@ -261,6 +258,17 @@ bool Feature::Load(SKSESerializationInterface* intfc, UInt32 version) {
       SERIALIZATION_ASSERT(ReadData(intfc, &reg.actor), "Failed to read registration %d's actor formID.", i);
       SERIALIZATION_ASSERT(ReadData(intfc, &reg.refCount), "Failed to read registration %d's actor refcount.", i);
       SERIALIZATION_ASSERT(ReadData(intfc, &reg.enabled), "Failed to read registration %d's enabled flag.", i);
+      SERIALIZATION_ASSERT(ReadData(intfc, &reg.loadOrderSlot), "Failed to read registration %d's load order slot.", i);
+      {
+         UInt32 formID = (UInt32)reg.loadOrderSlot << 0x18;
+         UInt32 fixedID;
+         if (!intfc->ResolveFormId(formID, &fixedID)) {
+            reg.enabled = false;
+            reg.loadOrderSlot = 0xFF;
+         } else {
+            reg.loadOrderSlot = fixedID >> 0x18;
+         }
+      }
       UInt32 length = 0;
       SERIALIZATION_ASSERT(ReadData(intfc, &length), "Failed to read registration %d's tag length.", i);
       if (length) {
@@ -279,6 +287,11 @@ bool Feature::Load(SKSESerializationInterface* intfc, UInt32 version) {
             fixedFormId = 0;
          }
          reg.actor = fixedFormId;
+      }
+      if (reg.loadOrderSlot == 0xFF) {
+         reg.actor = 0;
+         reg.enabled = false;
+         reg.refCount = 0;
       }
       this->registrations.push_back(reg);
       if (reg.actor)

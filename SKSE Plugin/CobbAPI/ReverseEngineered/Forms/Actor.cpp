@@ -5,8 +5,15 @@
 #include "skse/NiNodes.h"
 
 namespace RE {
+   void Actor::AddToFaction(TESFaction* faction) {
+      if (!this->IsInFaction(faction))
+         CALL_MEMBER_FN(this, SetFactionRank)(faction, 0);
+   };
    bool Actor::IsAIEnabled() {
       return (this->flags1 & Actor::kFlags_AIEnabled) == Actor::kFlags_AIEnabled;
+   };
+   bool Actor::IsLeveledActor() {
+      return CALL_MEMBER_FN((RE::BaseExtraList*)&this->extraData, GetExtraLeveledCreature)() != nullptr;
    };
    void Actor::UpdateHairColor() {
       TESNPC* npc = DYNAMIC_CAST(baseForm, TESForm, TESNPC);

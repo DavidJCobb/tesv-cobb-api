@@ -868,7 +868,7 @@ namespace RE {
          virtual void Unk_F5(UInt32);
          virtual void AdvanceSkill(UInt32 skillId, float points, UInt32 unk1, UInt32 unk2); // F6
          virtual void Unk_F7(void);
-         virtual bool Unk_F8(TESFaction*);
+         virtual bool IsInFaction(TESFaction*); // F8
          virtual void VisitPerks(void); // F9 // BGSPerk::FindPerkInRanksVisitor
          virtual void AddPerk(BGSPerk* perk, UInt32 unk1); // FA
          virtual void RemovePerk(BGSPerk* perk); // FB
@@ -1203,6 +1203,7 @@ namespace RE {
          DEFINE_MEMBER_FN(SetAlert,              void,    0x006A87A0, bool makeAlert);
          DEFINE_MEMBER_FN(SetCrimeFaction,       void,    0x006CDA10, TESFaction*);
          DEFINE_MEMBER_FN(SetDoingFavor,         void,    0x006C2870, bool);
+         DEFINE_MEMBER_FN(SetFactionRank,        void,    0x006D0330, TESFaction*, SInt32);
          DEFINE_MEMBER_FN(SetFlag2_00000800,     void,    0x006CE270, bool);
          DEFINE_MEMBER_FN(SetHasBeenEaten,       void,    0x006A8AF0, bool);
          DEFINE_MEMBER_FN(SetIntimidated,        void,    0x006AA440, bool);
@@ -1222,7 +1223,9 @@ namespace RE {
          DEFINE_MEMBER_FN(Subroutine006E05F0, void, 0x006E05F0, UInt32 avIndex, ActorValueState*, UInt32 unk);
          DEFINE_MEMBER_FN(Subroutine006DFEC0, void, 0x006DFEC0, UInt32 avIndex, float mod); // apparently RestoreActorValue, but the caller has to do a little bit of work themselves, too
          //
+         void AddToFaction(TESFaction*);
          bool IsAIEnabled();
+         bool IsLeveledActor();
          TESForm* GetEquippedObject(bool abLeftHand);
          void SetHeadTracking(bool abEnable);
          void StopCombatAlarm();

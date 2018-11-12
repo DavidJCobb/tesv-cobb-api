@@ -355,7 +355,7 @@ namespace RE {
          virtual void	Unk_81(void);
          virtual void	Unk_82(void);
          virtual void	Unk_83(void);
-         virtual void	Unk_84(TESBoundObject*);
+         virtual void	SetBaseForm(TESBoundObject*);
          virtual void	Unk_85(void);
          virtual void	Unk_86(NiPoint3* out);
          virtual void	Unk_87(void);
@@ -469,6 +469,7 @@ namespace RE {
          DEFINE_MEMBER_FN(MoveToMyEditorLocation,  bool,             0x004E6270, TESObjectCELL*, UInt32); // both arguments are zeroes?
          DEFINE_MEMBER_FN(SetDestroyed,            void,             0x00450E30, bool);
          DEFINE_MEMBER_FN(SetDisabled,             void,             0x00450FB0, bool); // sets enable state and marks changed
+         DEFINE_MEMBER_FN(SetEncounterZone,        void,             0x004EA9E0, BGSEncounterZone*); // also sets the reference's EXTRA_ENCOUNTER_ZONE changeflag
          DEFINE_MEMBER_FN(SetPitch,                void,             0x004DC9D0, float); // X // Does not honor actor-specific limitations like the race "immobile" flag. Does call Unk_54 for actors, though. Sets change-flag 2 (MOVE).
          DEFINE_MEMBER_FN(SetRoll,                 void,             0x004DCA60, float); // Y // Does not honor actor-specific limitations like the race "immobile" flag. Does call Unk_54 for actors, though. Sets change-flag 2 (MOVE).
          DEFINE_MEMBER_FN(SetYaw,                  void,             0x004DCAF0, float); // Z // Does not honor actor-specific limitations like the race "immobile" flag. Does call Unk_54 for actors, though. Sets change-flag 2 (MOVE).

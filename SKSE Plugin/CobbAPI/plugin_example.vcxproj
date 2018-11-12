@@ -147,6 +147,7 @@
     <ClCompile Include="Papyrus\Worldspace.cpp" />
     <ClCompile Include="Patches\CellDefaultData.cpp" />
     <ClCompile Include="Patches\Detection.cpp" />
+    <ClCompile Include="Patches\OnLeveledActorRegenerated.cpp" />
     <ClCompile Include="Patches\PlaceableCollisionPrimitives.cpp" />
     <ClCompile Include="ReverseEngineered\ExtraData.cpp" />
     <ClCompile Include="ReverseEngineered\Forms\Actor.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="Patches\Detection.h" />
     <ClInclude Include="Patches\Exploratory.h" />
     <ClInclude Include="Patches\MessageQuitGame.h" />
+    <ClInclude Include="Patches\OnLeveledActorRegenerated.h" />
     <ClInclude Include="Patches\PlaceableCollisionPrimitives.h" />
     <ClInclude Include="ReverseEngineered\Forms\Actor.h" />
     <ClInclude Include="ReverseEngineered\Forms\ActorValueInfo.h" />

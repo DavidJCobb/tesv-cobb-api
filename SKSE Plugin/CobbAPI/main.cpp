@@ -14,6 +14,7 @@
 #include "Patches/CellDefaultData.h"
 #include "Patches/SetMotionType.h"
 #include "Patches/MessageQuitGame.h"
+#include "Patches/OnLeveledActorRegenerated.h"
 //#include "Patches/FormRestoreState.h" // started in CobbPos 1.6, but not yet ready
 #include "Patches/PlaceableCollisionPrimitives.h"
 
@@ -181,6 +182,7 @@ extern "C" {
          CobbPatches::CellDefaultData::Apply();
          //CobbPatches::Detection::Apply(); // Do this later, so that we can tell whether ESODeath is present and patched-in
          CobbPatches::MessageQuitGame::Apply();
+         //CobbPatches::OnLeveledActorRegenerated::Apply(); // delay the patch to avoid startup spam
          //CobbPatches::FormRestoreState::Apply(); // started in 1.6, but not yet ready
          CobbPatches::PlaceableCollisionPrimitives::Apply();
          CobbPatches::SetMotionType::Apply();
@@ -275,6 +277,7 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
       CobbPatches::Detection::Apply(); // Done here so we can tell if ESODeath is present and patched-in
    } else if (message->type == SKSEMessagingInterface::kMessage_DataLoaded) {
       CobbPatches::PlaceableCollisionPrimitives::OnFormsLoaded();
+      CobbPatches::OnLeveledActorRegenerated::Apply(); // deferred to avoid startup spam
    } else if (message->type == SKSEMessagingInterface::kMessage_NewGame) {
       DEBUG_ONLY_MESSAGE("Message from SKSE is of type: kMessage_NewGame.");
       CellInteriorDataService::GetInstance().ResetAll();
@@ -325,15 +328,17 @@ void Callback_Serialization_FormDelete(UInt64 handle) {
    //
    // This callback actually fires whenever a form is deleted from the Papyrus VM. This can 
    // happen for reasons besides actual deletion; for example, on startup, we get TONS of 
-   // calls for leveled NPCs, unique NPCs, merchant chests, and even quests. It's really 
-   // only safe to handle "deletion" callbacks for temporary forms.
+   // calls for leveled NPCs, unique NPCs, merchant chests, and even quests.
+   //
+   //  - Deletion of a created reference
+   //  - Respawn of a LeveledActor
+   //     - Only if the actor has been modified somehow
    //
    UInt32 argUnknown = handle >> 0x20;
    UInt32 argFormID  = (UInt32)handle;
    //_MESSAGE("CobbAPI notified of form deletion by SKSE VM hook. Form ID: 0x%08X", argFormID);
    //
-   if (argFormID >= 0xFF000000)
-      DetectionInterceptService::GetInstance().OnFormDestroyed(argFormID);
+   DetectionInterceptService::GetInstance().OnFormDestroyed(argFormID); // don't filter to created refs; we need to catch the reset of a LeveledActor
 };
 void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
    _MESSAGE("Saving...");

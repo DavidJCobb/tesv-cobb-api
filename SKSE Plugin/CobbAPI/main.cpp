@@ -58,7 +58,7 @@
 #endif
 #endif
 
-static UInt32 g_pluginSerializationSignature = 'cAPI'; // CONFIRM THIS WITH THE SKSE TEAM
+static UInt32 g_pluginSerializationSignature = 'cAPI'; // confirmed with the SKSE team
 
 PluginHandle			    g_pluginHandle = kPluginHandle_Invalid;
 SKSEPapyrusInterface*       g_papyrus = nullptr;

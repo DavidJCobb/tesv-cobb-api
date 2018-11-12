@@ -749,6 +749,7 @@ namespace RE {
          DEFINE_MEMBER_FN(GetExtraHealth,                   float,   0x0040C130); // Returns health (or -1.0 if no extra data) via the FPU stack.
          DEFINE_MEMBER_FN(GetExtraHealthPerc,               float,   0x0040CB10); // Returns health percentage (or 1.0 if no extra data) via the FPU stack.
          DEFINE_MEMBER_FN(GetExtraLastFinishedSequence,     void*,   0x0040DBC0); // Returns extraDataObject->unk08 (a char*?).
+         DEFINE_MEMBER_FN(GetExtraLeveledCreature,          TESActorBase*, 0x0040D920);
          DEFINE_MEMBER_FN(GetExtraLeveledItem,              void*,   0x0040C152); // Returns the extra-data object itself. Typically, retval->unk08 would be either a void* or the start of the data.
          DEFINE_MEMBER_FN(GetExtraLeveledItemUnk08,         SInt32,  0x0040D070); // Returns extraDataObject->unk08  from a signed word.
          DEFINE_MEMBER_FN(GetExtraLightFOVModifier,         float,   0x0040BFF0); // Returns FOV modifier (or 0 if no extra data) directly, without using the FPU stack.

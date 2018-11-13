@@ -17,6 +17,9 @@ namespace RE {
    class BGSLightingTemplate : public TESForm { // sizeof == 0x94
       public:
          enum { kTypeID = kFormType_LightingTemplate };
+         enum {
+            kVTBL = 0x010864F4
+         };
 
          struct Color { // sizeof == 0x20 // Decoded by SKSE. This is probably what Bethesda uses, but it's not an intuitive way to expose the data.
             UInt32	x[2];				// 00 - init'd to 00FFFFFF

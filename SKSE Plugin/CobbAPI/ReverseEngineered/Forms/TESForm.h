@@ -110,8 +110,8 @@ namespace RE {
          virtual void         CopyFrom(TESForm* srcForm); // 2F // guessed
          virtual void         Unk_30(UInt32 arg0, UInt32 arg1, UInt32 arg2);
          virtual void         Unk_31(void* dst, UInt32 unk);
-         virtual const char*  GetName();            // 32 // gets an actor's short name?
-         virtual bool         SetName(const char*); // 33 // used to set a cell's (full?) name when loading/initializing it? // actually editor ID?
+         virtual const char*  GetEditorID();            // 32 // gets an actor's short name?
+         virtual bool         SetEditorID(const char*); // 33 // used to set a cell's editor ID when loading/initializing it; cells store it via ExtraEditorID
          virtual bool         Unk_34();
          virtual bool         Unk_35();
          virtual bool         Unk_36(UInt32 arg);
@@ -144,6 +144,10 @@ namespace RE {
 
          MEMBER_FN_PREFIX(TESForm);
          DEFINE_MEMBER_FN(SetFormFlags_Internal, void, 0x00450A60, UInt32 flagsMask, bool clearOrSet);
+         //
+         // Maybe avoid calling these:
+         //
+         DEFINE_MEMBER_FN(LoadVMAD, void, 0x00451760, BGSLoadFormBuffer*);
    };
    //static DEFINE_SUBROUTINE(::BGSDestructibleObjectForm*, GetBGSDestructibleObjectForm, 0x00448090, RE::TESForm*);
    DEFINE_SUBROUTINE_EXTERN(::BGSKeywordForm*, GetKeywordListFor, 0x0044B2D0, ::TESForm*);

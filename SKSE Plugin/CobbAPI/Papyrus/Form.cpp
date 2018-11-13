@@ -8,8 +8,10 @@
 #include "skse/GameReferences.h"
 #include "skse/GameRTTI.h"
 
+#include "ReverseEngineered/Forms/TESForm.h"
 #include "ReverseEngineered/Forms/BaseForms/base.h"
 #include "ReverseEngineered/Forms/BaseForms/TESObjectLIGH.h"
+#include "Services/ExtendedEditorIDService.h"
 
 namespace CobbPapyrus {
    namespace Form {
@@ -40,6 +42,14 @@ namespace CobbPapyrus {
          }
          return result;
       };
+      BSFixedString GetEditorID(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESForm* subject) {
+         BSFixedString result = subject->GetEditorID();
+         if (result.data && strlen(result.data))
+            return result;
+         std::string editorID;
+         ExtendedEditorIDService::GetInstance().GetEditorID(subject, editorID);
+         return editorID.c_str();
+      }
       bool IsDefiniteItem(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* subject) {
          if (!subject)
             return false;
@@ -90,7 +100,14 @@ bool CobbPapyrus::Form::Register(VMClassRegistry* registry) {
       )
    );
    registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetBounds", VMClassRegistry::kFunctionFlag_NoWait);
-   //
+   registry->RegisterFunction(
+      new NativeFunction1 <StaticFunctionTag, BSFixedString, RE::TESForm*>(
+         "GetEditorID",
+         PapyrusPrefixString("Form"),
+         Form::GetEditorID,
+         registry
+      )
+   );
    registry->RegisterFunction(
       new NativeFunction1 <StaticFunctionTag, bool, TESForm*>(
          "IsDefiniteItem",

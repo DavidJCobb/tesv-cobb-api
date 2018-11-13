@@ -10,8 +10,16 @@ class ExtendedEditorIDService {
       typedef UInt32 FormID;
       typedef std::unordered_map<FormID, std::string> _EditorIDList;
    protected:
+      //
+      // We sort loaded editor IDs by form type, to make lookups somewhat 
+      // faster.
+      //
       struct {
-         _EditorIDList lightingTemplates;
+         //
+         // REMINDER: When you add more form types to this service, be sure 
+         // to also edit the Papyrus script file to list them.
+         //
+         _EditorIDList lightingTemplates; // BGSLightingTemplate
       } editorIDs;
       //
       _EditorIDList* _GetListByFormType(UInt8 formType);

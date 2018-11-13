@@ -13,6 +13,7 @@
 #include "Patches/Detection.h"
 #include "Patches/CellDefaultData.h"
 #include "Patches/SetMotionType.h"
+#include "Patches/LoadMoreEditorIDs.h"
 #include "Patches/MessageQuitGame.h"
 #include "Patches/OnLeveledActorRegenerated.h"
 //#include "Patches/FormRestoreState.h" // started in CobbPos 1.6, but not yet ready
@@ -21,6 +22,7 @@
 #include "Services/Messaging.h"
 #include "Services/CellInteriorDataService.h"
 #include "Services/DetectionIntercept.h"
+#include "Services/ExtendedEditorIDService.h"
 #include "Services/RevealService.h"
 #include "Services/TeleportMarkerService.h"
 #include "Services/WeakReferenceService.h"
@@ -34,6 +36,7 @@
 #include "Papyrus/Furniture.h"
 #include "Papyrus/Game.h"
 #include "Papyrus/Light.h"
+#include "Papyrus/LightingTemplate.h"
 #include "Papyrus/Message.h"
 #include "Papyrus/ObjectReference.h"
 #include "Papyrus/RevealService.h"
@@ -181,6 +184,7 @@ extern "C" {
          CobbPatches::Exploratory::Apply();
          CobbPatches::CellDefaultData::Apply();
          //CobbPatches::Detection::Apply(); // Do this later, so that we can tell whether ESODeath is present and patched-in
+         CobbPatches::LoadMoreEditorIDs::Apply();
          CobbPatches::MessageQuitGame::Apply();
          //CobbPatches::OnLeveledActorRegenerated::Apply(); // delay the patch to avoid startup spam
          //CobbPatches::FormRestoreState::Apply(); // started in 1.6, but not yet ready
@@ -220,15 +224,16 @@ extern "C" {
       //-----------------------------------------------------------------------------------------------
       //   EXTENSIONS TO NATIVE CLASSES:
       //-----------------------------------------------------------------------------------------------
-      _RegisterAndEchoPapyrus(CobbPapyrus::Actor::Register,           "Actor");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Cell::Register,            "Cell");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Form::Register,            "Form");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Furniture::Register,       "Furniture");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Light::Register,           "Light");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Message::Register,         "Message");
-      _RegisterAndEchoPapyrus(CobbPapyrus::ObjectReference::Register, "ObjectReference");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Shout::Register,           "Shout");
-      _RegisterAndEchoPapyrus(CobbPapyrus::Worldspace::Register,      "Worldspace");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Actor::Register,            "Actor");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Cell::Register,             "Cell");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Form::Register,             "Form");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Furniture::Register,        "Furniture");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Light::Register,            "Light");
+      _RegisterAndEchoPapyrus(CobbPapyrus::LightingTemplate::Register, "LightLightingTemplate");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Message::Register,          "Message");
+      _RegisterAndEchoPapyrus(CobbPapyrus::ObjectReference::Register,  "ObjectReference");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Shout::Register,            "Shout");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Worldspace::Register,       "Worldspace");
       //-----------------------------------------------------------------------------------------------
       //   BATCH OPERATIONS:
       //-----------------------------------------------------------------------------------------------

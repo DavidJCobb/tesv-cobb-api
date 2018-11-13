@@ -27,6 +27,13 @@ namespace CobbPatches {
       }
       //
       void Apply() {
+         //
+         // Generally, a form will parse its EDID record even if it doesn't store its editor ID 
+         // in memory; it will pass the parsed string to its virtual method 0x33 (SetEditorID), 
+         // which will either store the editor ID (typically as extra-data) or just return true 
+         // immediately. In the latter case, we can write over the VTBL entry to replace the no-
+         // op with a function that will store the editor ID in our storage.
+         //
          SafeWrite32(RE::BGSLightingTemplate::kVTBL + (ce_SetEditorID_VTBLIndex * ce_ptrSize), (UInt32)&_Register);
       }
    }

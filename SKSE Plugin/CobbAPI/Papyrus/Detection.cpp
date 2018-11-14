@@ -28,7 +28,7 @@ namespace CobbPapyrus {
             return false;
          return DetectionInterceptService::GetInstance().unseenActors.contains(actor);
       }
-      SInt32 PreventActorFromSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
+      bool PreventActorFromSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
          auto& service = DetectionInterceptService::GetInstance();
          if (!service.isActive) {
             registry->LogError(ce_errorServiceOffline, stackId);
@@ -48,7 +48,7 @@ namespace CobbPapyrus {
          }
          return service.unseeingActors.add(actor, persistenceForm, tag.data);
       }
-      SInt32 PreventActorFromBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
+      bool PreventActorFromBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, TESForm* persistenceForm, BSFixedString tag) {
          auto& service = DetectionInterceptService::GetInstance();
          if (!service.isActive) {
             registry->LogError(ce_errorServiceOffline, stackId);
@@ -68,28 +68,28 @@ namespace CobbPapyrus {
          }
          return service.unseenActors.add(actor, persistenceForm, tag.data);
       }
-      void ReturnActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, SInt32 handle) {
+      void ReturnActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
          ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseeingNone, registry, stackId);
-         DetectionInterceptService::GetInstance().unseeingActors.remove(actor, handle);
+         DetectionInterceptService::GetInstance().unseeingActors.remove(actor, tag.data);
       };
-      void ReturnActorToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, SInt32 handle) {
+      void ReturnActorToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor, BSFixedString tag) {
          ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseenNone, registry, stackId);
-         DetectionInterceptService::GetInstance().unseenActors.remove(actor, handle);
+         DetectionInterceptService::GetInstance().unseenActors.remove(actor, tag.data);
       };
       void ForceActorToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor) {
          ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseeingNone, registry, stackId);
-         DetectionInterceptService::GetInstance().unseeingActors.force_remove(actor);
+         DetectionInterceptService::GetInstance().unseeingActors.remove_all_of(actor);
       };
       void ForceActorToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* actor) {
          ERROR_AND_RETURN_IF(actor == nullptr, ce_errorUnseenNone, registry, stackId);
-         DetectionInterceptService::GetInstance().unseenActors.force_remove(actor);
+         DetectionInterceptService::GetInstance().unseenActors.remove_all_of(actor);
       };
-      void ReturnTagToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString tag) {
+      void ForceTagToSeeing(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString tag) {
          if (!tag.data)
             return;
          DetectionInterceptService::GetInstance().unseeingActors.remove_all_of(tag.data);
       };
-      void ReturnTagToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString tag) {
+      void ForceTagToBeingSeen(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString tag) {
          if (!tag.data)
             return;
          DetectionInterceptService::GetInstance().unseenActors.remove_all_of(tag.data);
@@ -121,25 +121,25 @@ namespace CobbPapyrus {
             ActorCannotBeSeen,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, SInt32, RE::Actor*, TESForm*, BSFixedString>(
+         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, bool, RE::Actor*, TESForm*, BSFixedString>(
             "PreventActorFromSeeing",
             "CobbAPIDetection",
             PreventActorFromSeeing,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, SInt32, RE::Actor*, TESForm*, BSFixedString>(
+         registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, bool, RE::Actor*, TESForm*, BSFixedString>(
             "PreventActorFromBeingSeen",
             "CobbAPIDetection",
             PreventActorFromBeingSeen,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, RE::Actor*, SInt32>(
+         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, RE::Actor*, BSFixedString>(
             "ReturnActorToSeeing",
             "CobbAPIDetection",
             ReturnActorToSeeing,
             registry
          ));
-         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, RE::Actor*, SInt32>(
+         registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, void, RE::Actor*, BSFixedString>(
             "ReturnActorToBeingSeen",
             "CobbAPIDetection",
             ReturnActorToBeingSeen,
@@ -158,15 +158,15 @@ namespace CobbPapyrus {
             registry
          ));
          registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, BSFixedString>(
-            "ReturnTagToSeeing",
+            "ForceTagToSeeing",
             "CobbAPIDetection",
-            ReturnTagToSeeing,
+            ForceTagToSeeing,
             registry
          ));
          registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, BSFixedString>(
-            "ReturnTagToBeingSeen",
+            "ForceTagToBeingSeen",
             "CobbAPIDetection",
-            ReturnTagToBeingSeen,
+            ForceTagToBeingSeen,
             registry
          ));
          registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, void, BSFixedString>(

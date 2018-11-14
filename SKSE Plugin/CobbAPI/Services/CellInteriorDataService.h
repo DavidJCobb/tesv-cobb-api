@@ -41,12 +41,14 @@ class CellInteriorDataService {
          //
          kChanged_LastLightingFlag = kChanged_LightFadeEnd,
          //
-         kChanged_AcousticSpace  = 0x20000000,
-         kChanged_ImageSpace     = 0x40000000,
-         kChanged_MusicType      = 0x80000000,
+         kChanged_LightingTemplate = 0x10000000,
+         kChanged_AcousticSpace    = 0x20000000,
+         kChanged_ImageSpace       = 0x40000000,
+         kChanged_MusicType        = 0x80000000,
       };
       struct CellDefaults {
          CellData data;
+         FormID   lightingTemplate = 0;
          FormID   acousticSpace = 0;
          FormID   imageSpace = 0;
          FormID   musicType = 0;
@@ -55,6 +57,7 @@ class CellInteriorDataService {
          CellData data;
          UInt32   changes = 0; // ChangeFlags enum as bitmask
          UInt32   changedTemplateUsage = 0; // bitmask indicating which bits of CellData::inheritFromTemplate to apply
+         FormID   lightingTemplate = 0;
          FormID   acousticSpace = 0;
          FormID   imageSpace = 0;
          FormID   musicType = 0;
@@ -81,7 +84,7 @@ class CellInteriorDataService {
       bool GetDefaults(FormID cellID, CellDefaults& out); // zeroes (out) if there is no matching entry; returns bool indicating whether the cell is in the dataset
       void Modify(RE::TESObjectCELL*, UInt32 traitFlags, UInt32 usageFlags);
       //
-      enum { kSaveVersion = 2 };
+      enum { kSaveVersion = 3 };
       bool Save(SKSESerializationInterface* intfc);
       bool Load(SKSESerializationInterface* intfc, UInt32 version); // also modifies TESObjectCELLs to apply loaded change-data
 };

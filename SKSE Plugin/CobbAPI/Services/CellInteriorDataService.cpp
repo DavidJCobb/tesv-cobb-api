@@ -7,6 +7,7 @@ void CellInteriorDataService::RevertCell(RE::TESObjectCELL* cell, const CellDefa
    auto cellData = CALL_MEMBER_FN(cell, GetInteriorData)();
    if (cellData)
       memcpy(cellData, &(defaults.data), sizeof(CellData));
+   cell->lightingTemplate = (RE::BGSLightingTemplate*) LookupFormByID(defaults.lightingTemplate);
    {  // Handle ExtraData.
       auto extraList = (RE::BaseExtraList*) &cell->extraData;
       if (!defaults.acousticSpace)
@@ -49,6 +50,7 @@ void CellInteriorDataService::StoreDefaults(FormID id, RE::TESObjectCELL* cell) 
    // shadeMe, they get resolved in TESForm::InitItem (referred to as TESForm::Link 
    // in some xSE versions).
    //
+   record.lightingTemplate = reinterpret_cast<UInt32>(cell->lightingTemplate); // it's still a form ID right now.
    /*// Straightforward but slow code.
    RE::IExtraDataSingleFormID* data;
    data = (RE::IExtraDataSingleFormID*) cell->extraData.GetByType(kExtraData_CellAcousticSpace);
@@ -180,6 +182,11 @@ void CellInteriorDataService::Modify(RE::TESObjectCELL* cell, UInt32 traitFlags,
          if (traitFlags <= kChanged_LastLightingFlag)
             memcpy(&record.data, cellData, sizeof(CellData));
          else {
+            memcpy(&record.data, cellData, sizeof(CellData)); // in case flags above AND below the threshold are set
+            if (traitFlags & kChanged_LightingTemplate) {
+               auto form = cell->lightingTemplate;
+               record.lightingTemplate = form ? form->formID : 0;
+            }
             if (traitFlags & kChanged_AcousticSpace) {
                auto form = CALL_MEMBER_FN(cell, GetAcousticSpace)();
                record.acousticSpace = form ? form->formID : 0;
@@ -199,6 +206,10 @@ void CellInteriorDataService::Modify(RE::TESObjectCELL* cell, UInt32 traitFlags,
       CellModifications record;
       //
       memcpy(&record.data, cellData, sizeof(CellData));
+      if (traitFlags & kChanged_LightingTemplate) {
+         auto form = cell->lightingTemplate;
+         record.lightingTemplate = form ? form->formID : 0;
+      }
       if (traitFlags & kChanged_AcousticSpace) {
          auto form = CALL_MEMBER_FN(cell, GetAcousticSpace)();
          record.acousticSpace = form ? form->formID : 0;
@@ -222,6 +233,15 @@ void CellInteriorDataService::ApplyToCell(RE::TESObjectCELL* cell, const CellMod
    UInt32 flags = mods.changes;
    {
       auto extraList = (RE::BaseExtraList*) &cell->extraData;
+      if (flags & kChanged_LightingTemplate) {
+         if (!mods.lightingTemplate)
+            cell->lightingTemplate = nullptr;
+         else {
+            auto casted = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(mods.lightingTemplate), TESForm, BGSLightingTemplate);
+            if (casted)
+               cell->lightingTemplate = casted;
+         }
+      }
       if (flags & kChanged_AcousticSpace) {
          if (!mods.acousticSpace)
             CALL_MEMBER_FN(extraList, SetExtraCellAcousticSpace)(nullptr);
@@ -307,6 +327,15 @@ void CellInteriorDataService::ApplyToCell(RE::TESObjectCELL* cell, const CellMod
 void CellInteriorDataService::RevertCellProperties(RE::TESObjectCELL* cell, const CellDefaults& defaults, UInt32 propertyFlags) {
    {  // Extra-data changes
       auto extraList = &cell->extraData;
+      if (propertyFlags & kChanged_LightingTemplate) {
+         if (!defaults.lightingTemplate)
+            cell->lightingTemplate = nullptr;
+         else {
+            auto casted = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(defaults.lightingTemplate), TESForm, BGSLightingTemplate);
+            if (casted)
+               cell->lightingTemplate = casted;
+         }
+      }
       if (propertyFlags & kChanged_AcousticSpace) {
          if (!defaults.acousticSpace)
             CALL_MEMBER_FN(extraList, SetExtraCellAcousticSpace)(nullptr);
@@ -396,6 +425,7 @@ bool CellInteriorDataService::Save(SKSESerializationInterface* intfc) {
          SERIALIZATION_ASSERT(WriteData(intfc, &record.data), "Failed to write a record's interior data.");
          SERIALIZATION_ASSERT(WriteData(intfc, &record.changes), "Failed to write a record's changes.");
          SERIALIZATION_ASSERT(WriteData(intfc, &record.changedTemplateUsage), "Failed to write a record's template usage flag changes.");
+         SERIALIZATION_ASSERT(WriteData(intfc, &record.lightingTemplate), "Failed to write a record's lighting-template form ID.");
          SERIALIZATION_ASSERT(WriteData(intfc, &record.acousticSpace), "Failed to write a record's acoustic space form ID.");
          SERIALIZATION_ASSERT(WriteData(intfc, &record.imageSpace), "Failed to write a record's imagespace form ID.");
          SERIALIZATION_ASSERT(WriteData(intfc, &record.musicType), "Failed to write a record's music-type form ID.");
@@ -416,6 +446,9 @@ bool CellInteriorDataService::Load(SKSESerializationInterface* intfc, UInt32 ver
       SERIALIZATION_ASSERT(ReadData(intfc, &record.data), "Failed to read a record's interior data.");
       SERIALIZATION_ASSERT(ReadData(intfc, &record.changes), "Failed to read a record's changes.");
       SERIALIZATION_ASSERT(ReadData(intfc, &record.changedTemplateUsage), "Failed to read a record's template usage flag changes.");
+      if (version >= 3) {
+         SERIALIZATION_ASSERT(ReadData(intfc, &record.lightingTemplate), "Failed to read a record's lighting-template form ID.");
+      }
       if (version >= 2) {
          SERIALIZATION_ASSERT(ReadData(intfc, &record.acousticSpace), "Failed to read a record's acoustic space form ID.");
          SERIALIZATION_ASSERT(ReadData(intfc, &record.imageSpace), "Failed to read a record's imagespace form ID.");
@@ -426,6 +459,11 @@ bool CellInteriorDataService::Load(SKSESerializationInterface* intfc, UInt32 ver
             _MESSAGE("%s: Failed to correct a record's formID (0x%08X). Skipping.", __FUNCTION__, key);
             continue;
          }
+         if (record.lightingTemplate)
+            if (!intfc->ResolveFormId(record.lightingTemplate, &record.lightingTemplate)) {
+               _MESSAGE("%s: Failed to correct a record's lighting-template formID (0x%08X). Skipping.", __FUNCTION__, key);
+               continue;
+            };
          if (record.acousticSpace)
             if (!intfc->ResolveFormId(record.acousticSpace, &record.acousticSpace)) {
                _MESSAGE("%s: Failed to correct a record's acoustic space formID (0x%08X). Skipping.", __FUNCTION__, key);

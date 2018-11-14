@@ -16,7 +16,7 @@ _EditorIDList* ExtendedEditorIDService::_GetListByFormType(UInt8 formType) {
 }
 //
 ExtendedEditorIDService::ExtendedEditorIDService() {
-   this->editorIDs.lightingTemplates.reserve(150);
+   this->editorIDs.lightingTemplates.reserve(150); // vanilla has just over 130 lighting templates
 }
 //
 void ExtendedEditorIDService::GetEditorID(const RE::TESForm* form, std::string& out) {

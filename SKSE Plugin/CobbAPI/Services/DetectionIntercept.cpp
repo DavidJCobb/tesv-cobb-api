@@ -11,108 +11,91 @@ namespace {
 //
 //
 //
-RegistrationHandle Feature::add(RE::Actor* actor, TESForm* persistenceForm, const char* tag) {
+bool Feature::add(RE::Actor* actor, TESForm* persistenceForm, const char* tag) {
    if (!actor)
       return registration_not_found;
    return this->add(actor->formID, persistenceForm->formID >> 0x18, tag);
 };
-RegistrationHandle Feature::add(FormID formID, UInt8 loadOrderSlot, const char* tag) {
+bool Feature::add(FormID formID, UInt8 loadOrderSlot, const char* tag) {
    if (formID == 0)
-      return registration_not_found;
+      return false;
+   if (!tag || !strlen(tag))
+      return false;
    //
    feature_lock_guard scopedLock(this->lock);
    //
-   auto index = this->_find_enabled_only(formID, loadOrderSlot, tag);
-   if (index != registration_not_found) {
-      this->registrations[index].refCount++;
-      return index;
-   }
+   if (this->_has_registration(formID, loadOrderSlot, tag))
+      return true;
    //
-   this->affectedActors.push_back(formID);
-   if (this->firstEmpty >= this->registrations.size()) {
-      index = this->registrations.size();
-      this->registrations.emplace_back(formID, loadOrderSlot, tag);
-      if (tag)
-         this->byStringTag[tag].push_back(index);
-      this->firstEmpty = this->registrations.size();
-      return index;
-   }
-   SInt32 i = this->firstEmpty;
-   this->registrations[i] = Registration(formID, loadOrderSlot, tag);
-   if (tag) {
-      this->byStringTag[tag].push_back(i);
-   }
-   this->firstEmpty = this->_find_next_empty(i);
-   return i;
+   this->affectedActors.insert(formID);
+   this->registrations.emplace_back(formID, loadOrderSlot, tag);
+   return true;
 };
-void Feature::remove(RE::Actor* actor, RegistrationHandle index) {
+void Feature::remove(RE::Actor* actor, const char* tag) {
    if (!actor)
       return;
-   if (index < 0 || index >= this->registrations.size())
-      return;
-   this->remove(actor->formID, index);
+   this->remove(actor->formID, tag);
 };
-void Feature::remove(FormID formID, RegistrationHandle index) {
-   if (index < 0 || index >= this->registrations.size())
-      return;
-   //
+void Feature::remove(FormID formID, const char* tag) {
    feature_lock_guard scopedLock(this->lock);
    //
-   auto& r = this->registrations[index];
-   if ((r.actor != formID) && (r.actor || r.enabled))
-      return;
-   r.refCount--;
-   if (r.refCount <= 0) {
-      this->_remove_element(index, true);
-      this->_shrink_to_fit();
-   }
+   const cobb::lowerstring ls_tag = tag; // so that we aren't continually making and destroying cobb::lowerstrings in the lambda
+   auto& list = this->registrations;
+   list.erase(
+      std::remove_if(
+         list.begin(),
+         list.end(),
+         [formID, ls_tag](const Registration& reg){
+            return reg.matches(formID, ls_tag);
+         } 
+      ),
+      list.end()
+   );
+   this->_update_affected_state_after_removal(formID);
 };
 void Feature::remove_all_of(const char* tag) {
-   if (!tag)
-      return;
    feature_lock_guard scopedLock(this->lock);
-   try {
-      auto& indices = this->byStringTag.at(tag);
-      auto  size    = indices.size();
-      for (size_t i = 0; i < size; i++) {
-         const RegistrationHandle index = indices[i];
-         if (index < 0)
-            continue;
-         this->registrations[index].enabled = false;
-      }
-      this->_shrink_to_fit();
-   } catch (std::out_of_range) {};
+   //
+   const cobb::lowerstring ls_tag = tag; // so that we aren't continually making and destroying cobb::lowerstrings in the lambda
+   auto& list = this->registrations;
+   list.erase(
+      std::remove_if(
+         list.begin(),
+         list.end(),
+         [ls_tag](const Registration& reg){
+            return reg.matches(ls_tag);
+         } 
+      ),
+      list.end()
+   );
+   this->_rebuild_affected_actors_cache();
 };
-void Feature::force_remove(RE::Actor* actor) {
+void Feature::remove_all_of(RE::Actor* actor) {
    if (!actor)
       return;
-   this->force_remove(actor->formID);
+   this->remove_all_of(actor->formID);
 };
-void Feature::force_remove(FormID formID) {
+void Feature::remove_all_of(FormID formID) {
    feature_lock_guard scopedLock(this->lock);
    //
-   auto& l = this->registrations;
-   auto  size = l.size();
-   for (auto i = 0; i < size; i++) {
-      auto& r = l[i];
-      if (r.enabled && r.actor == formID)
-         this->_remove_element(i, false);
-   }
-   //
-   // Would be more efficient to merge these two operations into the above loop, but 
-   // it'd also be less clear and less maintainable.
-   //
-   this->_shrink_to_fit();
+   auto& list = this->registrations;
+   list.erase(
+      std::remove_if(
+         list.begin(),
+         list.end(),
+         [formID](const Registration& reg){
+            return reg.matches(formID);
+         } 
+      ),
+      list.end()
+   );
    this->_update_affected_state_after_removal(formID);
 };
 bool Feature::contains(RE::Actor* actor) const {
    if (!actor)
       return false;
-   //
    feature_lock_guard scopedLock(this->lock);
-   //
-   auto& actors = this->affectedActors;
-   return std::find(actors.begin(), actors.end(), actor->formID) != actors.end();
+   return this->_contains(actor->formID);
 };
 bool Feature::empty() const {
    return this->registrations.empty();
@@ -123,76 +106,38 @@ void Feature::reset() {
    this->registrations.clear();
 };
 //
-bool Feature::_has_any_of_actor(FormID formID) const {
+bool Feature::_contains(FormID formID) const {
+   return this->affectedActors.find(formID) != this->affectedActors.end();
+}
+bool Feature::_has_actor(FormID formID) const {
    auto& r = this->registrations;
-   for (auto it = r.begin(); it != r.end(); ++it) {
-      if (!it->enabled)
-         continue;
-      if (it->actor == formID && it->refCount)
+   for (auto it = r.begin(); it != r.end(); ++it)
+      if (it->matches(formID))
          return true;
-   }
    return false;
-};
-RegistrationHandle Feature::_find_enabled_only(FormID formID, UInt8 loadOrderSlot, const char* tag) const {
+}
+bool Feature::_has_registration(FormID formID, UInt8 loadOrderSlot, const char* tag) const {
+   const cobb::lowerstring ls_tag = tag; // so we're not continually creating and destroying cobb::lowerstrings as part of a cast
    auto& r = this->registrations;
-   for (auto it = r.begin(); it != r.end(); ++it) {
-      if (!it->enabled)
-         continue;
-      if (it->actor == formID && it->loadOrderSlot == loadOrderSlot && it->tag == tag && it->refCount)
-         return it - r.begin();
-   }
-   return registration_not_found;
-};
-RegistrationHandle Feature::_find_next_empty(RegistrationHandle startAt) const {
-   size_t size = this->registrations.size();
-   size_t i    = startAt;
-   for (; i < size; i++)
-      if (this->registrations[i].is_empty())
-         break;
-   return i;
-};
-void Feature::_remove_element(RegistrationHandle index, bool updateAffected) {
-   auto& r = this->registrations[index];
-   if (r.enabled) {
-      r.enabled = false;
-      if (updateAffected)
-         this->_update_affected_state_after_removal(r.actor);
-   }
-   r.actor = 0;
-   if (this->firstEmpty > index)
-      this->firstEmpty = index;
-   if (!r.tag.empty()) {
-      try {
-         auto& list = this->byStringTag.at(r.tag);
-         list.erase(std::remove(list.begin(), list.end(), index), list.end());
-         if (!list.size())
-            this->byStringTag.erase(r.tag);
-      } catch (std::out_of_range) {};
-      r.tag = "";
-   }
-};
-void Feature::_shrink_to_fit() {
+   for (auto it = r.begin(); it != r.end(); ++it)
+      if (it->loadOrderSlot == loadOrderSlot && it->matches(formID, ls_tag))
+         return true;
+   return false;
+}
+void Feature::_rebuild_affected_actors_cache() {
+   this->affectedActors.clear();
    auto& list = this->registrations;
-   list.erase(
-      std::find_if(
-         list.rbegin(),
-         list.rend(),
-         [](const Registration& x) { // find the last element we DON'T want to remove
-            return !x.is_empty();
-         }
-      ).base(),
-      list.end()
-   );
-};
+   for (auto it = list.begin(); it != list.end(); ++it)
+      if (it->actor)
+         this->affectedActors.insert(it->actor);
+}
 void Feature::_update_affected_state_after_removal(FormID formID) {
-   if (!this->_has_any_of_actor(formID)) {
+   if (!this->_has_actor(formID))
       //
       // We just killed the last registration for an actor. Remove that actor from the 
       // "affected actors" list.
       //
-      auto& actors = this->affectedActors;
-      actors.erase(std::remove(actors.begin(), actors.end(), formID), actors.end());
-   }
+      this->affectedActors.erase(formID);
 };
 //
 //
@@ -205,18 +150,26 @@ bool DetectionInterceptService::IsEmpty() const {
    return this->unseeingActors.empty() && this->unseenActors.empty();
 };
 void DetectionInterceptService::OnFormDestroyed(UInt32 formID) {
-   this->unseeingActors.force_remove(formID);
-   this->unseenActors.force_remove(formID);
+   this->unseeingActors.remove_all_of(formID);
+   this->unseenActors.remove_all_of(formID);
 };
 __declspec(noinline) void DetectionInterceptService::Reset() {
    this->unseeingActors.reset();
    this->unseenActors.reset();
 }
 bool DetectionInterceptService::ShouldCancelDetection(RE::Actor* seeker, RE::Actor* target) const {
+   /*// Functions that lock:
    if (this->unseeingActors.contains(seeker))
       return true;
    if (this->unseenActors.contains(target))
       return true;
+   //*/
+   //*// Functions that don't lock:
+   if (seeker && this->unseeingActors._contains(seeker->formID))
+      return true;
+   if (target && this->unseenActors._contains(target->formID))
+      return true;
+   //*/
    return false;
 };
 
@@ -233,8 +186,6 @@ bool Feature::Save(SKSESerializationInterface* intfc) {
    for (size_t i = 0; i < size; i++) {
       auto& entry = this->registrations[i];
       SERIALIZATION_ASSERT(WriteData(intfc, &entry.actor), "Failed to write registration %d's actor formID.", i);
-      SERIALIZATION_ASSERT(WriteData(intfc, &entry.refCount), "Failed to write registration %d's actor refcount.", i);
-      SERIALIZATION_ASSERT(WriteData(intfc, &entry.enabled), "Failed to write registration %d's enabled flag.", i);
       SERIALIZATION_ASSERT(WriteData(intfc, &entry.loadOrderSlot), "Failed to write registration %d's load order slot.", i);
       if (entry.tag.size()) {
          UInt32 length = entry.tag.size();
@@ -256,14 +207,11 @@ bool Feature::Load(SKSESerializationInterface* intfc, UInt32 version) {
    for (UInt32 i = 0; i < count; i++) {
       Registration reg;
       SERIALIZATION_ASSERT(ReadData(intfc, &reg.actor), "Failed to read registration %d's actor formID.", i);
-      SERIALIZATION_ASSERT(ReadData(intfc, &reg.refCount), "Failed to read registration %d's actor refcount.", i);
-      SERIALIZATION_ASSERT(ReadData(intfc, &reg.enabled), "Failed to read registration %d's enabled flag.", i);
       SERIALIZATION_ASSERT(ReadData(intfc, &reg.loadOrderSlot), "Failed to read registration %d's load order slot.", i);
       {
          UInt32 formID = (UInt32)reg.loadOrderSlot << 0x18;
          UInt32 fixedID;
          if (!intfc->ResolveFormId(formID, &fixedID)) {
-            reg.enabled = false;
             reg.loadOrderSlot = 0xFF;
          } else {
             reg.loadOrderSlot = fixedID >> 0x18;
@@ -276,30 +224,20 @@ bool Feature::Load(SKSESerializationInterface* intfc, UInt32 version) {
          SERIALIZATION_ASSERT(intfc->ReadRecordData(buffer, length), "Failed to read registration %d's tag.", i);
          reg.tag.assign(buffer, length);
          delete buffer;
-         //
-         this->byStringTag[reg.tag].push_back(i);
       }
       reg.tag.shrink_to_fit();
       {  // Handle load order changes.
          UInt32 fixedFormId;
-         if (!intfc->ResolveFormId(reg.actor, &fixedFormId)) {
-            reg.enabled = false;
+         if (!intfc->ResolveFormId(reg.actor, &fixedFormId))
             fixedFormId = 0;
-         }
          reg.actor = fixedFormId;
       }
-      if (reg.loadOrderSlot == 0xFF) {
-         reg.actor = 0;
-         reg.enabled = false;
-         reg.refCount = 0;
+      if (reg.actor && reg.loadOrderSlot != 0xFF) {
+         this->registrations.push_back(reg);
+         if (reg.actor)
+            this->affectedActors.insert(reg.actor);
       }
-      this->registrations.push_back(reg);
-      if (reg.actor)
-         this->affectedActors.push_back(reg.actor);
    }
-   this->_shrink_to_fit();
-   std::unique(this->affectedActors.begin(), this->affectedActors.end()); // we use this as a cache; we need to update it
-   this->affectedActors.shrink_to_fit();
    return true;
 };
 bool DetectionInterceptService::Save(SKSESerializationInterface* intfc) {
@@ -312,9 +250,7 @@ bool DetectionInterceptService::Save(SKSESerializationInterface* intfc) {
 bool DetectionInterceptService::Load(SKSESerializationInterface* intfc, UInt32 version) {
    using namespace Serialization;
    //
-   _MESSAGE("Loading unseeing registrations...");
    SERIALIZATION_ASSERT(this->unseeingActors.Load(intfc, version), "Failed to read the unseeing-actors list.");
-   _MESSAGE("Loading unseen registrations...");
    SERIALIZATION_ASSERT(this->unseenActors.Load(intfc, version), "Failed to read the unseen-actors list.");
    return true;
 };

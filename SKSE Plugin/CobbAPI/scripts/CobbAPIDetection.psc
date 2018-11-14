@@ -8,27 +8,10 @@ Scriptname CobbAPIDetection Hidden
 ; actor. You can flag an actor as being unable to detect other actors, or flag 
 ; the actor as undetectable to other actors.
 ;
-; The service works by exchanging "handles." When you flag an actor, you receive 
-; an integer "handle." To unflag the actor, you must pass that handle back in. 
-; This ensures that if multiple scripts are acting on the same actor, they do 
-; not conflict: instead, their effects overlap.
-;
-; Negative handles are invalid and indicate that the actor could not be added.
-;
-; If multiple registrations apply to the same actor, use the same string tag 
-; (see below), and use persistent forms from the same file (see below), then 
-; they will share a handle. This is not a conflict or an unintended behavior: 
-; handles are ref-counted, so if two scripts request a handle and receive the 
-; same one, then that handle must be "freed" twice (once by each script) before 
-; it is made available for reuse.
-;
-; ------------------------------------------------------------------------------
-;    STRING TAGS
-; ------------------------------------------------------------------------------
-;
-; In addition to using handles, you can associate an optional string "tag" with 
-; any given change. You can also forcibly unflag all handles associated with a 
-; given tag. This is useful for uninstallation scripts and last-resort fixups.
+; The service works by associating a "string tag" with a flagged actor. In order 
+; to flag or unflag an actor, you must pass in a string. This allows multiple 
+; mods to flag an actor at the same time, without either mod interfering with 
+; the other; the two mods' effects just overlap.
 ;
 ; ------------------------------------------------------------------------------
 ;    PERSISTENCE FORMS
@@ -68,24 +51,15 @@ Bool Function ServiceIsAvailable () Global Native
 
 Bool Function ActorCannotSee            (Actor akActor) Global Native
 Bool Function ActorCannotBeSeen         (Actor akActor) Global Native
-Int  Function PreventActorFromSeeing    (Actor akActor, Form akPersistenceForm, String asTag = "") Global Native
-Int  Function PreventActorFromBeingSeen (Actor akActor, Form akPersistenceForm, String asTag = "") Global Native
-     Function ReturnActorToSeeing       (Actor akActor, Int aiHandle) Global Native
-     Function ReturnActorToBeingSeen    (Actor akActor, Int aiHandle) Global Native
+Bool Function PreventActorFromSeeing    (Actor akActor, Form akPersistenceForm, String asTag) Global Native
+Bool Function PreventActorFromBeingSeen (Actor akActor, Form akPersistenceForm, String asTag) Global Native
+     Function ReturnActorToSeeing       (Actor akActor, String asTag) Global Native
+     Function ReturnActorToBeingSeen    (Actor akActor, String asTag) Global Native
 
-; These methods forcibly unflag an actor by disabling its internal registration. 
-; Handles affecting the actor must still be turned in so that they can be freed; 
-; otherwise, the "zombie" handles will linger in the SKSE co-save (unless the 
-; load order slot for those handles disappears).
+; These methods forcibly unflag all actors matching the criteria.
 ;
 Function ForceActorToSeeing    (Actor akActor) Global Native
 Function ForceActorToBeingSeen (Actor akActor) Global Native
-
-; These methods forcibly disable all handles using a given string tag. These 
-; handles must still be turned in so that they can be freed; otherwise, the 
-; "zombie" handles will linger in the SKSE co-save (unless the load order slot 
-; for those handles disappears).
-;
-Function ReturnTagToSeeing    (String asTag) Global Native
-Function ReturnTagToBeingSeen (String asTag) Global Native
+Function ForceTagToSeeing    (String asTag) Global Native
+Function ForceTagToBeingSeen (String asTag) Global Native
 Function InvalidateTag        (String asTag) Global Native ; works for both seeing and being seen; may be expanded to cover more if we ever add more

@@ -98,9 +98,10 @@ Bool       Function UsesSkyLighting             (Cell akSubject) Global Native ;
 ;
 ; Setters:
 ;
-Function SetAcousticSpace (Cell akSubject, Form akAcousticSpace, Bool abPersist = True) Global Native
-Function SetImageSpace    (Cell akSubject, Form akImageSpace, Bool abPersist = True) Global Native
-Function SetMusicType     (Cell akSubject, MusicType akMusicType, Bool abPersist = True) Global Native
+Function SetAcousticSpace    (Cell akSubject, Form akAcousticSpace, Bool abPersist = True) Global Native
+Function SetImageSpace       (Cell akSubject, Form akImageSpace, Bool abPersist = True) Global Native
+Function SetLightingTemplate (Cell akSubject, Form akLightingTemplate, Bool abPersist = True) Global Native
+Function SetMusicType        (Cell akSubject, MusicType akMusicType, Bool abPersist = True) Global Native
 
 ;
 ; Setters for lighting data.
@@ -175,6 +176,7 @@ Function SetLightFadeDistances (Cell akSubject, Float afDistanceBegin, Float afD
 ;    0x00040000 = Light fade, begin
 ;    0x00080000 = Light fade, end
 ;    ...        = Unused
+;    0x10000000 = Lighting template
 ;    0x20000000 = AcousticSpace
 ;    0x40000000 = ImageSpace
 ;    0x80000000 = MusicType

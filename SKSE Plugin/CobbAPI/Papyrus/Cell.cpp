@@ -967,6 +967,20 @@ namespace CobbPapyrus {
             );
          }
       };
+      void SetLightingTemplate(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, TESForm* lighting, bool persist) {
+         ERROR_AND_RETURN_IF(cell == nullptr, "Cannot modify data on a None cell.", registry, stackId);
+         auto casted = (RE::BGSLightingTemplate*) DYNAMIC_CAST(lighting, TESForm, BGSLightingTemplate);
+         ERROR_AND_RETURN_IF(lighting && (casted == nullptr), "You did not specify a lighting template.", registry, stackId);
+         cell->lightingTemplate = casted;
+         if (persist) {
+            auto& service = CellInteriorDataService::GetInstance();
+            service.Modify(
+               cell,
+               CellInteriorDataService::kChanged_LightingTemplate,
+               0
+            );
+         }
+      };
       void SetLightingTemplateUsageFlags(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flags, bool setTo, bool persist) {
          ERROR_AND_RETURN_IF(cell == nullptr, "Cannot modify data on a None cell.", registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
@@ -1396,6 +1410,14 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
          "SetLightFadeDistances",
          PapyrusPrefixString("Cell"),
          Cell::SetLightFadeDistances,
+         registry
+      )
+   );
+   registry->RegisterFunction(
+      new NativeFunction3<StaticFunctionTag, void, RE::TESObjectCELL*, TESForm*, bool>(
+         "SetLightingTemplate",
+         PapyrusPrefixString("Cell"),
+         Cell::SetLightingTemplate,
          registry
       )
    );

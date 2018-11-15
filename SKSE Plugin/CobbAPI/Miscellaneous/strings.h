@@ -2,6 +2,9 @@
 #include <string>
 
 namespace cobb {
+   template<class T> struct is_basic_string : std::false_type {};
+   template<class Ch, class Tr, class Al> struct is_basic_string<std::basic_string<Ch, Tr, Al>> : std::true_type {};
+   //
    extern bool string_has_content(const char* str); // any characters besides '\0' and std::isspace-positive glyphs
    extern bool string_says_false(const char* str); // the string spells the case-insensitive word "false", ignoring whitespace
    extern bool string_to_int(const char* str, SInt32& out);  // returns true if it's a valid integer and no non-whitespace follows the number; out is not modified otherwise

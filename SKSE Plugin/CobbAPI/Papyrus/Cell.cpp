@@ -679,7 +679,7 @@ namespace CobbPapyrus {
       };
       void SetDirectionalRotation(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, VMArray<SInt32> rotations, bool force, bool persist) {
          ERROR_AND_RETURN_IF(cell == nullptr, "Cannot modify data on a None cell.", registry, stackId);
-         ERROR_AND_RETURN_IF(rotations.Length() < 6, "You must specify two rotations (XY and Z) in degrees.", registry, stackId);
+         ERROR_AND_RETURN_IF(rotations.Length() < 2, "You must specify two rotations (XY and Z) in degrees.", registry, stackId);
          ERROR_AND_RETURN_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot modify lighting for a cell that uses sky lighting.", registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          ERROR_AND_RETURN_IF(data == nullptr, "Cannot modify the lighting data of an exterior cell.", registry, stackId);

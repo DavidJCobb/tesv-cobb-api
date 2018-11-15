@@ -4,20 +4,24 @@
 #include "skse/PapyrusObjects.h"
 #include "skse/PapyrusVM.h"
 
-//#define COBB_PAPYRUS_OFFER_REGEX_STRING_APIS 1
+#define COBB_PAPYRUS_OFFER_REGEX_STRING_APIS 1
 #ifdef COBB_PAPYRUS_OFFER_REGEX_STRING_APIS
-   #include <regex> // adds, like 80KB to the DLL
+   #include <regex> // adds, like 80KB to the DLL :(
 #endif
 
+#include <algorithm>
 #include <string>
+#include "skse/GameForms.h"
+#include "Miscellaneous/strings.h"
 #include "Miscellaneous/utf8string.h"
+#include "Miscellaneous/utf8naturalsort.h"
 
 /********************************************************************************************\
 
    SOME EXPLANATION:
 
-   Skyrim and the Creation Kit use UTF-8 strings. If you open a Japanese ESP file in an 
-   English Creation Kit, you'll probably only see question-mark characters... but if you 
+   Skyrim's script engine use UTF-8 strings. If you open a Japanese ESP file in an Eng-
+   lish Creation Kit, you'll probably only see question-mark characters... but if you 
    use xEdit to examine any Japanese string's binary data, you'll find that that data 
    only produces Japanese glyphs when interpreted as UTF-8.
 
@@ -86,11 +90,11 @@ namespace CobbPapyrus {
                length = 32;
             }
             char bin[33];
-            memset(bin, '0', length);
+            memset(bin, '0', sizeof(bin));
             bin[length] = '\0';
             for (UInt8 i = 0; i < length; i++)
                if (value & (1 << i))
-                  bin[length - i] = '1';
+                  bin[length - i - 1] = '1';
             return bin; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
          }
          BSFixedString ToHex(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
@@ -102,7 +106,7 @@ namespace CobbPapyrus {
                length = 8;
             }
             char hex[9];
-            memset(hex, '0', length);
+            memset(hex, '0', sizeof(hex));
             hex[length] = '\0';
             while (value > 0 && length--) {
                UInt8 digit = value % 0x10;
@@ -116,68 +120,153 @@ namespace CobbPapyrus {
             return hex; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
          }
       }
-      //
-      // BUG: ALL std::string FIND CALLS ARE BROKEN BECAUSE THEY ARE CASE-SENSITIVE
-      //
-      SInt32 Compare(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString a, BSFixedString b) {
-         if (!a.data) {
-            if (!b.data)
-               return 0;
-            return -1;
-         }
-         if (!b.data)
-            return 1;
-         return strcmp(a.data, b.data);
-      };
-      SInt32 FindFirstOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString needles, SInt32 startAt) {
-         if (!haystack.data || !needles.data)
-            return -1;
-         return std::string(haystack.data).find_first_of(needles.data, startAt);
-      };
-      SInt32 FindFirstNotOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString needles, SInt32 startAt) {
-         if (!haystack.data || !needles.data)
-            return -1;
-         return std::string(haystack.data).find_first_not_of(needles.data, startAt);
-      };
-      SInt32 FindLastOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString needles, SInt32 startAt) {
-         if (!haystack.data || !needles.data)
-            return -1;
-         return std::string(haystack.data).find_last_of(needles.data, startAt);
-      };
-      SInt32 FindLastNotOf(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString needles, SInt32 startAt) {
-         if (!haystack.data || !needles.data)
-            return -1;
-         return std::string(haystack.data).find_last_not_of(needles.data, startAt);
-      };
-      #ifdef COBB_PAPYRUS_OFFER_REGEX_STRING_APIS
-         bool RegexSearch(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex) {
+      namespace Regex {
+         void _fix_regex(std::string& out, const std::string& regex, const std::string& sentinel) {
+            out.clear();
+            out.reserve(regex.size());
+            cobb::utf8iterator<std::string> a(regex);
+            cobb::utf8iterator<std::string> b(sentinel);
+            for (; !a.is_end() && !b.is_end(); ++a, ++b) {
+               UInt32 x = a.as_unicode();
+               UInt32 y = b.as_unicode();
+               if (y == '0')
+                  x = tolower(x);
+               else if (y == '1')
+                  x = toupper(x);
+               cobb::utf8append(out, x);
+            }
+         };
+         //
+         bool Search(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex, BSFixedString caseSentinel) {
             if (!haystack.data || !regex.data)
                return false;
-            std::regex ex(regex.data, std::regex::ECMAScript | std::regex::icase);
-            return std::regex_match(haystack.data, ex);
+            ERROR_AND_RETURN_0_IF(!caseSentinel.data, "You must specify a non-empty case sentinel.", registry, stackId);
+            std::string rxFixed  = regex.data;
+            std::string sentinel = caseSentinel.data;
+            ERROR_AND_RETURN_0_IF(cobb::utf8count(rxFixed) != cobb::utf8count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
+            _fix_regex(rxFixed, regex.data, sentinel);
+            std::regex ex(rxFixed.c_str(), std::regex::ECMAScript | std::regex::icase);
+            return std::regex_search(haystack.data, ex);
          };
-         VMResultArray<BSFixedString> RegexMatch(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex) {
+         VMResultArray<BSFixedString> Match(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex, BSFixedString caseSentinel, bool wholeMustMatch) {
             VMResultArray<BSFixedString> result;
             if (!haystack.data || !regex.data)
                return result;
-            std::regex  ex(regex.data, std::regex::ECMAScript | std::regex::icase);
+            if (!caseSentinel.data) {
+               registry->LogError("You must specify a non-empty case sentinel.", stackId);
+               return result;
+            }
+            std::string rxFixed = regex.data;
+            std::string sentinel = caseSentinel.data;
+            if (cobb::utf8count(rxFixed) != cobb::utf8count(sentinel)) {
+               registry->LogError("The case sentinel must have the same number of code points as the regex.", stackId);
+               return result;
+            }
+            _fix_regex(rxFixed, regex.data, sentinel);
+            //
+            std::regex  ex(rxFixed.c_str(), std::regex::ECMAScript | std::regex::icase);
             std::cmatch matches;
-            std::regex_match(haystack.data, matches, ex);
-            result.reserve(matches.size());
-            for (UInt32 i = 0; i < matches.size(); i++)
-               result.push_back(matches[i].second);
+            if (wholeMustMatch) {
+               std::regex_match(haystack.data, matches, ex);
+               auto size = matches.size();
+               result.reserve(size);
+               for (size_t i = 0; i < size; i++)
+                  result.push_back(matches[i].str().c_str());
+            }  else {
+               std::string hay(haystack.data);
+               std::sregex_iterator iter(hay.begin(), hay.end(), ex);
+               std::sregex_iterator end;
+               //
+               while (iter != end) {
+                  auto& results = *iter;
+                  for (size_t i = 0; i < results.size(); ++i) {
+                     auto submatch = results[i];
+                     result.push_back(submatch.str().c_str());
+                  }
+                  ++iter;
+               }
+            }
             return result;
          };
-         BSFixedString RegexReplace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex, BSFixedString replaceWith) {
+         BSFixedString Replace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString haystack, BSFixedString regex, BSFixedString caseSentinel, BSFixedString replaceWith) {
             if (!haystack.data || !regex.data || !replaceWith.data)
                return haystack;
-            std::regex  ex(regex.data, std::regex::ECMAScript | std::regex::icase);
+            ERROR_AND_RETURN_0_IF(!caseSentinel.data, "You must specify a non-empty case sentinel.", registry, stackId);
+            std::string rxFixed = regex.data;
+            std::string sentinel = caseSentinel.data;
+            ERROR_AND_RETURN_0_IF(cobb::utf8count(rxFixed) != cobb::utf8count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
+            _fix_regex(rxFixed, regex.data, sentinel);
+            std::regex  ex(rxFixed.c_str(), std::regex::ECMAScript | std::regex::icase);
             std::string haystackSTL(haystack.data);
             std::string result;
             std::regex_replace(std::back_inserter(result), haystackSTL.begin(), haystackSTL.end(), ex, replaceWith.data);
             return result.c_str();
          };
-      #endif
+      }
+      namespace Sort {
+         VMResultArray<BSFixedString> NaturalSort_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr) {
+            VMResultArray<BSFixedString> result;
+            {  // Copy input array into output array
+               UInt32 size = arr.Length();
+               result.reserve(size);
+               for (UInt32 i = 0; i < size; i++) {
+                  BSFixedString x;
+                  arr.Get(&x, i);
+                  result.push_back(x);
+               }
+            }
+            std::sort(
+               result.begin(),
+               result.end(),
+               [](const BSFixedString& x, const BSFixedString& y) {
+                  return cobb::utf8_naturalcompare(cobb::lowerstring(x.data), cobb::lowerstring(y.data)) > 0;
+               }
+            );
+            return result;
+         }
+         template<typename T> VMResultArray<BSFixedString> NaturalSortPair_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, VMArray<T> second) {
+            UInt32 size = arr.Length();
+            if (size != second.Length()) {
+               registry->LogError("The two arrays must be the same length.", stackId);
+               //
+               VMResultArray<BSFixedString> result;
+               result.reserve(size);
+               for (UInt32 i = 0; i < size; i++) {
+                  BSFixedString x;
+                  arr.Get(&x, i);
+                  result.push_back(x);
+               }
+               return result;
+            }
+            //
+            typedef std::pair<BSFixedString, T> _pair;
+            std::vector<_pair> pairs;
+            //
+            VMResultArray<BSFixedString> result;
+            {  // Copy input array into output array
+               result.reserve(size);
+               for (UInt32 i = 0; i < size; i++) {
+                  BSFixedString x;
+                  T y;
+                  arr.Get(&x, i);
+                  second.Get(&y, i);
+                  pairs.emplace_back(x, y);
+               }
+            }
+            std::sort(
+               pairs.begin(),
+               pairs.end(),
+               [](const _pair& x, const _pair& y) {
+                  return cobb::utf8_naturalcompare(cobb::lowerstring(x.first.data), cobb::lowerstring(y.first.data)) > 0;
+               }
+            );
+            for (UInt32 i = 0; i < size; i++) {
+               result.push_back(pairs[i].first);
+               second.Set(&pairs[i].second, i);
+            }
+            return result;
+         }
+      }
       BSFixedString Trim(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
          if (!str.data)
             return nullptr;
@@ -189,41 +278,11 @@ namespace CobbPapyrus {
          output = output.substr(start, end);
          return output.c_str();
       };
-      //
-      /*// Not meaningful; "compare" should be a tool for an alph sort, but that's harder to implement in Unicode
-      SInt32 UTF8Compare(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString a, BSFixedString b) {
-         if (!a.data) {
-            if (!b.data)
-               return 0;
-            return -1;
-         }
-         if (!b.data)
-            return 1;
-         std::string sA(a.data);
-         std::string sB(b.data);
-         auto iA = cobb::utf8charpos(sA);
-         auto iB = cobb::utf8charpos(sB);
-         for (; !iA.is_end() && !iB.is_end(); ++iA, ++iB) {
-            auto cA = *iA;
-            auto cB = *iB;
-            if (cA != cB)
-               return cA - cB;
-         }
-         if (!iA.is_end())
-            return 1;
-         if (!iB.is_end())
-            return -1;
-         return 0;
-      };*/
-      SInt32 UTF8Length(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
+      SInt32 Length(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString str) {
          if (!str.data)
             return 0;
-         SInt32 result = 0;
          std::string s(str.data);
-         auto i = cobb::utf8charpos(s);
-         for (; !i.is_end(); ++i)
-            result++;
-         return result;
+         return cobb::utf8count(s);
       };
    }
 }
@@ -259,94 +318,70 @@ bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "ToHex", VMClassRegistry::kFunctionFlag_NoWait);
    }
-
-   registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, SInt32, BSFixedString, BSFixedString>(
-         "Compare",
+   {  // Regex
+      #ifdef COBB_PAPYRUS_OFFER_REGEX_STRING_APIS
+         registry->RegisterFunction(
+            new NativeFunction3<StaticFunctionTag, bool, BSFixedString, BSFixedString, BSFixedString>(
+               "RegexSearch", PapyrusPrefixString("String"), String::Regex::Search, registry
+            )
+         );
+         registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexSearch", VMClassRegistry::kFunctionFlag_NoWait);
+         registry->RegisterFunction(
+            new NativeFunction4<StaticFunctionTag, VMResultArray<BSFixedString>, BSFixedString, BSFixedString, BSFixedString, bool>(
+               "RegexMatch", PapyrusPrefixString("String"), String::Regex::Match, registry
+            )
+         );
+         registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexMatch", VMClassRegistry::kFunctionFlag_NoWait);
+         registry->RegisterFunction(
+            new NativeFunction4<StaticFunctionTag, BSFixedString, BSFixedString, BSFixedString, BSFixedString, BSFixedString>(
+               "RegexReplace", PapyrusPrefixString("String"), String::Regex::Replace, registry
+            )
+         );
+         registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexReplace", VMClassRegistry::kFunctionFlag_NoWait);
+      #endif
+   }
+   {  // Sorts
+      registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>>(
+         "NaturalSort_ASCII",
          PapyrusPrefixString("String"),
-         String::Compare,
+         String::Sort::NaturalSort_ASCII,
          registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "Compare", VMClassRegistry::kFunctionFlag_NoWait);
-   //
-   registry->RegisterFunction(
-      new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>(
-         "FindFirstOf", PapyrusPrefixString("String"), String::FindFirstOf, registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "FindFirstOf", VMClassRegistry::kFunctionFlag_NoWait);
-   registry->RegisterFunction(
-      new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>(
-         "FindFirstNotOf", PapyrusPrefixString("String"), String::FindFirstOf, registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "FindFirstNotOf", VMClassRegistry::kFunctionFlag_NoWait);
-   //
-   
-   //
-   registry->RegisterFunction(
-      new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>(
-         "FindLastOf", PapyrusPrefixString("String"), String::FindLastOf, registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "FindLastOf", VMClassRegistry::kFunctionFlag_NoWait);
-   registry->RegisterFunction(
-      new NativeFunction3<StaticFunctionTag, SInt32, BSFixedString, BSFixedString, SInt32>(
-         "FindLastNotOf", PapyrusPrefixString("String"), String::FindLastOf, registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "FindLastNotOf", VMClassRegistry::kFunctionFlag_NoWait);
-   //
-   #ifdef COBB_PAPYRUS_OFFER_REGEX_STRING_APIS
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSort_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<SInt32>>(
+         "NaturalSortPairInt_ASCII",
+         PapyrusPrefixString("String"),
+         String::Sort::NaturalSortPair_ASCII<SInt32>,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSortPairInt_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<TESForm*>>(
+         "NaturalSortPairForm_ASCII",
+         PapyrusPrefixString("String"),
+         String::Sort::NaturalSortPair_ASCII<TESForm*>,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSortPairForm_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
+   }
+   {  // Utilities
       registry->RegisterFunction(
-         new NativeFunction2<StaticFunctionTag, bool, BSFixedString, BSFixedString>(
-            "RegexSearch", PapyrusPrefixString("String"), String::RegexSearch, registry
+         new NativeFunction1<StaticFunctionTag, BSFixedString, BSFixedString>(
+            "Trim",
+            PapyrusPrefixString("String"),
+            String::Trim,
+            registry
          )
       );
-      registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexSearch", VMClassRegistry::kFunctionFlag_NoWait);
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "Trim", VMClassRegistry::kFunctionFlag_NoWait);
       registry->RegisterFunction(
-         new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, BSFixedString, BSFixedString>(
-            "RegexMatch", PapyrusPrefixString("String"), String::RegexMatch, registry
+         new NativeFunction1<StaticFunctionTag, SInt32, BSFixedString>(
+            "CPLength",
+            PapyrusPrefixString("String"),
+            String::Length,
+            registry
          )
       );
-      registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexMatch", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(
-         new NativeFunction3<StaticFunctionTag, BSFixedString, BSFixedString, BSFixedString, BSFixedString>(
-            "RegexReplace", PapyrusPrefixString("String"), String::RegexReplace, registry
-         )
-      );
-      registry->SetFunctionFlags(PapyrusPrefixString("String"), "RegexReplace", VMClassRegistry::kFunctionFlag_NoWait);
-   #endif
-   //
-   registry->RegisterFunction(
-      new NativeFunction1<StaticFunctionTag, BSFixedString, BSFixedString>(
-         "Trim",
-         PapyrusPrefixString("String"),
-         String::Trim,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "Trim", VMClassRegistry::kFunctionFlag_NoWait);
-   //
-   /*registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, SInt32, BSFixedString, BSFixedString>(
-         "UTF8Compare",
-         PapyrusPrefixString("String"),
-         String::UTF8Compare,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "UTF8Compare", VMClassRegistry::kFunctionFlag_NoWait);*/
-   registry->RegisterFunction(
-      new NativeFunction1<StaticFunctionTag, SInt32, BSFixedString>(
-         "UTF8Length",
-         PapyrusPrefixString("String"),
-         String::UTF8Length,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("String"), "UTF8Length", VMClassRegistry::kFunctionFlag_NoWait);
-   //
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "CPLength", VMClassRegistry::kFunctionFlag_NoWait);
+   }
    return true;
 };

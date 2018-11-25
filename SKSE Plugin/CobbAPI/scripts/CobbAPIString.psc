@@ -1,6 +1,25 @@
 Scriptname CobbAPIString Hidden
 
 ; ---------------------------------------------------------------------------------------
+;    BACKGROUND
+; ---------------------------------------------------------------------------------------
+;
+; When Papyrus strings are written to ESP and ESM files, they are always written in 
+; UTF-8, regardless of the language in use by a mod author's system. I assume that UTF-8 
+; is also used for Papyrus strings at run-time. (I'm not sure what would happen to string 
+; constants in a script, though; does the Papyrus Compiler treat all files as UTF-8?)
+;
+; These script functions generally use UTF-8.
+;
+; It's worth noting that non-Papyrus strings are not guaranteed to use UTF-8. In Skyrim 
+; Classic, the text encoding used by the rest of the game varies from language to lang-
+; uage. Worse, ESP and ESM files don't contain any metadata identifying their language 
+; or their encoding. As such, Papyrus functions that pull strings from game data (such 
+; as getters for editor IDs and actors' names) will generally return data in an unknown 
+; encoding, which may or may not be UTF-8.
+;
+
+; ---------------------------------------------------------------------------------------
 ;    NUMBERS
 ; ---------------------------------------------------------------------------------------
 Int    Function HexToInt32    (String asString) Global Native
@@ -11,16 +30,6 @@ String Function ToHex         (Int aiHex, Int aiDigits = 8) Global Native
 ; ---------------------------------------------------------------------------------------
 ;    UTILITIES
 ; ---------------------------------------------------------------------------------------
-;
-; When Papyrus strings are written to ESP and ESM files, they are written in UTF-8 (even 
-; though all other strings use different encodings depending on language). I assume that 
-; UTF-8 is also used at run-time.
-;
-; Not sure what would happen to string constants compiled with the Papyrus Compiler, 
-; though. Does that treat all script source files as UTF-8?
-;
-; Anyway, this file's functions for working with strings generally use UTF-8.
-;
 Int    Function CPLength (String asString) Global Native ; length in UTF-8 code points
 String Function Trim     (String asString) Global Native ; only works on the standard space 0x32 for now
 
@@ -45,11 +54,11 @@ String Function Trim     (String asString) Global Native ; only works on the sta
 ; as follows:
 ;
 ; ASCIIbetical | Alphabetical
-; z10          | z1
-; z11          | z2
-; z12          | z3
-; z13          | z4
-; z1           | z5
+; z1           | z1
+; z10          | z2
+; z11          | z3
+; z12          | z4
+; z13          | z5
 ; z2           | z6
 ; z3           | z7
 ; z4           | z8
@@ -59,7 +68,7 @@ String Function Trim     (String asString) Global Native ; only works on the sta
 ; z8           | z12
 ; z9           | z13
 ;
-Int Function NaturalCompare_ASCII (String a, String b) Global Native
+Int Function NaturalCompare_ASCII (String a, String b) Global Native ; same return values as C++ _stricmp
 ;
 ; Functions for sorting arrays come in a few variants: a function that sorts just the 
 ; string array; and a function that sorts a second array passed beside it. The akStrings 
@@ -68,8 +77,8 @@ Int Function NaturalCompare_ASCII (String a, String b) Global Native
 ; array of FormIDs (or forms themselves).
 ;
 String[] Function NaturalSort_ASCII         (String[] akStrings) Global Native
-String[] Function NaturalSortPairInt_ASCII  (String[] akStrings, Int[]  axSecond) Global Native
-String[] Function NaturalSortPairForm_ASCII (String[] akStrings, Form[] axSecond) Global Native
+String[] Function NaturalSortPairInt_ASCII  (String[] akStrings, Int[];/&/;  axSecond) Global Native
+String[] Function NaturalSortPairForm_ASCII (String[] akStrings, Form[];/&/; axSecond) Global Native
 
 ; ---------------------------------------------------------------------------------------
 ;    REGULAR EXPRESSIONS

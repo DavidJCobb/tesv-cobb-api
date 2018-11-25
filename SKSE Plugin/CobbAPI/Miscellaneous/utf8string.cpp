@@ -7,19 +7,19 @@ namespace cobb {
          return;
       }
       if (c < 0x800) {
-         target.push_back(0xE0 | ((c >> 0x6) & 0x3F));
-         target.push_back(0x80 | (c & 0x1F));
+         target.push_back(0xE0 | ((c >> 6) & 0x1F));
+         target.push_back(0x80 | (c & 0x3F));
          return;
       }
       if (c < 0x10000) {
-         target.push_back(0xE0 | ((c >> 0x12) & 0xF));
-         target.push_back(0x80 | ((c >> 0x6) & 0x3F));
-         target.push_back(0x80 | (c & 0x1F));
+         target.push_back(0xE0 | ((c >> 12) &  0xF));
+         target.push_back(0x80 | ((c >>  6) & 0x3F));
+         target.push_back(0x80 | (c & 0x3F));
          return;
       }
-      target.push_back(0xE0 | ((c >> 0x18) & 0x7));
-      target.push_back(0x80 | ((c >> 0x12) & 0x3F));
-      target.push_back(0x80 | ((c >> 0x6) & 0x3F));
+      target.push_back(0xE0 | ((c >> 18) &  0x7));
+      target.push_back(0x80 | ((c >> 12) & 0x3F));
+      target.push_back(0x80 | ((c >>  6) & 0x3F));
       target.push_back(0x80 | (c & 0x1F));
    }
    size_t utf8count(std::string& target) {
@@ -60,7 +60,7 @@ namespace cobb {
          return invalid_utf8char;
       if ((a & 0xF0) == 0xE0) { // three bytes
          result = (a & 0xF) << 12;
-         result |= b << 6;
+         result |= (b & 0x3F) << 6;
          result |= (c & 0x3F);
          if (result >= 0xD800 && result <= 0xDFFF)
             return invalid_utf8char;
@@ -73,8 +73,8 @@ namespace cobb {
       if (!_is_continuation(d))
          return invalid_utf8char;
       result = (a & 7) << 18;
-      result |= b << 12;
-      result |= c << 6;
+      result |= (b & 0x3F) << 12;
+      result |= (c & 0x3F) << 6;
       result |= (d & 0x3F);
       if (result > 0x10FFFF)
          return invalid_utf8char;

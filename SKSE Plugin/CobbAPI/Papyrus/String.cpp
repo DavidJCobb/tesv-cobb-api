@@ -121,6 +121,21 @@ namespace CobbPapyrus {
          }
       }
       namespace Regex {
+         //
+         // Regular expressions are case-insensitive, but Papyrus stores all strings 
+         // case-insensitively (per the "C" locale). To work around this, we have the 
+         // scripter supply a "case sentinel" string along with their regex, wherein 
+         // glyphs that would be uppercase in the regex are '1' in the sentinel, and 
+         // glyphs that would be lowercase in the regex are '0' in the sentinel. Some 
+         // examples:
+         //
+         // REGEX            | SENTINEL
+         // th\w             | 00-0
+         // \w\w\W\w\W       | -0-0-1-0-1
+         // Jarl Elisif      | 1000-100000
+         //
+         // The _fix_regex function applies the sentinel to a regex.
+         //
          void _fix_regex(std::string& out, const std::string& regex, const std::string& sentinel) {
             out.clear();
             out.reserve(regex.size());
@@ -204,6 +219,12 @@ namespace CobbPapyrus {
          };
       }
       namespace Sort {
+         namespace Compare {
+            SInt32 NaturalCompare_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString a, BSFixedString b) {
+               return cobb::utf8_naturalcompare(cobb::lowerstring(a.data), cobb::lowerstring(b.data));
+            }
+         }
+         //
          VMResultArray<BSFixedString> NaturalSort_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr) {
             VMResultArray<BSFixedString> result;
             {  // Copy input array into output array
@@ -341,6 +362,13 @@ bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
       #endif
    }
    {  // Sorts
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, SInt32, BSFixedString, BSFixedString>(
+         "NaturalCompare_ASCII",
+         PapyrusPrefixString("String"),
+         String::Sort::Compare::NaturalCompare_ASCII,
+         registry
+      ));
+      registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalCompare_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
       registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>>(
          "NaturalSort_ASCII",
          PapyrusPrefixString("String"),

@@ -19,6 +19,8 @@ class ExtendedEditorIDService {
          // REMINDER: When you add more form types to this service, be sure 
          // to also edit the Papyrus script file to list them.
          //
+         _EditorIDList acousticSpaces;    // BGSAcousticSpace
+         _EditorIDList imageSpaces;       // TESImageSpace
          _EditorIDList lightingTemplates; // BGSLightingTemplate
       } editorIDs;
       //
@@ -31,6 +33,7 @@ class ExtendedEditorIDService {
       };
       ExtendedEditorIDService();
       void GetEditorID(const RE::TESForm*, std::string& out);
+      const std::string& GetEditorID(const RE::TESForm*);
       void StoreEditorID(const RE::TESForm*, const char*);
       //
       void DebugDump() const;

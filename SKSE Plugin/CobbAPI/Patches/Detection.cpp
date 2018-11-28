@@ -20,25 +20,26 @@ namespace CobbPatches {
             add  esp, 8;
             test al, al;
             jnz  lAbort;
-            mov  eax, 0x01B11820;      // reproduce patched-over instruction piecemeal // eax = GMST:fSneakBaseValue;
-            mov  eax, dword ptr [eax]; // reproduce patched-over instruction piecemeal
-            mov  ecx, 0x0059897E;
+            mov  edx, dword ptr [ebp + 0x8]; // reproduce patched-over instruction
+            push ebx;      // reproduce patched-over instruction
+            xor  ebx, ebx; // reproduce patched-over instruction
+            mov  ecx, 0x00598984;
             jmp  ecx;
          lAbort:
             mov  eax, -0x3E8; // -1000
-            mov  ecx, 0x00598DA8;
+            mov  ecx, 0x00598DA7;
             jmp  ecx;
          };
       };
       void Apply() {
-         if (*(UInt8*)(0x00598979) == 0xE9) {
+         if (*(UInt8*)(0x0059897E) == 0xE9) {
             //
             // Something else has patched our target site.
             //
             DetectionInterceptService::GetInstance().isActive = false;
             return;
          }
-         WriteRelJump(0x00598979, (UInt32)&Outer);
+         WriteRelJump(0x0059897E, (UInt32)&Outer);
       };
    };
 };

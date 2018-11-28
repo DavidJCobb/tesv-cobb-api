@@ -78,7 +78,7 @@ namespace RE {
          virtual void         ReadSavedata(void* savedata); // 0F // restores form state from savedata. for TESObjectREFR*, restores extra data, flora flags and 3D state, etc.
          virtual void         Unk_10(UInt32 arg);
          virtual void         Unk_11(UInt32 arg);
-         virtual void         Unk_12(UInt32 arg);
+         virtual void         Unk_12(UInt32 arg); // 12 // for Actor, seems to reset the actor?
          virtual void         InitItem(void); // 13 // called once all dependent forms are loaded
          virtual void         Unk_14(void);
          virtual UInt32       GetFormType(); // 15

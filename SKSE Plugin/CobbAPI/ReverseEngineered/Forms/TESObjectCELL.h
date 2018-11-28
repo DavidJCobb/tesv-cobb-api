@@ -182,6 +182,7 @@ namespace RE {
          DEFINE_MEMBER_FN(SetIsInterior,   void,  0x004C0240, bool flag); // Sets or modifies flag 0x0001 in unk2C. WARNING: interior and exterior cells store data differently, and this function DOES NOT CONVERT EXISTING DATA. It just changes the flag.
          DEFINE_MEMBER_FN(SetPublic,       void,  0x004C0260, bool flag); // Sets or modifies flag 0x0020 in unk2C.
          //
+         DEFINE_MEMBER_FN(GetDirectionalAmbientColor, InteriorData::Color, 0x004C1930, UInt32 whichColor);
          DEFINE_MEMBER_FN(SetFogColorNear, void,  0x004C03B0, UInt32 color); // Sets the fog color (as 0x00BBGGRR) for interior cells. (Exterior cells don't use that value.)
          DEFINE_MEMBER_FN(SetFogColorFar,  void,  0x004C03D0, UInt32 color); // Sets the fog color (as 0x00BBGGRR) for interior cells. (Exterior cells don't use that value.)
          DEFINE_MEMBER_FN(SetFogPlaneNear, void,  0x004C03F0, float); // Sets the near fog plane for interior cells. (Exterior cells don't use that value.)
@@ -196,7 +197,7 @@ namespace RE {
          DEFINE_MEMBER_FN(Subroutine004C05A0, UInt32, 0x004C05A0); // Interiors: returns (this->unk88 + 0x54). Exteriors: returns (this->parentWorld->unkBC).
          DEFINE_MEMBER_FN(Subroutine004C05C0, UInt32, 0x004C05C0); // Interiors: returns (this->unk88 + 0x64). Exteriors: returns (this->parentWorld->unkC0).
          DEFINE_MEMBER_FN(Subroutine004C0650, void,   0x004C0650, UInt32, UInt32); // Func(-1, 0) queues the cell to reset.
-         DEFINE_MEMBER_FN(ResetUnk3C,         void,   0x004C1820);
+         DEFINE_MEMBER_FN(ResetCellData,      void,   0x004C1820);
          DEFINE_MEMBER_FN(Subroutine004C2470, void,   0x004C2470); // loops over all objects in cell; performs unknown operation on 3D; unloads 3D
          DEFINE_MEMBER_FN(Subroutine004C25D0, void,   0x004C25D0); // loops over all objects in cell; performs unknown operation on any that aren't: disabled; deleted; or doors that are marked as destroyed
          DEFINE_MEMBER_FN(Subroutine004C2660, void,   0x004C2660, bool); // loops over all objects in cell; performs one of two unknown operations on them based on bool

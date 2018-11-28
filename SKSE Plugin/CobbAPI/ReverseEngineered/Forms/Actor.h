@@ -638,8 +638,14 @@ namespace RE {
          DEFINE_MEMBER_FN(CreateDetectionEvent,   void, 0x00702070, Actor* myActor, NiPoint3* position, UInt32 soundLevel, TESObjectREFR* positionOf);
          DEFINE_MEMBER_FN(GetDetectionEvent,      DetectionEvent*, 0x006FB670);
          //
+         DEFINE_MEMBER_FN(GetEquippedObject0, TESForm*, 0x006572F0);
+         DEFINE_MEMBER_FN(GetEquippedObject1, TESForm*, 0x00494EA0);
+         //
          DEFINE_MEMBER_FN(GetCurrentShoutVariation, SInt32, 0x006FCB90);
          DEFINE_MEMBER_FN(SetCurrentShoutVariation, void,   0x006FCBA0, SInt32);
+         //
+         DEFINE_MEMBER_FN(GetVoiceRecoveryTime, float, 0x006FCC00);
+         DEFINE_MEMBER_FN(SetVoiceRecoveryTime, void,  0x006FCC20, float);
          //
          DEFINE_MEMBER_FN(IsAlerted, bool, 0x006F4770); // { return this->unk9A & 8; }
          DEFINE_MEMBER_FN(SetAlert,  void, 0x006F4780, bool makeAlert);
@@ -782,7 +788,7 @@ namespace RE {
 
          virtual ~Actor();
          //
-         virtual void Unk_A2(TESForm* someBaseForm, bool, UInt32); // reportedly Actor::PlaySounds(TESForm* a_item, bool a_isPickup, bool a_unk);
+         virtual void PlayItemPickupPutdownSound(TESBoundObject* itemBaseForm, bool isPickup, bool forceDefaultSoundForItemFormType); // A2
          virtual float GetHeading(UInt32); // A3 // returns the yaw-rotation for actors that can't pitch/roll; otherwise, returns some mathy stuff
          virtual void Unk_A4(bool); // A4 // PlayerCharacter constructor calls this on itself
          virtual void DrawSheatheWeapon(bool draw); // A5
@@ -799,7 +805,7 @@ namespace RE {
          virtual void Unk_B0(void);
          virtual void Unk_B1(bool);
          virtual void Unk_B2(void);
-         virtual void Unk_B3(TESForm*, UInt32, UInt32); // from what I've seen, the form is generally a weapon
+         virtual void Unk_B3(TESForm*, UInt32, UInt32); // from what I've seen, the form is generally a weapon // unequipitem?
          virtual void SetBounty(TESFaction*, bool forViolentCrime, SInt32 gold); // B4 // violent and non-violent bounties are tracked separately
          virtual void ModBounty(TESFaction*, bool forViolentCrime, SInt32 gold); // B5
          virtual void Unk_B6(void);
@@ -823,7 +829,7 @@ namespace RE {
          virtual void Unk_C8(void);
          virtual void OnArmorActorValueChanged(); // C9 // called when HeavyArmor or LightArmor AV base value changes
          virtual void Unk_CA(void);
-         virtual void Unk_CB(TESObjectREFR*, UInt32, UInt32, bool); // reportedly PickUpItem(TESObjectREFR* a_item, UInt32 a_count, bool a_arg3, bool a_playSound);
+         virtual void PickUpItem(TESObjectREFR* item, UInt32 count, UInt32, bool doPlaySound); // CB // doPlaySound calls this->PlayItemPickupPutdownSound(item->baseForm, true, false)
          virtual void Unk_CC(void);
          virtual void Unk_CD(void);
          virtual void Unk_CE(void);
@@ -952,6 +958,7 @@ namespace RE {
          enum Flags1 : UInt32 {
             kFlags_AIEnabled        = 0x00000002,
             kFlags_Flag1_00000200   = 0x00000200,
+            kFlags_Flag1_00000800   = 0x00000800, // cleared on actors that start dead
             kFlags_Flag1_00004000   = 0x00004000,
             kFlags_Flag1_00008000   = 0x00008000,
             kFlags_Flag1_00040000   = 0x00040000, // related to the Waterbreathing magic effect. also related to the actor being in cell water, or in lava; checked by a condition meant for the latter
@@ -1084,6 +1091,7 @@ namespace RE {
             DEFINE_MEMBER_FN(InsertIntoSecondList, ActorValueState*, 0x006F2340, UInt32 actorValueIndex);
             DEFINE_MEMBER_FN(Load,                 void,             0x006F3450, BGSLoadFormBuffer*);
             DEFINE_MEMBER_FN(RemoveFromSecondList, void,             0x006F2520, UInt32 actorValueIndex);
+            DEFINE_MEMBER_FN(Reset,                void,             0x006F2860); // just wraps DestroyLists, tho
             DEFINE_MEMBER_FN(Save,                 void,             0x006F2720, BGSSaveFormBuffer*);
             DEFINE_MEMBER_FN(GetBaseValueFor,      bool,             0x006F2870, UInt32 actorValueIndex, float* out); // gets a float from unk04 based on the avIndex's position in unk00; returns false if not found
             DEFINE_MEMBER_FN(SetBaseValueFor,      void,             0x006F28D0, UInt32 actorValueIndex, float value);
@@ -1138,7 +1146,7 @@ namespace RE {
          ActorValueState avStateMagicka;     // 15C
          ActorValueState avStateStamina;     // 168
          ActorValueState avStateVoicePoints; // 174
-         float  unk180; // 180 // see code circa 0x006EC46E
+         float  unk180; // 180 // see code circa 0x006EC46E // related to timers?
          SInt32 unk184; // 184
          UInt32 unk188; // 188
          float  unk18C; // 18C // set to -1 when HeavyArmor or LightArmor values change
@@ -1151,7 +1159,16 @@ namespace RE {
 
          MEMBER_FN_PREFIX(Actor);
          DEFINE_MEMBER_FN(AddSpell,              bool,    0x006EC120, SpellItem* spell);
+         //
+         DEFINE_MEMBER_FN(AdvanceTime,                      void, 0x006EC290, float time); // advances all other timers as appropriate. the argument can be zero, and often is; I don't understand what the effect of that is
+         DEFINE_MEMBER_FN(AdvanceActorValueRegenDelayTimer, bool, 0x006DE9D0, UInt32 avIndex, float time); // ticks the delay timer down by (time) units (seconds?). returns true if there's still time left before regen should begin
+         DEFINE_MEMBER_FN(AdvanceRegenTimerForHealth,       void, 0x006E0A50, float time); // if the timer falls to zero or is already there, regens the stat
+         DEFINE_MEMBER_FN(AdvanceRegenTimerForMagicka,      void, 0x006E0B30, float time); // if the timer falls to zero or is already there, regens the stat
+         DEFINE_MEMBER_FN(AdvanceRegenTimerForStamina,      void, 0x006E0AA0, float time); // if the timer falls to zero or is already there, regens the stat
+         DEFINE_MEMBER_FN(AdvanceVoiceRecoveryTime,         void, 0x006DEA70, float time);
+         //
          DEFINE_MEMBER_FN(CanFlyHere,            bool,    0x006A6F80);
+         DEFINE_MEMBER_FN(CanRegenMagicka,       bool,    0x006EA2A0); // the player can't regen magicka while casting, and a game setting controls whether NPCs can
          DEFINE_MEMBER_FN(ClearExtraArrows,      void,    0x006A9F20);
          DEFINE_MEMBER_FN(CreateActorValueStateObj, ActorValueState*, 0x006DE8D0, UInt32 avIndex); // don't call this; use GetActorValueStateObj
          DEFINE_MEMBER_FN(Decapitate,            void,    0x006AA560); // refuses if the actor is already decapped, but not if they're alive
@@ -1175,8 +1192,10 @@ namespace RE {
          DEFINE_MEMBER_FN(GetHealthPercentage,   float,   0x006A8320); // just a convenience wrapper for GetActorValuePercentage
          DEFINE_MEMBER_FN(GetLevel,              UInt16,  0x006A7320);
          DEFINE_MEMBER_FN(GetLightLevel,         double,  0x006AE980); // places result on the FPU stack
+         DEFINE_MEMBER_FN(GetPickupPutdownSoundFor, BGSSoundDescriptorForm*, 0x006B2470, TESBoundObject* itemBaseForm, bool isPickup, bool forceDefaultSoundForItemFormType); // just checks data on the item; never accesses (this) at all
          DEFINE_MEMBER_FN(GetThreatLevel,        float,   0x006E0DE0, float UnkModifier_LessOrEqualZeroUsesSomeDefault); // the "threat ratio" between two actors is one actor's threat level divided by the other's
          DEFINE_MEMBER_FN(GetSoulSize,           UInt32,  0x006E8BC0); // returns ExtraSoul::SoulSize enum
+         DEFINE_MEMBER_FN(GetVoiceRecoveryTime,  float,   0x006E8AE0);
          DEFINE_MEMBER_FN(HasBeenEaten,          bool,    0x006A8B50);
          DEFINE_MEMBER_FN(HasPerk,               bool,    0x006AA190, BGSPerk* perk);
          DEFINE_MEMBER_FN(HasSpell,              bool,    0x006EAF10, SpellItem* perk);
@@ -1212,6 +1231,7 @@ namespace RE {
          DEFINE_MEMBER_FN(SetPlayerControls,     void,    0x008DC790, bool);
          DEFINE_MEMBER_FN(SetPlayerResistingArrest, void, 0x006AEF40, bool isResisting, TESFaction*); // literally doesn't matter what actor you call this on; hell, you can call it on nullptr
          DEFINE_MEMBER_FN(SetRace,               void,    0x006AF590, TESRace*, bool isPlayer);
+         DEFINE_MEMBER_FN(SetVoiceRecoveryTime,  void,    0x006E8B10, float);
          DEFINE_MEMBER_FN(SetYaw,                void,    0x006A8910, float); // Honors actor-specific settings, like the race "immobile" flag. Uses underlying SetYaw method on TESObjectREFR.
          DEFINE_MEMBER_FN(TrapSoul,              bool,    0x006EC950, Actor* target); // (this) traps the soul of (target)
          DEFINE_MEMBER_FN(UpdateArmorAbility,    void,    0x006E8650, TESForm*, BaseExtraList* extraData);

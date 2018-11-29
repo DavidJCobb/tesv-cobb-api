@@ -6,7 +6,21 @@
 
 class BGSLoadFormBuffer;
 class BGSSaveFormBuffer;
+class BSString;
 namespace RE {
+   class TESForm;
+   class BaseFormComponent {
+      public:
+         BaseFormComponent();
+         virtual ~BaseFormComponent();
+
+         virtual void Init();
+         virtual void ReleaseRefs();
+         virtual void CopyFromBase(BaseFormComponent* rhs);
+         //
+         MEMBER_FN_PREFIX(BaseFormComponent);
+         DEFINE_MEMBER_FN(LoadSubrecordStringContent, void, 0x0044F9E0, BSString* out, TESForm* thisAsForm, UInt32 bswappedSignature); // second argument is not optional and cannot be nullptr
+   };
    class TESForm : public BaseFormComponent {
       public:
          operator ::TESForm*() const { return (::TESForm*) this; }
@@ -80,7 +94,7 @@ namespace RE {
          virtual void         Unk_11(UInt32 arg);
          virtual void         Unk_12(UInt32 arg); // 12 // for Actor, seems to reset the actor?
          virtual void         InitItem(void); // 13 // called once all dependent forms are loaded
-         virtual void         Unk_14(void);
+         virtual BGSLoadFormBuffer* Unk_14(); // 14
          virtual UInt32       GetFormType(); // 15
          virtual void         GetFormDesc(char* buf, UInt32 bufLen); // 16
          virtual bool         GetFormFlag00000040(); // 17

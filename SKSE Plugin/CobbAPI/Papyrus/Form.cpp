@@ -50,6 +50,23 @@ namespace CobbPapyrus {
          ExtendedEditorIDService::GetInstance().GetEditorID(subject, editorID);
          return editorID.c_str();
       }
+      VMResultArray<BSFixedString> GetEditorIDs(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<RE::TESForm*> forms) {
+         VMResultArray<BSFixedString> result;
+         UInt32 size = forms.Length();
+         result.reserve(size);
+         std::string editorID;
+         for (UInt32 i = 0; i < size; i++) {
+            RE::TESForm* form;
+            forms.Get(&form, i);
+            if (form) {
+               ExtendedEditorIDService::GetInstance().GetEditorID(form, editorID);
+               result.push_back(editorID.c_str());
+            } else {
+               result.push_back("");
+            }
+         }
+         return result;
+      }
       bool IsDefiniteItem(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* subject) {
          if (!subject)
             return false;
@@ -108,6 +125,16 @@ bool CobbPapyrus::Form::Register(VMClassRegistry* registry) {
          registry
       )
    );
+   registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetEditorID", VMClassRegistry::kFunctionFlag_NoWait);
+   registry->RegisterFunction(
+      new NativeFunction1 <StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<RE::TESForm*>>(
+         "GetEditorIDs",
+         PapyrusPrefixString("Form"),
+         Form::GetEditorIDs,
+         registry
+      )
+   );
+   registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetEditorIDs", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
       new NativeFunction1 <StaticFunctionTag, bool, TESForm*>(
          "IsDefiniteItem",

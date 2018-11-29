@@ -27,6 +27,7 @@
 #include "Services/TeleportMarkerService.h"
 #include "Services/WeakReferenceService.h"
 
+#include "Papyrus/AcousticSpace.h"
 #include "Papyrus/Actor.h"
 #include "Papyrus/Array.h"
 #include "Papyrus/Cell.h"
@@ -35,6 +36,7 @@
 #include "Papyrus/Form.h"
 #include "Papyrus/Furniture.h"
 #include "Papyrus/Game.h"
+#include "Papyrus/ImageSpace.h"
 #include "Papyrus/Light.h"
 #include "Papyrus/LightingTemplate.h"
 #include "Papyrus/Message.h"
@@ -224,8 +226,10 @@ extern "C" {
       //-----------------------------------------------------------------------------------------------
       //   EXTENSIONS TO NATIVE CLASSES:
       //-----------------------------------------------------------------------------------------------
+      _RegisterAndEchoPapyrus(CobbPapyrus::AcousticSpace::Register,    "AcousticSpace");
       _RegisterAndEchoPapyrus(CobbPapyrus::Actor::Register,            "Actor");
       _RegisterAndEchoPapyrus(CobbPapyrus::Cell::Register,             "Cell");
+      _RegisterAndEchoPapyrus(CobbPapyrus::ImageSpace::Register,       "ImageSpace");
       _RegisterAndEchoPapyrus(CobbPapyrus::Form::Register,             "Form");
       _RegisterAndEchoPapyrus(CobbPapyrus::Furniture::Register,        "Furniture");
       _RegisterAndEchoPapyrus(CobbPapyrus::Light::Register,            "Light");

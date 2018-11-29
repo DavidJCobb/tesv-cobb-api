@@ -117,6 +117,7 @@
     <ClCompile Include="Miscellaneous\memory.cpp" />
     <ClCompile Include="Miscellaneous\strings.cpp" />
     <ClCompile Include="Miscellaneous\utf8string.cpp" />
+    <ClCompile Include="Papyrus\AcousticSpace.cpp" />
     <ClCompile Include="Papyrus\Actor.cpp" />
     <ClCompile Include="Papyrus\Array.cpp" />
     <ClCompile Include="Papyrus\Cell.cpp" />
@@ -132,6 +133,7 @@
     <ClCompile Include="Papyrus\Form.cpp" />
     <ClCompile Include="Papyrus\Furniture.cpp" />
     <ClCompile Include="Papyrus\Game.cpp" />
+    <ClCompile Include="Papyrus\ImageSpace.cpp" />
     <ClCompile Include="Papyrus\Light.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\MoveGroup.cpp" />
     <ClCompile Include="Papyrus\LightingTemplate.cpp" />
@@ -181,7 +183,9 @@
     <ClInclude Include="Miscellaneous\math.h" />
     <ClInclude Include="Miscellaneous\memory.h" />
     <ClInclude Include="Miscellaneous\strings.h" />
+    <ClInclude Include="Miscellaneous\utf8naturalsort.h" />
     <ClInclude Include="Miscellaneous\utf8string.h" />
+    <ClInclude Include="Papyrus\AcousticSpace.h" />
     <ClInclude Include="Papyrus\Actor.h" />
     <ClInclude Include="Papyrus\Cell.h" />
     <ClInclude Include="Papyrus\CobbAPI.h" />
@@ -190,6 +194,7 @@
     <ClInclude Include="Papyrus\Array.h" />
     <ClInclude Include="Papyrus\CompoundOperations\SetMotionType.h" />
     <ClInclude Include="Papyrus\Game.h" />
+    <ClInclude Include="Papyrus\ImageSpace.h" />
     <ClInclude Include="Papyrus\LightingTemplate.h" />
     <ClInclude Include="Papyrus\Message.h" />
     <ClInclude Include="Papyrus\Shout.h" />
@@ -207,12 +212,14 @@
     <ClInclude Include="Patches\PlaceableCollisionPrimitives.h" />
     <ClInclude Include="ReverseEngineered\Forms\Actor.h" />
     <ClInclude Include="ReverseEngineered\Forms\ActorValueInfo.h" />
+    <ClInclude Include="ReverseEngineered\Forms\BGSAcousticSpace.h" />
     <ClInclude Include="ReverseEngineered\Forms\BGSEncounterZone.h" />
     <ClInclude Include="ReverseEngineered\Forms\BGSLightingTemplate.h" />
     <ClInclude Include="ReverseEngineered\Forms\HardcodedForms.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESEffectShader.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESFaction.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESGlobal.h" />
+    <ClInclude Include="ReverseEngineered\Forms\TESImageSpace.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESObjectLAND.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESPackage.h" />
     <ClInclude Include="ReverseEngineered\Forms\TESRace.h" />
@@ -241,6 +248,7 @@
     <ClInclude Include="ReverseEngineered\Systems\01B9ED08.h" />
     <ClInclude Include="ReverseEngineered\Systems\ActorAI\base.h" />
     <ClInclude Include="ReverseEngineered\Systems\DefaultObjects.h" />
+    <ClInclude Include="ReverseEngineered\Systems\TESFile.h" />
     <ClInclude Include="ReverseEngineered\Systems\Timing.h" />
     <ClInclude Include="ReverseEngineered\Types.h" />
     <ClInclude Include="ReverseEngineered\UI\MessageBoxCallbacks.h" />
@@ -298,6 +306,7 @@
   <ItemGroup>
     <None Include="exports.def" />
     <None Include="scripts\CobbAPI.psc" />
+    <None Include="scripts\CobbAPIAcousticSpace.psc" />
     <None Include="scripts\CobbAPIActor.psc" />
     <None Include="scripts\CobbAPIArray.psc" />
     <None Include="scripts\CobbAPIBatchMove.psc" />
@@ -312,6 +321,7 @@
     <None Include="scripts\CobbAPIForm.psc" />
     <None Include="scripts\CobbAPIFurniture.psc" />
     <None Include="scripts\CobbAPIGame.psc" />
+    <None Include="scripts\CobbAPIImageSpace.psc" />
     <None Include="scripts\CobbAPILight.psc" />
     <None Include="scripts\CobbAPILightingTemplate.psc" />
     <None Include="scripts\CobbAPIMessage.psc" />

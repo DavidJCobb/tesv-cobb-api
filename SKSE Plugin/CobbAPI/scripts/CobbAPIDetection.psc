@@ -41,11 +41,16 @@ Scriptname CobbAPIDetection Hidden
 ;
 ; In order to offer this functionality, CobbAPI has to patch a particular part 
 ; of Skyrim's code in-memory. If the patch site has already been patched by 
-; another mod, such as my ESO Death and Resurrection, then CobbAPI will defer 
-; to that other mod: the DetectionInterceptService will not function, and you 
-; will not be able to add new registrations.
+; another mod, then CobbAPI will defer to that other mod: the DetectionIntercept-
+; Service will not function, and you will not be able to add new registrations.
 ;
 ; Use the ServiceIsAvailable method to check whether the service is online.
+;
+; ------------------------------------------------------------------------------
+;    FURTHER NOTES
+; ------------------------------------------------------------------------------
+;
+; A LeveledActor's registration will be invalidated when the actor respawns.
 ;
 Bool Function ServiceIsAvailable () Global Native
 

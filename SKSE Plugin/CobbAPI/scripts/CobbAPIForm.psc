@@ -14,6 +14,9 @@ Bool  Function IsDefiniteItem (Form akSubject) Global Native ; Returns true if t
 ;
 ; Sig. | Internal class name | Friendly name
 ; -----+---------------------+----------------------------
+; ACSP | BGSAcousticSpace    | Acoustic Space
+; IMGS | TESImageSpace       | Imagespace
 ; LGTM | BGSLightingTemplate | Lighting Template
 ;
-String Function GetEditorID (Form akSubject) Global Native
+String   Function GetEditorID  (Form akSubject) Global Native
+String[] Function GetEditorIDs (Form[] akSubjects) Global Native

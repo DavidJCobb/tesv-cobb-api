@@ -114,17 +114,25 @@ namespace CobbPapyrus {
             {  // Validate base form.
                auto baseForm = subject->baseForm;
                ERROR_AND_RETURN_0_IF(baseForm == nullptr, "Reference has no identifiable base form.", registry, stackId);
-               ERROR_AND_RETURN_0_IF(baseForm->formID != g_PlaceableCollisionPrimitiveFormID, "Reference base form ID must be 0x00C0BB00.", registry, stackId);
+               #if COBB_PLACEABLE_NAVCUT_USES_MANAGER == 0
+                  ERROR_AND_RETURN_0_IF(baseForm->formID != g_PlaceableCollisionPrimitiveFormID, "Reference base form ID must be 0x00C0BB00.", registry, stackId);
+               #else
+                  auto acti = DYNAMIC_CAST(baseForm, TESForm, TESObjectACTI);
+                  ERROR_AND_RETURN_0_IF(
+                     !acti || !CobbPatches::PlaceableCollisionPrimitives::Manager::GetInstance().Matches(acti),
+                     "The reference's base form must be an Activator, and that Activator must have a keyword injected to form ID 0x00C0BB03.",
+                     registry,
+                     stackId
+                  );
+               #endif
             }
             ERROR_AND_RETURN_0_IF(halfwidths.Length() < 3, "You need to pass an array of three floats to serve as halfwidths.", registry, stackId);
             //
-            subject->handleRefObject.IncRef();
             SInt32 result = 0;
-            {  // Destroy existing primitive and collision data. (The accompanying BGSPrimitive* is cleaned up by ExtraPrimitive::Dispose.)
-               CALL_MEMBER_FN((RE::BaseExtraList*) &(subject->extraData), SetExtraCollisionData)(nullptr);
-               auto extra_p = subject->extraData.GetByType(kExtraData_Primitive);
-               if (extra_p)
-                  subject->extraData.Remove(kExtraData_Primitive, extra_p);
+            {  // Destroy existing primitive and collision data.
+               auto extraList = (RE::BaseExtraList*) &(subject->extraData);
+               CALL_MEMBER_FN(extraList, SetExtraCollisionData)(nullptr);
+               extraList->RemoveExtra(kExtraData_Primitive); // calls ExtraPrimitive::Dispose, which cleans up the accompanying BGSPrimitive*
             }
             {  // Add primitive and collision data.
                auto extra_p = RE::ExtraPrimitive::Create();
@@ -143,7 +151,6 @@ namespace CobbPapyrus {
                subject->extraData.Add(kExtraData_CollisionData, extra_c);
                result = 1;
             }
-            subject->handleRefObject.DecRef();
             return result;
          };
       };

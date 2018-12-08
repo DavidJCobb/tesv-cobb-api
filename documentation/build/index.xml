@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<root>
+   <title>CobbAPI Documentation Index</title>
+   <description>
+      <p>
+         CobbAPI is a resource provided for mod authors: an SKSE-powered DLL that adds numerous 
+         native functions to the Papyrus script engine. CobbAPI does not extend existing Papyrus 
+         classes (due to compatibility risks); rather, it adds secondary Papyrus classes with 
+         global functions, which receive the subject of any given action as an argument. For 
+         example:
+      </p>
+      <pre>Bool bIsHorse = CobbAPIActor.IsHorse(kMyActor)</pre>
+   </description>
+   <abstract-types>
+      <type name="actor-value-index">
+         The numeric index of an actor value.
+      </type>
+      <type name="bounds">
+         An array of six floats representing an oriented bounding box, in the form of 
+         two coordinate triplets: a "min" point and a "max" point.
+      </type>
+   </abstract-types>
+   <classes>
+      <class name="CobbAPI" file="CobbAPI.xml" />
+      <class name="CobbAPIAcousticSpace" file="AcousticSpace.xml" />
+      <class name="CobbAPIActor" file="Actor.xml" />
+      <class name="CobbAPIArray" file="Array.xml" />
+      <class name="CobbAPIBatchMove" file="BatchMove.xml" />
+      <class name="CobbAPIBatchMoveGroup" file="BatchMoveGroup.xml" />
+      <class name="CobbAPIBatchMoveRel" file="BatchMoveRel.xml" />
+      <class name="CobbAPIBatchSetMotionType" file="BatchSetMotionType.xml" />
+      <class name="CobbAPIBatchSpawnComplex" file="BatchSpawnComplex.xml" />
+      <class name="CobbAPIBatchSpawnRel" file="BatchSpawnRel.xml" />
+      <class name="CobbAPICell" file="Cell.xml" />
+      <class name="CobbAPICellSearcher" file="CellSearcher.xml" />
+      <class name="CobbAPIDetection" file="Detection.xml" />
+      <class name="CobbAPIForm" file="Form.xml" />
+      <class name="CobbAPIFurniture" file="Furniture.xml" />
+      <class name="CobbAPIGame" file="Game.xml" />
+      <class name="CobbAPIImageSpace" file="ImageSpace.xml" />
+      <class name="CobbAPILight" file="Light.xml" />
+      <class name="CobbAPILightingTemplate" file="LightingTemplate.xml" />
+      <class name="CobbAPIMessage" file="Message.xml" />
+      <class name="CobbAPIObjectReference" file="ObjectReference.xml" />
+      <class name="CobbAPIRevealService" file="RevealService.xml" />
+      <class name="CobbAPIRotations" file="Rotations.xml" />
+      <class name="CobbAPIShout" file="Shout.xml" />
+      <class name="CobbAPISimpleSearches" file="SimpleSearches.xml" />
+      <class name="CobbAPIString" file="String.xml" />
+      <class name="CobbAPIUtility" file="Utility.xml" />
+      <class name="CobbAPIWorldspace" file="Worldspace.xml" />
+   </classes>
+   <concepts>
+      <concept name="Actor values"     page="Actor values" />
+      <concept name="Changeflags"      page="Changeflags" />
+      <concept name="Detection events" page="Detection Events" />
+   </concepts>
+</root>

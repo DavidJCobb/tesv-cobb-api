@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIForm">
+   <blurb>
+      Functions for working with forms in general.
+   </blurb>
+   <methods>
+      <method name="GetBounds" returns="Int[]">
+         <args>
+            <arg type="Form" name="akSubject" />
+         </args>
+         <blurb>
+            Returns an array of the form's bounds.
+         </blurb>
+         <description>
+            <p>
+               This function returns an array of the form's bounds, as defined in the form's 
+               Object Bounds (<code>OBND</code>) data. This is the data that gets filled when 
+               you right-click on a form in the Creation Kit and select "Recalc Bounds."
+            </p>
+            <p>
+               The returned data consists of six integers, which define the 3D coordinates for a 
+               "min" point and a "max" point. This is enough data to infer a full oriented 
+               bounding box.
+            </p>
+         </description>
+      </method>
+      <method name="GetEditorID" returns="String">
+         <args>
+            <arg type="Form" name="akSubject" />
+         </args>
+         <blurb>
+            Returns the form's editor ID.
+         </blurb>
+         <description>
+            <p>
+               This function returns the specified form's editor ID. Note that most forms do not 
+               actually load their editor IDs during gameplay.
+            </p>
+            <p>
+               Currently, CobbAPI patches the following form types to load editor IDs when they 
+               normally wouldn't:
+            </p>
+            <ul>
+               <li>AcousticSpace</li>
+               <li>ImageSpace</li>
+               <li>LightingTemplate</li>
+            </ul>
+         </description>
+         <related type="method" name="GetEditorIDs" />
+      </method>
+      <method name="GetEditorIDs" returns="String[]">
+         <args>
+            <arg type="Form[]" name="akSubjects">
+               An array of forms for which editor IDs should be retrieved. If any elements in 
+               this array are None, an empty string will be returned for the corresponding 
+               index in the result array.
+            </arg>
+         </args>
+         <blurb>
+            Returns an array of editor IDs for the specified forms.
+         </blurb>
+         <description>
+            <p>
+               Given an array of forms, this function returns an array of those forms' editor 
+               IDs. Note that most forms do not actually load their editor IDs during gameplay; 
+               refer to the documentation for GetEditorID for further information.
+            </p>
+         </description>
+         <related type="method" name="GetEditorID" />
+      </method>
+      <method name="IsDefiniteItem" returns="Bool">
+         <args>
+            <arg type="Form" name="akSubject">
+               A base form to be tested, or an ObjectReference whose base form will be tested.
+            </arg>
+         </args>
+         <blurb>
+            Returns true if the form is an item, and not a leveled item.
+         </blurb>
+         <description>
+            <p>
+               This function returns True if the form is a item, and False otherwise.
+            </p>
+            <p>
+               Specifically, this function returns True if the form is: a scroll; a piece of 
+               armor; a book; an alchemy ingredient; a misc. item; an alchemy apparatus (which 
+               is an unused item type left over from Oblivion); a weapon; ammunition; a key; a 
+               potion (including food); a note; a soul gem; a light that has been flagged as 
+               "carryable;" or an ObjectReference whose base form is any of the preceding.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

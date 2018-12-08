@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIWorldspace">
+   <blurb>Functions for working with worldspaces.</blurb>
+   <methods>
+      <method name="GetParentWorldspace" returns="Worldspace">
+         <args>
+            <arg type="Worldspace" name="akSubject" />
+         </args>
+         <blurb>Returns the specified worldspace's parent world.</blurb>
+         <example-data>
+            <call return-var="kParent" />
+         </example-data>
+      </method>
+      <method name="GetRootWorldspaceOrSelf" returns="Worldspace">
+         <args>
+            <arg type="Worldspace" name="akSubject" />
+         </args>
+         <blurb>Returns the specified worldspace's root world.</blurb>
+         <description>
+            <p>
+               If <var>akSubject</var> has a parent worldspace, this function traverses 
+               up through all parent worldspaces until it finds a worldspace with no 
+               parent, and then returns that. If <var>akSubject</var> does not have a 
+               parent worldspace, then this function returns <var>akSubject</var>.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="kRoot" />
+         </example-data>
+      </method>
+      <method name="GetWaterLevel" returns="Float">
+         <args>
+            <arg type="Worldspace" name="akSubject" />
+         </args>
+         <blurb>Returns the specified worldspace's default water level.</blurb>
+         <example-data>
+            <call return-var="fHeight" />
+         </example-data>
+      </method>
+   </methods>
+</class>

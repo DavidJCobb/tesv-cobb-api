@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPISimpleSearches">
+   <blurb>
+      Functions for searching a cell or the loaded area for references matching very basic 
+      criteria.
+   </blurb>
+   <methods>
+      <method name="GetAllOfBaseFormInCell" returns="ObjectReference[]">
+         <args>
+            <arg type="Form" name="akBaseForm" />
+            <arg type="Cell" name="akCellToSearch" default="None" />
+            <arg type="Bool" name="abSearchLoadedArea" default="False" />
+         </args>
+         <blurb>
+            Finds all references that use a given base form.
+         </blurb>
+         <description>
+            <p>
+               This function scans all ObjectReferences in <var>akCellToSearch</var>, and 
+               returns an array of all references that use <var>akBaseForm</var> as their base 
+               form.
+            </p>
+            <p>
+               If <var>abSearchLoadedArea</var> is True and the player is in an outdoor cell, 
+               this function will search all cells in the loaded grid.
+            </p>
+            <p>
+               If <var>akCellToSearch</var> is None, then this function will behave as if you 
+               specified the cell that the player is currently in; if that cell is an exterior 
+               cell, then this function will behave as if <var>abSearchLoadedArea</var> were 
+               True.
+            </p>
+         </description>
+      </method>
+      <method name="GetAllWithLinkedRefInCell" returns="ObjectReference[]">
+         <args>
+            <arg type="ObjectReference" name="akLinkedRef" />
+            <arg type="Keyword" name="akKeyword" />
+            <arg type="Cell" name="akCellToSearch" default="None" />
+            <arg type="Bool" name="abSearchLoadedArea" default="False" />
+         </args>
+         <blurb>
+            Finds all references that have a given linked ref.
+         </blurb>
+         <description>
+            <p>
+               This function scans all ObjectReferences in <var>akCellToSearch</var>, and 
+               returns an array of all references that are linked to <var>akLinkedRef</var> 
+               via <var>akKeyword</var>.
+            </p>
+            <p>
+               If <var>abSearchLoadedArea</var> is True and the player is in an outdoor cell, 
+               this function will search all cells in the loaded grid.
+            </p>
+            <p>
+               If <var>akCellToSearch</var> is None, then this function will behave as if you 
+               specified the cell that the player is currently in; if that cell is an exterior 
+               cell, then this function will behave as if <var>abSearchLoadedArea</var> were 
+               True.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPI">
+   <blurb>
+      Functions for querying information about the current CobbAPI installation.
+   </blurb>
+   <methods>
+      <method name="GetVersion" returns="Int">
+         <blurb>
+            Returns CobbAPI's version number.
+         </blurb>
+         <description>
+            <p>
+               This function returns CobbAPI's version number as an eight-digit hexadecimal value. 
+               The first two digits are the major version; the next two, the minor; the two after 
+               that, the patch; and the lowest two digits, the build number.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Check if the current version number is 1.2.10.25:
+            </comment>
+            <call return-var="iNumber" />
+            <raw>
+If iNumber == 0x01020A19
+   ;
+   ; Version is 1.2.10.25 (0x01, 0x02, 0x0A, 0x19).
+   ;
+EndIf
+            </raw>
+         </example-data>
+      </method>
+   </methods>
+</class>

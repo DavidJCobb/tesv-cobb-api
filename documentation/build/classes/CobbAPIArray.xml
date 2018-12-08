@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIArray">
+   <blurb>
+      Functions for working with arrays. Most of these can be used as substitutes for 
+      carrying out tasks manually in Papyrus.
+   </blurb>
+   <methods>
+      <method name="CountTruthyFloat" returns="Int">
+         <args>
+            <arg type="Float[]" name="afArray" />
+         </args>
+         <blurb>
+            Returns the number of non-zero values in a float array.
+         </blurb>
+         <related type="method" name="CountTruthyForm" />
+         <related type="method" name="CountTruthyInt" />
+         <related type="method" name="CountTruthyReference" />
+      </method>
+      <method name="CountTruthyForm" returns="Int">
+         <args>
+            <arg type="Form[]" name="akArray" />
+         </args>
+         <blurb>
+            Returns the number of non-None values in a form array.
+         </blurb>
+         <related type="method" name="CountTruthyFloat" />
+         <related type="method" name="CountTruthyInt" />
+         <related type="method" name="CountTruthyReference" />
+      </method>
+      <method name="CountTruthyInt" returns="Int">
+         <args>
+            <arg type="Int[]" name="aiArray" />
+         </args>
+         <blurb>
+            Returns the number of non-zero values in an int array.
+         </blurb>
+         <related type="method" name="CountTruthyFloat" />
+         <related type="method" name="CountTruthyForm" />
+         <related type="method" name="CountTruthyReference" />
+      </method>
+      <method name="CountTruthyReference" returns="Int">
+         <args>
+            <arg type="ObjectReference[]" name="akArray" />
+         </args>
+         <blurb>
+            Returns the number of non-None values in an ObjectReference array.
+         </blurb>
+         <related type="method" name="CountTruthyFloat" />
+         <related type="method" name="CountTruthyForm" />
+         <related type="method" name="CountTruthyInt" />
+      </method>
+      <method name="CreateFloat" returns="Float[]">
+         <args>
+            <arg type="Int" name="aiSize" />
+            <arg type="Float" name="afFill" default="0.0" />
+         </args>
+         <blurb>
+            Creates a float array of the desired length.
+         </blurb>
+         <description>
+            <p>
+               Creates and returns a float array with length <var>aiSize</var>. 
+               All elements are set to <var>afFill</var>.
+            </p>
+         </description>
+         <related type="method" name="CreateForm" />
+         <related type="method" name="CreateInt" />
+         <related type="method" name="CreateReference" />
+      </method>
+      <method name="CreateForm" returns="Form[]">
+         <args>
+            <arg type="Int" name="aiSize" />
+            <arg type="Form" name="akFill" default="None" />
+         </args>
+         <blurb>
+            Creates a form array of the desired length.
+         </blurb>
+         <description>
+            <p>
+               Creates and returns a form array with length <var>aiSize</var>. 
+               All elements are set to <var>akFill</var>.
+            </p>
+         </description>
+         <related type="method" name="CreateFloat" />
+         <related type="method" name="CreateInt" />
+         <related type="method" name="CreateReference" />
+      </method>
+      <method name="CreateInt" returns="Int[]">
+         <args>
+            <arg type="Int" name="aiSize" />
+            <arg type="Int" name="aiFill" default="None" />
+         </args>
+         <blurb>
+            Creates an int array of the desired length.
+         </blurb>
+         <description>
+            <p>
+               Creates and returns an int array with length <var>aiSize</var>. 
+               All elements are set to <var>aiFill</var>.
+            </p>
+         </description>
+         <related type="method" name="CreateFloat" />
+         <related type="method" name="CreateForm" />
+         <related type="method" name="CreateReference" />
+      </method>
+      <method name="CreateReference" returns="ObjectReference[]">
+         <args>
+            <arg type="Int" name="aiSize" />
+            <arg type="ObjectReference" name="akFill" default="None" />
+         </args>
+         <blurb>
+            Creates an ObjectReference array of the desired length.
+         </blurb>
+         <description>
+            <p>
+               Creates and returns an ObjectReference array with length <var>aiSize</var>. 
+               All elements are set to <var>akFill</var>.
+            </p>
+         </description>
+         <related type="method" name="CreateFloat" />
+         <related type="method" name="CreateForm" />
+         <related type="method" name="CreateInt" />
+      </method>
+      <method name="HasTruthyFloat" returns="Bool">
+         <args>
+            <arg type="Float[]" name="afArray" />
+         </args>
+         <blurb>
+            Returns True if the array contains any non-zero values, or False otherwise.
+         </blurb>
+         <related type="method" name="HasTruthyForm" />
+         <related type="method" name="HasTruthyInt" />
+         <related type="method" name="HasTruthyReference" />
+      </method>
+      <method name="HasTruthyForm" returns="Bool">
+         <args>
+            <arg type="Form[]" name="akArray" />
+         </args>
+         <blurb>
+            Returns True if the array contains any non-None values, or False otherwise.
+         </blurb>
+         <related type="method" name="HasTruthyFloat" />
+         <related type="method" name="HasTruthyInt" />
+         <related type="method" name="HasTruthyReference" />
+      </method>
+      <method name="HasTruthyInt" returns="Bool">
+         <args>
+            <arg type="Int[]" name="aiArray" />
+         </args>
+         <blurb>
+            Returns True if the array contains any non-zero values, or False otherwise.
+         </blurb>
+         <related type="method" name="HasTruthyFloat" />
+         <related type="method" name="HasTruthyForm" />
+         <related type="method" name="HasTruthyReference" />
+      </method>
+      <method name="HasTruthyReference" returns="Bool">
+         <args>
+            <arg type="ObjectReference[]" name="akArray" />
+         </args>
+         <blurb>
+            Returns True if the array contains any non-None values, or False otherwise.
+         </blurb>
+         <related type="method" name="HasTruthyFloat" />
+         <related type="method" name="HasTruthyForm" />
+         <related type="method" name="HasTruthyInt" />
+      </method>
+      <method name="OverwriteFloat">
+         <args>
+            <arg type="Float[]" name="afTarget" />
+            <arg type="Float[]" name="afSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>afSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>afTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>afTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>afTarget</var>, the function will not enlarge 
+               <var>afTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>afTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloatWithInt" />
+         <related type="method" name="OverwriteForm" />
+         <related type="method" name="OverwriteInt" />
+         <related type="method" name="OverwriteIntWithFloat" />
+         <related type="method" name="OverwriteReference" />
+      </method>
+      <method name="OverwriteFloatWithInt">
+         <args>
+            <arg type="Float[]" name="afTarget" />
+            <arg type="Int[]" name="aiSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>aiSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>afTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>afTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>afTarget</var>, the function will not enlarge 
+               <var>afTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>afTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloat" />
+         <related type="method" name="OverwriteForm" />
+         <related type="method" name="OverwriteInt" />
+         <related type="method" name="OverwriteIntWithFloat" />
+         <related type="method" name="OverwriteReference" />
+      </method>
+      <method name="OverwriteForm">
+         <args>
+            <arg type="Form[]" name="akTarget" />
+            <arg type="Form[]" name="akSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>akSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>akTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>akTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>akTarget</var>, the function will not enlarge 
+               <var>akTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>akTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloat" />
+         <related type="method" name="OverwriteFloatWithInt" />
+         <related type="method" name="OverwriteInt" />
+         <related type="method" name="OverwriteIntWithFloat" />
+         <related type="method" name="OverwriteReference" />
+      </method>
+      <method name="OverwriteInt">
+         <args>
+            <arg type="Int[]" name="aiTarget" />
+            <arg type="Int[]" name="aiSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>aiSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>aiTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>aiTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>aiTarget</var>, the function will not enlarge 
+               <var>aiTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>aiTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloat" />
+         <related type="method" name="OverwriteFloatWithInt" />
+         <related type="method" name="OverwriteForm" />
+         <related type="method" name="OverwriteIntWithFloat" />
+         <related type="method" name="OverwriteReference" />
+      </method>
+      <method name="OverwriteIntWithFloat">
+         <args>
+            <arg type="Int[]" name="aiTarget" />
+            <arg type="Float[]" name="afSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>afSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>aiTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>aiTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>aiTarget</var>, the function will not enlarge 
+               <var>aiTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>aiTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloat" />
+         <related type="method" name="OverwriteFloatWithInt" />
+         <related type="method" name="OverwriteForm" />
+         <related type="method" name="OverwriteInt" />
+         <related type="method" name="OverwriteReference" />
+      </method>
+      <method name="OverwriteReference">
+         <args>
+            <arg type="ObjectReference[]" name="akTarget" />
+            <arg type="ObjectReference[]" name="akSource" />
+            <arg type="Int" name="aiStart">
+               The index of the first element to overwrite in the target array.
+            </arg>
+            <arg type="Int" name="aiSourceStart">
+               The index of the first element to read from the source array.
+            </arg>
+            <arg type="Int" name="aiCount">
+               The number of elements to overwrite.
+            </arg>
+         </args>
+         <blurb>
+            Overwrites part of one array with part of another. The arrays passed in are 
+            directly modified.
+         </blurb>
+         <description>
+            <p>
+               This function reads <var>aiCount</var> many elements from <var>akSource</var> 
+               starting at index <var>aiSourceStart</var>. Those elements then overwrite the 
+               elements in <var>akTarget</var> starting at index <var>aiStart</var>.
+            </p>
+            <p>
+               This function does not create copies of any array; it directly modifies the 
+               <var>akTarget</var> array. If <code>(<var>aiStart</var> + <var>aiCount</var>)</code> 
+               exceeds the size of <var>akTarget</var>, the function will not enlarge 
+               <var>akTarget</var>; it will simply stop writing values when it reaches the end 
+               of the <var>akTarget</var>.
+            </p>
+         </description>
+         <related type="method" name="OverwriteFloat" />
+         <related type="method" name="OverwriteFloatWithInt" />
+         <related type="method" name="OverwriteForm" />
+         <related type="method" name="OverwriteInt" />
+         <related type="method" name="OverwriteIntWithFloat" />
+      </method>
+      <method name="ResizeFloat" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afArray" />
+            <arg type="Int" name="aiSize" />
+            <arg type="Float" name="afFill" default="0.0" />
+         </args>
+         <blurb>
+            Creates a resized copy of a float array.
+         </blurb>
+         <description>
+            <p>
+               Creates a copy of <var>afArray</var> with length <var>aiSize</var>. If 
+               the new array is longer than the original, then the new elements in the 
+               array are set to <var>afFill</var>. Returns the new array.
+            </p>
+         </description>
+         <related type="method" name="ResizeForm" />
+         <related type="method" name="ResizeInt" />
+         <related type="method" name="ResizeReference" />
+      </method>
+      <method name="ResizeForm" returns="Form[]">
+         <args>
+            <arg type="Form[]" name="akArray" />
+            <arg type="Int" name="aiSize" />
+            <arg type="Form" name="akFill" default="None" />
+         </args>
+         <blurb>
+            Creates a resized copy of a form array.
+         </blurb>
+         <description>
+            <p>
+               Creates a copy of <var>akArray</var> with length <var>aiSize</var>. If 
+               the new array is longer than the original, then the new elements in the 
+               array are set to <var>akFill</var>. Returns the new array.
+            </p>
+         </description>
+         <related type="method" name="ResizeFloat" />
+         <related type="method" name="ResizeInt" />
+         <related type="method" name="ResizeReference" />
+      </method>
+      <method name="ResizeInt" returns="Int[]">
+         <args>
+            <arg type="Int[]" name="aiArray" />
+            <arg type="Int" name="aiSize" />
+            <arg type="Int" name="aiFill" default="None" />
+         </args>
+         <blurb>
+            Creates a resized copy of an int array.
+         </blurb>
+         <description>
+            <p>
+               Creates a copy of <var>aiArray</var> with length <var>aiSize</var>. If 
+               the new array is longer than the original, then the new elements in the 
+               array are set to <var>aiFill</var>. Returns the new array.
+            </p>
+         </description>
+         <related type="method" name="ResizeFloat" />
+         <related type="method" name="ResizeForm" />
+         <related type="method" name="ResizeReference" />
+      </method>
+      <method name="ResizeReference" returns="ObjectReference[]">
+         <args>
+            <arg type="ObjectReference[]" name="akArray" />
+            <arg type="Int" name="aiSize" />
+            <arg type="ObjectReference" name="akFill" default="None" />
+         </args>
+         <blurb>
+            Creates a resized copy of an ObjectReference array.
+         </blurb>
+         <description>
+            <p>
+               Creates a copy of <var>akArray</var> with length <var>aiSize</var>. If 
+               the new array is longer than the original, then the new elements in the 
+               array are set to <var>akFill</var>. Returns the new array.
+            </p>
+         </description>
+         <related type="method" name="ResizeFloat" />
+         <related type="method" name="ResizeForm" />
+         <related type="method" name="ResizeInt" />
+      </method>
+      <method name="SliceFloat" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afArray" />
+            <arg type="Int" name="aiStart" />
+            <arg type="Int" name="aiCount" />
+         </args>
+         <blurb>
+            Copies and returns a section of a float array.
+         </blurb>
+         <description>
+            <p>
+               This function copies <var>aiCount</var> elements out of <var>afArray</var> 
+               starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
+               following Papyrus instructions:
+            </p>
+            <pre>
+Float[] afSlice = new Float[3] ; given aiCount == 3
+iTemporary = aiStart
+afSlice[0] = afArray[iTemporary]
+iTemporary += 1
+afSlice[1] = afArray[iTemporary]
+iTemporary += 1
+afSlice[2] = afArray[iTemporary]
+            </pre>
+            <p>
+               The intermediate int variable in that Papyrus snippet is needed to ensure proper 
+               compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               An example of a multi-dimensional array; the following code is 
+               equal to this hypothetical construct:
+               
+               Float[5][3] fPositionList
+               Float[] fPosition = fPositionList[2]
+            </comment>
+            <raw>Float[] fPositionList = new Float[15]</raw>
+            <call return-var="fPosition">
+               <arg value="fPositionList" />
+               <arg value="2 * 3" />
+               <arg value="3" />
+            </call>
+         </example-data>
+         <related type="method" name="SliceForm" />
+         <related type="method" name="SliceInt" />
+         <related type="method" name="SliceReference" />
+      </method>
+      <method name="SliceForm" returns="Form[]">
+         <args>
+            <arg type="Form[]" name="akArray" />
+            <arg type="Int" name="aiStart" />
+            <arg type="Int" name="aiCount" />
+         </args>
+         <blurb>
+            Copies and returns a section of a form array.
+         </blurb>
+         <description>
+            <p>
+               This function copies <var>aiCount</var> elements out of <var>akArray</var> 
+               starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
+               following Papyrus instructions:
+            </p>
+            <pre>
+Float[] akSlice = new Form[3] ; given aiCount == 3
+iTemporary = aiStart
+akSlice[0] = akArray[iTemporary]
+iTemporary += 1
+akSlice[1] = akArray[iTemporary]
+iTemporary += 1
+akSlice[2] = akArray[iTemporary]
+            </pre>
+            <p>
+               The intermediate int variable in that Papyrus snippet is needed to ensure proper 
+               compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               An example of a multi-dimensional array; the following code is 
+               equal to this hypothetical construct:
+               
+               Form[5][2] kFormPairList
+               Form[] kPair = kFormPairList[4]
+            </comment>
+            <raw>Form[] kFormPairList = new Form[10]</raw>
+            <call return-var="kPair">
+               <arg value="kFormPairList" />
+               <arg value="4 * 2" />
+               <arg value="2" />
+            </call>
+         </example-data>
+         <related type="method" name="SliceFloat" />
+         <related type="method" name="SliceInt" />
+         <related type="method" name="SliceReference" />
+      </method>
+      <method name="SliceInt" returns="Int[]">
+         <args>
+            <arg type="Int[]" name="aiArray" />
+            <arg type="Int" name="aiStart" />
+            <arg type="Int" name="aiCount" />
+         </args>
+         <blurb>
+            Copies and returns a section of an int array.
+         </blurb>
+         <description>
+            <p>
+               This function copies <var>aiCount</var> elements out of <var>aiArray</var> 
+               starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
+               following Papyrus instructions:
+            </p>
+            <pre>
+Int[] aiSlice = new Int[3] ; given aiCount == 3
+iTemporary = aiStart
+aiSlice[0] = aiArray[iTemporary]
+iTemporary += 1
+aiSlice[1] = aiArray[iTemporary]
+iTemporary += 1
+aiSlice[2] = aiArray[iTemporary]
+            </pre>
+            <p>
+               The intermediate int variable in that Papyrus snippet is needed to ensure proper 
+               compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               An example of a multi-dimensional array; the following code is 
+               equal to this hypothetical construct:
+               
+               Int[5][3] iPositionList
+               Int[] iPosition = iPositionList[2]
+            </comment>
+            <raw>Int[] iPositionList = new Int[15]</raw>
+            <call return-var="iPosition">
+               <arg value="iPositionList" />
+               <arg value="2 * 3" />
+               <arg value="3" />
+            </call>
+         </example-data>
+         <related type="method" name="SliceFloat" />
+         <related type="method" name="SliceForm" />
+         <related type="method" name="SliceReference" />
+      </method>
+      <method name="SliceReference" returns="ObjectReference[]">
+         <args>
+            <arg type="ObjectReference[]" name="akArray" />
+            <arg type="Int" name="aiStart" />
+            <arg type="Int" name="aiCount" />
+         </args>
+         <blurb>
+            Copies and returns a section of an ObjectReference array.
+         </blurb>
+         <description>
+            <p>
+               This function copies <var>aiCount</var> elements out of <var>akArray</var> 
+               starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
+               following Papyrus instructions:
+            </p>
+            <pre>
+ObjectReference[] akSlice = new ObjectReference[3] ; given aiCount == 3
+iTemporary = aiStart
+akSlice[0] = akArray[iTemporary]
+iTemporary += 1
+akSlice[1] = akArray[iTemporary]
+iTemporary += 1
+akSlice[2] = akArray[iTemporary]
+            </pre>
+            <p>
+               The intermediate int variable in that Papyrus snippet is needed to ensure proper 
+               compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               An example of a multi-dimensional array; the following code is 
+               equal to this hypothetical construct:
+               
+               Form[5][2] kReferencePairList
+               Form[] kPair = kReferencePairList[4]
+            </comment>
+            <raw>ObjectReference[] kReferencePairList = new ObjectReference[10]</raw>
+            <call return-var="kPair">
+               <arg value="kReferencePairList" />
+               <arg value="4 * 2" />
+               <arg value="2" />
+            </call>
+         </example-data>
+         <related type="method" name="SliceFloat" />
+         <related type="method" name="SliceForm" />
+         <related type="method" name="SliceInt" />
+      </method>
+   </methods>
+</class>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIShout">
+   <blurb>
+      Functions for working with shouts.
+   </blurb>
+   <methods>
+      <method name="GetAllShoutsUsingSpell" returns="Shout[]">
+         <args>
+            <arg type="Spell" name="akSpell" />
+         </args>
+         <blurb>
+            Returns an array of all shouts that use a given spell.
+         </blurb>
+         <description>
+            <p>
+               This function scans through the list of all shouts in memory, and returns an 
+               array of all shouts that use the specified spell for any of their words.
+            </p>
+         </description>
+         <related type="method" name="GetAnyShoutUsingSpell" />
+         <related type="method" name="GetAllShoutsUsingWord" />
+         <related type="method" name="GetAnyShoutUsingWord" />
+      </method>
+      <method name="GetAnyShoutUsingSpell" returns="Shout">
+         <args>
+            <arg type="Spell" name="akSpell" />
+         </args>
+         <blurb>
+            Returns the first found shout that uses a given spell.
+         </blurb>
+         <description>
+            <p>
+               This function scans through the list of all shouts in memory, and returns the 
+               first shout that uses the specified spell for any of its words.
+            </p>
+         </description>
+         <related type="method" name="GetAllShoutsUsingSpell" />
+         <related type="method" name="GetAllShoutsUsingWord" />
+         <related type="method" name="GetAnyShoutsUsingWord" />
+      </method>
+      <method name="GetAllShoutsUsingWord" returns="Shout[]">
+         <args>
+            <arg type="WordOfPower" name="akWord" />
+         </args>
+         <blurb>
+            Returns an array of all shouts that use a given word of power.
+         </blurb>
+         <description>
+            <p>
+               This function scans through the list of all shouts in memory, and returns an 
+               array of all shouts that use the specified word of power.
+            </p>
+         </description>
+         <related type="method" name="GetAnyShoutUsingSpell" />
+         <related type="method" name="GetAllShoutsUsingSpell" />
+         <related type="method" name="GetAnyShoutUsingWord" />
+      </method>
+      <method name="GetAnyShoutUsingWord" returns="Shout">
+         <args>
+            <arg type="WordOfPower" name="akWord" />
+         </args>
+         <blurb>
+            Returns the first found shout that uses a given word of power.
+         </blurb>
+         <description>
+            <p>
+               This function scans through the list of all shouts in memory, and returns the 
+               first shout that uses the specified word of power.
+            </p>
+         </description>
+         <related type="method" name="GetAllShoutsUsingSpell" />
+         <related type="method" name="GetAnyShoutsUsingSpell" />
+         <related type="method" name="GetAllShoutsUsingWord" />
+      </method>
+      <method name="GetShoutMenuDisplayObject" returns="Static">
+         <args>
+            <arg type="Shout" name="akShout" />
+         </args>
+         <blurb>
+            Returns the menu display object used by a shout.
+         </blurb>
+         <description>
+            <p>
+               This function returns the menu display object used by the specified shout.
+            </p>
+         </description>
+      </method>
+      <method name="GetShoutRecoveryTimes" returns="Float[]">
+         <args>
+            <arg type="Shout" name="akShout" />
+         </args>
+         <blurb>
+            Returns an array of a shout's recovery times.
+         </blurb>
+         <description>
+            <p>
+               This function returns an array of the three recovery times that the specified 
+               shout uses.
+            </p>
+         </description>
+      </method>
+      <method name="GetShoutSpells" returns="Spell[]">
+         <args>
+            <arg type="Shout" name="akShout" />
+         </args>
+         <blurb>
+            Returns an array of a shout's spells.
+         </blurb>
+         <description>
+            <p>
+               This function returns an array of the three spells that the specified shout uses.
+            </p>
+         </description>
+      </method>
+      <method name="GetShoutWords" returns="WordOfPower[]">
+         <args>
+            <arg type="Shout" name="akShout" />
+         </args>
+         <blurb>
+            Returns an array of a shout's word of power.
+         </blurb>
+         <description>
+            <p>
+               This function returns an array of the three words of power that the specified 
+               shout uses.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

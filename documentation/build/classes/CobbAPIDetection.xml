@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIDetection">
+   <blurb>
+      Functions for tampering with AI-controlled actors' ability to detect other actors.
+   </blurb>
+   <description>
+      <p>
+         The DetectionInterceptService allows you to tamper with the detection of any actor. You 
+         can flag an actor as being unable to detect other actors, or flag the actor as undetectable 
+         to other actors.
+      </p>
+      <p>
+         The service works by associating a "string tag" with a flagged actor. In order to flag or 
+         unflag an actor, you must pass in a string. This allows multiple mods to flag an actor at 
+         the same time, without either mod interfering with the other; the two mods' effects just 
+         overlap.
+      </p>
+      <h2>Persistence forms</h2>
+      <p>
+         When you obtain a handle, you must also pass in a "persistence form." This is so that if 
+         your mod is uninstalled and your script ceases to exist, the handle can be freed instead of 
+         hanging around forever. The form you pass in must be from your mod, but there are otherwise 
+         no restrictions; CobbAPI only stores its load order slot, so don't worry about modifying or 
+         even deleting the form when updating your mod.
+      </p>
+      <p>
+         In case you're not aware: Skyrim save files include a copy of the load order. When a save 
+         file is loaded, the game uses this copy to detect and handle any changes in the load order. 
+         SKSE and CobbAPI can detect load order changes in the same way, and can use this to tell 
+         when the user disables or uninstalls the mod that the persistence form originally came 
+         from.
+      </p>
+      <p>
+         It is recommended that you use a form added through a Papyrus property. If you use 
+         Game.GetFormFromFile to retrieve your form, that will become an obstacle for users that 
+         wish to merge your mod. (This is the same reason the detection API requests a form rather 
+         than an ES[LPM] filename.)
+      </p>
+      <h2>Service availability</h2>
+      <p>
+         In order to offer this functionality, CobbAPI has to patch a particular part 
+         of Skyrim's code in-memory. If the patch site has already been patched by 
+         another mod, then CobbAPI will defer to that other mod: the DetectionIntercept-
+         Service will not function, and you will not be able to add new registrations.
+      </p>
+      <p>Use the ServiceIsAvailable method to check whether the service is online.</p>
+      <h2>Miscellaneous details</h2>
+      <p>A LeveledActor's registration will be invalidated when the actor respawns.</p>
+   </description>
+   <methods>
+      <method name="ActorCannotBeSeen">
+         <blurb>
+            Returns True if the DetectionInterceptService is preventing the specified actor from 
+            being detected by other actors, or False otherwise.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+      </method>
+      <method name="ActorCannotSee">
+         <blurb>
+            Returns True if the DetectionInterceptService is preventing the specified actor from 
+            detecting other actors, or False otherwise.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+      </method>
+      <method name="ForceActorToBeingSeen">
+         <blurb>
+            This function tells the DetectionInterceptService to stop preventing an actor from 
+            being detected. All string tags for that actor are invalidated.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+      </method>
+      <method name="ForceActorToSeeing">
+         <blurb>
+            This function tells the DetectionInterceptService to stop preventing an actor from 
+            detecting other actors. All string tags for that actor are invalidated.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+      </method>
+      <method name="ForceTagToBeingSeen">
+         <blurb>
+            Stops a given string tag from affecting any actor's ability to be detected.
+         </blurb>
+         <args>
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="ForceTagToSeeing">
+         <blurb>
+            Stops a given string tag from affecting any actor's ability to detect other actors.
+         </blurb>
+         <args>
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="InvalidateTag">
+         <blurb>
+            Stops a given string tag from affecting any actor's ability to be detected or detect 
+            others.
+         </blurb>
+         <args>
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="PreventActorFromBeingSeen">
+         <blurb>
+            Prevents a given actor from being detected by any other actors.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Form" name="akPersistenceForm" />
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="PreventActorFromSeeing">
+         <blurb>
+            Prevents a given actor from detecting any other actors.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Form" name="akPersistenceForm" />
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="ReturnActorToBeingSeen">
+         <blurb>
+            Stops a given string tag from affecting an actor's ability to be detected.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="ReturnActorToSeeing">
+         <blurb>
+            Stops a given string tag from affecting an actor's ability to detect other actors.
+         </blurb>
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="String" name="asTag" />
+         </args>
+      </method>
+      <method name="ServiceIsAvailable">
+         <blurb>
+            Returns True if the DetectionInterceptService is active, functional, and accepting new 
+            registrations.
+         </blurb>
+      </method>
+   </methods>
+</class>

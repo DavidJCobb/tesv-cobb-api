@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPILight">
+   <blurb>
+      Functions for working with placed lights.
+   </blurb>
+   <methods>
+      <method name="GetDepthBias" returns="Float">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+         </args>
+         <blurb>
+            Returns a placed light's depth bias.
+         </blurb>
+      </method>
+      <method name="GetFade" returns="Float">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+            <arg type="Bool" name="abRelative" default="False">
+               If this argument is True, then this function returns the <em>relative</em> brightness 
+               &#8212; that is, the actual brightness minus the base form's brightness.
+            </arg>
+         </args>
+         <blurb>
+            Returns a placed light's brightness.
+         </blurb>
+      </method>
+      <method name="GetFOV" returns="Float">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+            <arg type="Bool" name="abRelative" default="False">
+               If this argument is True, then this function returns the <em>relative</em> FOV &#8212; 
+               that is, the actual FOV minus the base form's FOV.
+            </arg>
+         </args>
+         <blurb>
+            Returns a placed light's field of view.
+         </blurb>
+      </method>
+      <method name="GetRadius" returns="Float">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+            <arg type="Bool" name="abRelative" default="False">
+               If this argument is True, then this function returns the <em>relative</em> radius &#8212; 
+               that is, the actual radius minus the base form's radius.
+            </arg>
+         </args>
+         <blurb>
+            Returns a placed light's radius.
+         </blurb>
+      </method>
+      <method name="SetFade">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+            <arg type="Float" name="afFade">
+               The value to set.
+            </arg>
+            <arg type="Bool" name="abRelative" default="False">
+               If this argument is True, then this function modifies the <em>relative</em> brightness 
+               &#8212; that is, the actual brightness minus the base form's brightness.
+            </arg>
+            <arg type="Bool" name="abReserved" default="False">
+               This argument is currently unused. In future releases of CobbAPI, when it becomes 
+               possible to persist light changes between play sessions, setting this argument to 
+               True will allow a change to be persisted.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a placed light's brightness. Changes do not persist in the savegame.
+         </blurb>
+      </method>
+      <method name="SetRadius">
+         <args>
+            <arg type="ObjectReference" name="akLightReference" />
+            <arg type="Float" name="afFade">
+               The value to set.
+            </arg>
+            <arg type="Bool" name="abRelative" default="False">
+               If this argument is True, then this function modifies the <em>relative</em> radius 
+               &#8212; that is, the actual radius minus the base form's radius.
+            </arg>
+            <arg type="Bool" name="abReserved" default="False">
+               This argument is currently unused. In future releases of CobbAPI, when it becomes 
+               possible to persist light changes between play sessions, setting this argument to 
+               True will allow a change to be persisted.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a placed light's radius. Changes do not persist in the savegame.
+         </blurb>
+      </method>
+   </methods>
+</class>

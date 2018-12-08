@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIBatchMove">
+   <blurb>
+      Functions for moving references in bulk, optionally with a world-relative offset.
+   </blurb>
+   <description>
+      <p>
+         This API allows you to move references in bulk, optionally with a world-relative offset.
+      </p>
+      <p>
+         To use the API, you call a function to create a BatchMove task; this function returns a 
+         numeric "handle," which is like a ticket that you can exchange to access your task. Once you 
+         have a handle, you can use additional functions to configure your task, and then call a final 
+         function to run the task and receive results.
+      </p>
+      <p>
+         A task can only be configured or used by the same Papyrus call stack that created it; you 
+         can't pass a handle to some other part of your mod and operate on it later.
+      </p>
+   </description>
+   <methods>
+      <method name="AddOperation">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMove task.
+            </arg>
+            <arg type="ObjectReference" name="akSubject">
+               The reference to move.
+            </arg>
+            <arg type="ObjectReference" name="akTarget">
+               The reference that <var>akSubject</var> should be moved to.
+            </arg>
+            <arg type="Float[]" name="afPositionOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s position. 
+               <var>akSubject</var> will be moved to the position of <var>akTarget</var> plus this 
+               offset. This argument is required, but if you don't want an offset, a quick shortcut 
+               is to pass <code>new Float[3]</code>.
+            </arg>
+            <arg type="Float[]" name="afRotation">
+               Three floats specifying the rotation that <var>akSubject</var> should be moved to.
+            </arg>
+         </args>
+         <blurb>
+            Queues a reference to move.
+         </blurb>
+      </method>
+      <method name="AddOperationSpecial">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMove task.
+            </arg>
+            <arg type="ObjectReference" name="akSubject">
+               The reference to move.
+            </arg>
+            <arg type="ObjectReference" name="akTarget">
+               The reference that <var>akSubject</var> should be moved to.
+            </arg>
+            <arg type="Float[]" name="afPositionOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s position. 
+               <var>akSubject</var> will be moved to the position of <var>akTarget</var> plus this 
+               offset. This argument is required, but if you don't want an offset, a quick shortcut 
+               is to pass <code>new Float[3]</code>.
+            </arg>
+            <arg type="Float[]" name="afRotation">
+               Three floats specifying the rotation that <var>akSubject</var> should be moved to.
+            </arg>
+            <arg type="Int" name="aiOperationType">
+               <table>
+                  <thead>
+                     <tr>
+                        <th>Value</th>
+                        <th>Behavior</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr>
+                        <th>0</th>
+                        <td>
+                           A normal operation. The subject reference is moved to the target reference, 
+                           with a position offset applied as appropriate.
+                        </td>
+                     </tr>
+                     <tr>
+                        <th>1</th>
+                        <td>
+                           If the subject reference is a load door, its destination door's teleport 
+                           marker (so, the marker on the same side as the subject) is moved instead.
+                        </td>
+                     </tr>
+                     <tr>
+                        <th>2</th>
+                        <td>
+                           Your specified coordinates and target are ignored. The subject reference 
+                           is moved back to its editor location.
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+            </arg>
+         </args>
+         <blurb>
+            Queues a reference to move.
+         </blurb>
+         <description>
+            <p>
+               Queues a reference to move. The <var>aiOperationType</var> argument changes the 
+               behavior of this function.
+            </p>
+         </description>
+      </method>
+      <method name="Cancel">
+         <blurb>
+            Aborts a BatchMove task, allowing its handle to be reused.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMove task.
+            </arg>
+         </args>
+      </method>
+      <method name="Create" returns="Int">
+         <blurb>
+            Creates a BatchMove task, and returns its numeric handle.
+         </blurb>
+         <example-data>
+            <call return-var="iHandle" />
+            <raw>CobbAPIBatchMove.AddOperation(iHandle, kRefToMove, kMoveTo, new Float[3], new Float[3])</raw>
+            <raw>CobbAPIBatchMove.Run(iHandle)</raw>
+         </example-data>
+      </method>
+      <method name="Run" returns="ObjectReference[]">
+         <blurb>
+            Executes a BatchMove task and returns an array of the references that were 
+            successfully moved.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMove task.
+            </arg>
+         </args>
+      </method>
+      <method name="SetAlsoMoveTeleportMarkers">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMove task.
+            </arg>
+            <arg type="Int" name="aiWhich">
+               <table>
+                  <thead>
+                     <tr>
+                        <th>Value</th>
+                        <th>Behavior</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr>
+                        <th>0</th>
+                        <td>
+                           The default. Do not modify load doors' teleport markers.
+                        </td>
+                     </tr>
+                     <tr>
+                        <th>1</th>
+                        <td>
+                           Move load door subjects' destinations' teleport markers (so, the markers 
+                           on the subjects' side) in order to keep those markers in the same 
+                           position relative to the subjects.
+                        </td>
+                     </tr>
+                     <tr>
+                        <th>2</th>
+                        <td>
+                           Move load doors' destinations' teleport markers: compute the offset from 
+                           the load door's editor position to the marker's editor position, and 
+                           maintain that exact offset from the load door's new position.
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+            </arg>
+         </args>
+         <blurb>
+            Controls how a BatchMove operation handles load doors' teleport markers.
+         </blurb>
+         <description>
+            <p>
+               Controls how a BatchMove operation handles load doors' teleport markers.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

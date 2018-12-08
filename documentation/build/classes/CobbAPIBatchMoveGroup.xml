@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIBatchMoveGroup">
+   <blurb>
+      Functions for moving a group of references, optionally with an offset relative to the target.
+   </blurb>
+   <description>
+      <p>
+         This API allows you to move a group of references. A single reference is designated the 
+         "root" of the group. You can control where the root ends up, and all other references will 
+         maintain their positions relative to the root. You must manually specify a root, or the 
+         operation will fail without making any changes. The root will always be moved first, even 
+         if you don't add it as a "child;" it will not be moved redundantly if you do add it as a 
+         child.
+      </p>
+      <p>
+         To use the API, you call a function to create a BatchMoveGroup task; this function returns a 
+         numeric "handle," which is like a ticket that you can exchange to access your task. Once 
+         you have a handle, you can use additional functions to configure your task, and then call a 
+         final function to run the task and receive results.
+      </p>
+      <p>
+         A task can only be configured or used by the same Papyrus call stack that created it; you 
+         can't pass a handle to some other part of your mod and operate on it later.
+      </p>
+   </description>
+   <methods>
+      <method name="AddChild">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="ObjectReference" name="akChild">
+               The reference to move.
+            </arg>
+         </args>
+         <blurb>
+            Adds a reference to the group.
+         </blurb>
+      </method>
+      <method name="AddChildren">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="ObjectReference[]" name="akChildren">
+               The references to move.
+            </arg>
+         </args>
+         <blurb>
+            Adds multiple references to the group.
+         </blurb>
+      </method>
+      <method name="Cancel">
+         <blurb>
+            Aborts a BatchMoveGroup task, allowing its handle to be reused.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+         </args>
+      </method>
+      <method name="Create" returns="Int">
+         <blurb>
+            Creates a BatchMoveGroup task, and returns its numeric handle.
+         </blurb>
+         <example-data>
+            <call return-var="iHandle" />
+            <comment>
+               Setting the root manually is mandatory.
+            </comment>
+            <raw>CobbAPIBatchMove.SetRoot(iHandle, kRoot)</raw>
+            <raw>CobbAPIBatchMove.AddChildren(iHandle, kMyReferences)</raw>
+            <raw>CobbAPIBatchMove.Run(iHandle)</raw>
+         </example-data>
+      </method>
+      <method name="Run" returns="ObjectReference[]">
+         <blurb>
+            Executes a BatchMoveGroup task and returns an array of the references that were 
+            successfully moved.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+         </args>
+      </method>
+      <method name="SetAlsoMoveTeleportMarkers">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="Bool" name="abWhich" />
+         </args>
+         <blurb>
+            Controls how a BatchMoveGroup operation handles load doors' teleport markers.
+         </blurb>
+         <description>
+            <p>
+               Controls how a BatchMoveGroup task handles load doors' teleport markers. 
+               By default, the task does nothing to teleport markers (equivalent to passing False 
+               to this function); if you pass True to this function, then the task will maintain 
+               the offset between a moved load door and its destination's teleport marker.
+            </p>
+         </description>
+      </method>
+      <method name="SetDestination">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="Float" name="akPositionX" />
+            <arg type="Float" name="akPositionY" />
+            <arg type="Float" name="akPositionZ" />
+            <arg type="Float" name="akRotationX" />
+            <arg type="Float" name="akRotationY" />
+            <arg type="Float" name="akRotationZ" />
+         </args>
+         <blurb>
+            Sets the target coordinates for the group root.
+         </blurb>
+      </method>
+      <method name="SetDestinationPosition">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="Float" name="akPositionX" />
+            <arg type="Float" name="akPositionY" />
+            <arg type="Float" name="akPositionZ" />
+         </args>
+         <blurb>
+            Sets the target position for the group root.
+         </blurb>
+      </method>
+      <method name="SetDestinationRotation">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="Float" name="akRotationX" />
+            <arg type="Float" name="akRotationY" />
+            <arg type="Float" name="akRotationZ" />
+         </args>
+         <blurb>
+            Sets the target rotation for the group root.
+         </blurb>
+      </method>
+      <method name="SetRoot">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="ObjectReference" name="akRoot" />
+         </args>
+         <blurb>
+            Sets the group root.
+         </blurb>
+      </method>
+      <method name="SetTargetCell">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchMoveGroup task.
+            </arg>
+            <arg type="Cell" name="akCell" />
+         </args>
+         <blurb>
+            Sets the target cell that references will be moved to, if you wish to move references 
+            to a different cell.
+         </blurb>
+      </method>
+   </methods>
+</class>

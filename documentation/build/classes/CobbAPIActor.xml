@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIActor">
+   <blurb>Functions for working with actors.</blurb>
+   <concepts>
+      <concept name="Actor Values"     page="Actor Values" />
+      <concept name="Detection events" page="Detection Events" />
+   </concepts>
+   <methods>
+      <method name="CeaseDetectionEvent">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Ends the actor's ongoing detection event, if it has one.</blurb>
+         <example-data>
+            <comment>
+               Delete the detection event, so that other actors forget 
+               about the last noise that akActor made.
+            </comment>
+            <call />
+         </example-data>
+         <related type="method" name="GetDetectionEventAge" />
+         <related type="method" name="GetDetectionEventPosition" />
+         <related type="method" name="GetDetectionEventSoundLevel" />
+         <related type="method" name="HasDetectionEvent" />
+      </method>
+      <method name="Decapitate">
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Bool"  name="abEvenIfAlive" default="False">
+               If this argument is True, then the actor will be decapitated even if they are 
+               alive. Otherwise, the actor will not be decapitated unless they are dead.
+            </arg>
+         </args>
+         <blurb>Severs an actor's head, optionally even if they are still alive.</blurb>
+         <description>
+            <p>
+               Severs <var>akTarget</var>'s head, but only if they are dead or if 
+               <var>abEvenIfAlive</var> is true.
+            </p>
+            <p>
+               It is possible to decapitate living actors. This does not affect their AI, 
+               pathing, or survivability in combat; however, it prevents them from engaging in 
+               any kind of dialogue. This function has an argument that can guard against the 
+               accidental decapitation of living actors.
+            </p>
+            <p>
+               Note that once an actor's head is severed, it can't be reattached. If the actor's 
+               equipped armor has a head covering (e.g. mage robes), that covering will likely 
+               sever with the head, which may produce graphical oddities if the armor wasn't 
+               designed for this. The actor's head will pop off of their body with a small 
+               amount of force, which may look somewhat unnatural if they're still standing.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Sever Ulfric's head, but only if he's dead:
+            </comment>
+            <call>
+               <arg value="Ulfric" />
+               <!-- Omitting an ARG uses the default value. -->
+            </call>
+            <comment>
+               Sever the horseman's head even if he's alive:
+            </comment>
+            <call>
+               <arg value="myHorseman" />
+               <arg value="True" />
+            </call>
+         </example-data>
+         <related type="method" name="IsDecapitated" />
+      </method>
+      <method name="GetActorValueModifier" returns="Float">
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Int"   name="aiActorValue" abstract-type="actor-value-index" />
+            <arg type="Int"   name="aiModifierType" />
+         </args>
+         <blurb>Retrieves the permanent, temporary, or damage modifier of a given actor value.</blurb>
+         <description>
+            <p>
+               Returns the permanent, temporary, or damage modifier that 
+               <var>akActor</var> has for a given actor value. <var>aiActorValue</var> 
+               should be the numeric index of an actor value, and <var>aiModifierType</var> 
+               should be one of the following:
+            </p>
+            <table class="narrow" data-align-col-1="right">
+               <thead>
+                  <tr>
+                     <th>Value</th>
+                     <th>Modifier</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>0</th>
+                     <td>Permanent</td>
+                  </tr>
+                  <tr>
+                     <th>1</th>
+                     <td>Temporary</td>
+                  </tr>
+                  <tr>
+                     <th>2</th>
+                     <td>Damage</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+         <example-data>
+            <comment>
+               Check how much damage akActor has taken to health:
+            </comment>
+            <call return-var="fHealthDamage">
+               <arg value="akActor" />
+               <arg value="24" />
+               <arg value="2" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetActorValueRegenDelay" returns="Float">
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Int"   name="aiActorValue" abstract-type="actor-value-index" />
+         </args>
+         <blurb>Retrieves the remaining regen timer for an actor value.</blurb>
+         <description>
+            <p>
+               Retrieves the remaining regen timer for an actor value. Only health, magicka, 
+               and stamina have regen functionality; for all other actor values, this 
+               function returns 0.0.
+            </p>
+         </description>
+      </method>
+      <method name="GetBleedoutTimer" returns="Float">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Retrieves an actor's remaining bleedout time, or 0.0 if they are not in bleedout.</blurb>
+      </method>
+      <method name="GetDetectionEventAge" returns="Float">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Returns the age of the actor's ongoing detection event.</blurb>
+         <description>
+            <p>
+               Returns the age of the actor's ongoing detection event, or zero if the 
+               actor does not have an ongoing detection event.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="fAge" />
+         </example-data>
+         <related type="method" name="CeaseDetectionEvent" />
+         <related type="method" name="GetDetectionEventPosition" />
+         <related type="method" name="GetDetectionEventSoundLevel" />
+         <related type="method" name="HasDetectionEvent" />
+      </method>
+      <method name="GetDetectionEventPosition" returns="Float[]">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Returns the position of the actor's ongoing detection event.</blurb>
+         <description>
+            <p>
+               Returns the position of the actor's ongoing detection event as an array of 
+               three coordinates. If the actor does not have an ongoing detection event, 
+               this function returns an empty array.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="fPosition" />
+            <raw>
+If fPosition.Length == 0
+   ;
+   ; There is no ongoing detection event.
+   ;
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="CeaseDetectionEvent" />
+         <related type="method" name="GetDetectionEventAge" />
+         <related type="method" name="GetDetectionEventSoundLevel" />
+         <related type="method" name="HasDetectionEvent" />
+      </method>
+      <method name="GetDetectionEventSoundLevel" returns="Int">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Returns the sound level of the actor's ongoing detection event.</blurb>
+         <description>
+            <p>
+               Returns the sound level of the actor's ongoing detection event, or -1 if the 
+               actor does not have an ongoing detection event.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="iLoudness" />
+         </example-data>
+         <related type="method" name="CeaseDetectionEvent" />
+         <related type="method" name="GetDetectionEventAge" />
+         <related type="method" name="GetDetectionEventPosition" />
+         <related type="method" name="HasDetectionEvent" />
+      </method>
+      <method name="GetHasBeenEaten" returns="Bool">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Checks whether an actor has been eaten by a werewolf or a cannibal.</blurb>
+         <description>
+            <p>
+               Returns True if <var>akActor</var> has been eaten by a 
+               werewolf or a cannibal, or False otherwise. Werewolf and 
+               cannibal feeding both use the same flag internally, and 
+               cannot be distinguisted after the fact.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="fPosition" />
+            <raw>
+If CobbAPIActor.GetHasBeenEaten(akActor)
+   Debug.MessageBox("You already ate this person!")
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="SetHasBeenEaten" />
+      </method>
+      <method name="GetSoulSize" returns="Int">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Returns the actor's soul size as an enum.</blurb>
+         <description>
+            <p>
+               Returns the actor's soul size as an enum. Values have the 
+               following meaning:
+            </p>
+            <table class="narrow">
+               <thead>
+                  <tr>
+                     <th>Value</th>
+                     <th>Size</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>None</th>
+                     <td>0</td>
+                  </tr>
+                  <tr>
+                     <th>Petty</th>
+                     <td>1</td>
+                  </tr>
+                  <tr>
+                     <th>Lesser</th>
+                     <td>2</td>
+                  </tr>
+                  <tr>
+                     <th>Common</th>
+                     <td>3</td>
+                  </tr>
+                  <tr>
+                     <th>Greater</th>
+                     <td>4</td>
+                  </tr>
+                  <tr>
+                     <th>Grand</th>
+                     <td>5</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+         <example-data>
+            <call return-var="iSoulSize" />
+         </example-data>
+      </method>
+      <method name="HasDetectionEvent" returns="Bool">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Checks whether the actor has an ongoing detection event.</blurb>
+         <description>
+            <p>
+               Returns True if the actor has an ongoing detection event, or 
+               False otherwise.
+            </p>
+         </description>
+         <related type="method" name="CeaseDetectionEvent" />
+         <related type="method" name="GetDetectionEventAge" />
+         <related type="method" name="GetDetectionEventPosition" />
+         <related type="method" name="GetDetectionEventSoundLevel" />
+      </method>
+      <method name="IsDecapitated" returns="Bool">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Checks whether an actor's head has been severed from its body.</blurb>
+         <description>
+            <p>
+               Returns True if the actor has been decapitated, or False otherwise.
+            </p>
+         </description>
+         <related type="method" name="Decapitate" />
+      </method>
+      <method name="IsHorse" returns="Bool">
+         <args>
+            <arg type="Actor" name="akActor" />
+         </args>
+         <blurb>Checks if an actor has the HRSK default object (Keyword: ActorTypeHorse).</blurb>
+         <description>
+            <p>
+               Returns True if the actor's base form has the <var>HRSK</var> 
+               default object, which in Skyrim.esm is a Keyword named 
+               <var>ActorTypeHorse</var>. Returns False otherwise.
+            </p>
+         </description>
+      </method>
+      <method name="SetHasBeenEaten">
+         <args>
+            <arg type="Actor" name="akActor" />
+            <arg type="Bool"  name="abEaten" default="True">
+               If this argument is True, then the actor will be flagged as having 
+               been eaten. Otherwise, the actor will be flagged as not having been 
+               eaten.
+            </arg>
+         </args>
+         <blurb>Sets the flag that indicates that an actor has been eaten by a werewolf or a cannibal.</blurb>
+         <description>
+            <p>
+               This function modifies the internal flag that indicates that an 
+               actor has been eaten by a werewolf or a cannibal. However, the 
+               function only works if the actor is dead, and has no effect 
+               otherwise.
+            </p>
+         </description>
+         <example-data>
+            <raw>
+If akActor.IsDead()
+   CobbAPIActor.SetHasBeenEaten(akActor, True) ; flag them as "eaten" so they can't be fed on
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="GetHasBeenEaten" />
+      </method>
+   </methods>
+</class>

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIFurniture">
+   <blurb>
+      Functions for working with Furniture base forms.
+   </blurb>
+   <methods>
+      <method name="GetAssociatedSpell" returns="Spell">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+         </args>
+         <blurb>
+            Returns a Furniture form's associated spell.
+         </blurb>
+      </method>
+      <method name="GetEnabledMarkers" returns="Int[]">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+         </args>
+         <blurb>
+            Returns a list of the indices of all markers on a Furniture that are flagged as enabled.
+         </blurb>
+      </method>
+      <method name="GetMarkerEntryPoints" returns="Int[]">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+            <arg type="Int" name="aiMarker">
+               The index of the marker to query.
+            </arg>
+         </args>
+         <blurb>
+            Returns a list of the entry points available for a marker on a Furniture.
+         </blurb>
+         <description>
+            <p>
+               Returns an array of the entry points available for a specified marker on a Furniture.
+            </p>
+            <table class="narrow" data-align-col-1="right">
+               <thead>
+                  <tr>
+                     <th>Value</th>
+                     <th>Meaning</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>0</th>
+                     <td>Invalid</td>
+                  </tr>
+                  <tr>
+                     <th>1</th>
+                     <td>Front</td>
+                  </tr>
+                  <tr>
+                     <th>2</th>
+                     <td>Back</td>
+                  </tr>
+                  <tr>
+                     <th>3</th>
+                     <td>Right</td>
+                  </tr>
+                  <tr>
+                     <th>4</th>
+                     <td>Left</td>
+                  </tr>
+                  <tr>
+                     <th>5</th>
+                     <td>Up</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+      </method>
+      <method name="GetMarkerKeyword" returns="Keyword">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+            <arg type="Int" name="aiMarker">
+               The index of the marker to query.
+            </arg>
+         </args>
+         <blurb>
+            Returns the Keyword associated with a marker on a Furniture.
+         </blurb>
+      </method>
+      <method name="GetMustExitToTalk" returns="Bool">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+         </args>
+         <blurb>
+            Returns whether an actor using a given Furniture type must exist that furniture before 
+            they can talk.
+         </blurb>
+      </method>
+      <method name="GetWorkbenchSkill" returns="Int">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+         </args>
+         <blurb>
+            Returns the workbench skill set for a furniture.
+         </blurb>
+         <description>
+            <p>
+               This function returns the workbench skill assigned to a furniture. Skill values 
+               are:
+            </p>
+            <table class="narrow" data-align-col-1="right">
+               <thead>
+                  <tr>
+                     <th>Value</th>
+                     <th>Workbench skill</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>-1</th>
+                     <td>None</td>
+                  </tr>
+                  <tr>
+                     <th>16</th>
+                     <td>Alchemy</td>
+                  </tr>
+                  <tr>
+                     <th>18</th>
+                     <td>Alteration</td>
+                  </tr>
+                  <tr>
+                     <th>8</th>
+                     <td>Archery</td>
+                  </tr>
+                  <tr>
+                     <th>9</th>
+                     <td>Block</td>
+                  </tr>
+                  <tr>
+                     <th>19</th>
+                     <td>Conjuration</td>
+                  </tr>
+                  <tr>
+                     <th>20</th>
+                     <td>Destruction</td>
+                  </tr>
+                  <tr>
+                     <th>23</th>
+                     <td>Enchanting</td>
+                  </tr>
+                  <tr>
+                     <th>11</th>
+                     <td>Heavy Armor</td>
+                  </tr>
+                  <tr>
+                     <th>21</th>
+                     <td>Illusion</td>
+                  </tr>
+                  <tr>
+                     <th>12</th>
+                     <td>Light Armor</td>
+                  </tr>
+                  <tr>
+                     <th>14</th>
+                     <td>Lockpicking</td>
+                  </tr>
+                  <tr>
+                     <th>13</th>
+                     <td>Pickpocketing</td>
+                  </tr>
+                  <tr>
+                     <th>22</th>
+                     <td>Restoration</td>
+                  </tr>
+                  <tr>
+                     <th>10</th>
+                     <td>Smithing</td>
+                  </tr>
+                  <tr>
+                     <th>15</th>
+                     <td>Sneak</td>
+                  </tr>
+                  <tr>
+                     <th>17</th>
+                     <td>Speech</td>
+                  </tr>
+                  <tr>
+                     <th>7</th>
+                     <td>Two-Handed</td>
+                  </tr>
+                  <tr>
+                     <th>255</th>
+                     <td>None</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+      </method>
+      <method name="GetWorkbenchType" returns="Int">
+         <args>
+            <arg type="Furniture" name="akFurniture" />
+         </args>
+         <blurb>
+            Returns the workbench type set for a furniture.
+         </blurb>
+         <description>
+            <p>
+               This function returns the workbench type assigned to a furniture. Type values 
+               are:
+            </p>
+            <table class="narrow" data-align-col-1="right">
+               <thead>
+                  <tr>
+                     <th>Value</th>
+                     <th>Workbench type</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>-1</th>
+                     <td>None</td>
+                  </tr>
+                  <tr>
+                     <th>0</th>
+                     <td>None</td>
+                  </tr>
+                  <tr>
+                     <th>1</th>
+                     <td>Create Object</td>
+                  </tr>
+                  <tr>
+                     <th>2</th>
+                     <td>Smithing Weapon</td>
+                  </tr>
+                  <tr>
+                     <th>3</th>
+                     <td>Enchanting</td>
+                  </tr>
+                  <tr>
+                     <th>4</th>
+                     <td>Enchanting Experiment</td>
+                  </tr>
+                  <tr>
+                     <th>5</th>
+                     <td>Alchemy</td>
+                  </tr>
+                  <tr>
+                     <th>6</th>
+                     <td>Alchemy Experiment</td>
+                  </tr>
+                  <tr>
+                     <th>7</th>
+                     <td>Smithing Armor</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+      </method>
+   </methods>
+</class>

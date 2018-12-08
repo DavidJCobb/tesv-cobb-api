@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIRevealService">
+   <blurb>
+      Functions for showing and hiding objects en masse.
+   </blurb>
+   <description>
+      <p>
+         The "reveal service" is primarily useful for showing and hiding all lights in the 
+         loaded area en masse, by way of switching the 3D model paths for all Light base forms 
+         in memory and then forcing all nearby lights to reload their 3D. Before you can reveal 
+         lights, you must supply forms to be used for the new models.
+      </p>
+      <p>
+         In addition to revealing lights, the service can "reveal" arbitrary forms that have 
+         been registered with it. As with lights, this is a simple mass model swap. These forms 
+         are referred to in this documentation as "markers."
+      </p>
+      <p>
+         The reveal service in CobbAPI synchronizes with the reveal service in Cobb Positioner. 
+         They share the same light model forms and registrations, and state synchronizes between 
+         both. The functionality was originally developed in order to allow Cobb Positioner to 
+         reveal lights for editing, and to reveal invisible objects as "editor markers."
+      </p>
+   </description>
+   <methods>
+      <method name="GetLightRevealState" returns="Bool">
+         <blurb>
+            Returns True if lights are being revealed, or False otherwise.
+         </blurb>
+         <related type="method" name="SetLightModels" />
+         <related type="method" name="SetLightRevealState" />
+      </method>
+      <method name="GetMarkerRevealState" returns="Bool">
+         <blurb>
+            Returns True if markers are being revealed, or False otherwise.
+         </blurb>
+         <related type="method" name="RegisterMarker" />
+         <related type="method" name="RegisterMarkersInBulk" />
+         <related type="method" name="SetMarkerRevealState" />
+      </method>
+      <method name="RegisterMarker">
+         <args>
+            <arg type="Form" name="akBaseForm">
+               The form that the reveal service should register.
+            </arg>
+            <arg type="String" name="asRevealPath">
+               The 3D model that the form should use while revealed.
+            </arg>
+            <arg type="Int[]" name="aiBounds" abstract-type="bounds">
+               Six integers representing the bounds that the form should use while revealed. These 
+               are directly analogous to the Object Bounds (OBND) that the model would produce if 
+               you were to use Recalc Bounds in the Creation Kit.
+            </arg>
+         </args>
+         <blurb>
+            Register a marker with the reveal service.
+         </blurb>
+         <related type="method" name="GetMarkerRevealState" />
+         <related type="method" name="RegisterMarkersInBulk" />
+         <related type="method" name="SetMarkerRevealState" />
+      </method>
+      <method name="RegisterMarkersInBulk">
+         <args>
+            <arg type="Form[]" name="akBaseForms">
+               An array of forms that the reveal service should register.
+            </arg>
+            <arg type="String[]" name="asRevealPaths">
+               An array of 3D models that the forms should use while revealed.
+            </arg>
+            <arg type="Int[]" name="aiBounds" abstract-type="bounds">
+               An array of integers representing the bounds that the forms should use while revealed; 
+               there should be six integers for each form. These are directly analogous to the Object 
+               Bounds (OBND) that the model would produce if you were to use Recalc Bounds in the 
+               Creation Kit.
+            </arg>
+         </args>
+         <blurb>
+            Register multiple markers with the reveal service.
+         </blurb>
+         <related type="method" name="GetMarkerRevealState" />
+         <related type="method" name="RegisterMarkers" />
+         <related type="method" name="SetMarkerRevealState" />
+      </method>
+      <method name="SetAllRevealStates">
+         <args>
+            <arg type="Bool" name="abState">
+               Whether to reveal (True) or revert (False) lights and markers.
+            </arg>
+         </args>
+         <blurb>
+            Sets whether lights and markers should be revealed.
+         </blurb>
+         <related type="method" name="SetLightRevealState" />
+         <related type="method" name="SetMarkerRevealState" />
+      </method>
+      <method name="SetLightModels">
+         <args>
+            <arg type="Activator" name="akOmni">
+               A form to be used for "omni" lights.
+            </arg>
+            <arg type="Activator" name="akOmniShadow">
+               A form to be used for shadow-casting "omni" lights.
+            </arg>
+            <arg type="Activator" name="akOmniHalf">
+               A form to be used for shadow-casting "hemi" lights.
+            </arg>
+            <arg type="Activator" name="akSpot">
+               A form to be used for "spot" lights.
+            </arg>
+            <arg type="Activator" name="akOmni">
+               A form to be used for shadow-casting "spot" lights.
+            </arg>
+         </args>
+         <blurb>
+            Sets the models used for revealing lights.
+         </blurb>
+         <description>
+            <p>
+               This function sets the models used for revealing lights.
+            </p>
+            <p>
+               The reason the function requires forms rather than model paths is so that you can 
+               also supply bounds, allowing lights to be found with CellSearcher and similar APIs. 
+               The Object Bounds (OBND) of each form will be used as the bounds for any currently 
+               revealed lights. You can generate OBND data by right-clicking on your form in the 
+               Creation Kit's Object Window and selecting "Recalc Bounds."
+            </p>
+         </description>
+         <related type="method" name="GetLightRevealState" />
+         <related type="method" name="SetLightRevealState" />
+      </method>
+      <method name="SetLightRevealState">
+         <args>
+            <arg type="Bool" name="abState">
+               Whether to reveal (True) or revert (False) lights.
+            </arg>
+         </args>
+         <blurb>
+            Sets whether lights should be revealed.
+         </blurb>
+         <related type="method" name="GetLightRevealState" />
+         <related type="method" name="SetAllRevealStates" />
+         <related type="method" name="SetLightModels" />
+      </method>
+      <method name="SetMarkerRevealState">
+         <args>
+            <arg type="Bool" name="abState">
+               Whether to reveal (True) or revert (False) markers.
+            </arg>
+         </args>
+         <blurb>
+            Sets whether markers should be revealed.
+         </blurb>
+         <related type="method" name="GetMarkerRevealState" />
+         <related type="method" name="RegisterMarker" />
+         <related type="method" name="RegisterMarkersInBulk" />
+         <related type="method" name="SetAllRevealStates" />
+      </method>
+   </methods>
+</class>

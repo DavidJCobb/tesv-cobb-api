@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPILightingTemplate">
+   <blurb>Functions for working with lighting templates.</blurb>
+   <methods>
+      <method name="GetAllForms" returns="Form[]">
+         <blurb>Returns an array of all LightingTemplates.</blurb>
+         <example-data>
+            <call return-var="kLightingTemplates" />
+         </example-data>
+      </method>
+   </methods>
+</class>

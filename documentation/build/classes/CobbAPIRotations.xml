@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIRotations">
+   <blurb>
+      A set of mathematical functions for working with 3D rotations.
+   </blurb>
+   <methods>
+      <method name="ApplyRelativeCoordinates" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afParentPosition">
+               The position that the local coordinates are relative to.
+            </arg>
+            <arg type="Float[]" name="afParentRotation">
+               The rotation that the local coordinates are relative to.
+            </arg>
+            <arg type="Float[]" name="afOffsetPosition">
+               The local position to convert.
+            </arg>
+            <arg type="Float[]" name="afOffsetRotation">
+               The local rotation to convert.
+            </arg>
+         </args>
+         <blurb>
+            Converts local coordinates to world-relative coordinates.
+         </blurb>
+         <description>
+            <p>
+               This function takes coordinates that are local to a given reference frame, and 
+               converts them to world-relative coordinates.
+            </p>
+         </description>
+         <related type="method" name="GetRelativeCoordinates" />
+      </method>
+      <method name="ApplyTransformationMatrix" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afPosition">
+               Three floats representing the position to convert.
+            </arg>
+            <arg type="Float[]" name="afMatrix">
+               An array of nine floats comprising a transformation matrix.
+            </arg>
+         </args>
+         <blurb>Applies a transformation matrix to a 3D position.</blurb>
+         <description>
+            <p>
+               Given a 3D position and a transformation matrix, this function converts the 3D 
+               position to the reference frame described by the matrix, and then returns the 
+               converted 3D position.
+            </p>
+            <p>
+               In simpler terms: you can use this function to convert a position with world-relative 
+               X, Y, and Z axes to a position with X, Y, and Z axes local to the rotation that the 
+               transformation matrix represents. If you use the transpose of the transformation 
+               matrix, you can convert back.
+            </p>
+         </description>
+         <related type="method" name="ApplySnappedOffsetToPosition" />
+         <related type="method" name="ComputeTransformationMatrix" />
+      </method>
+      <method name="ApplySnappedOffsetToPosition" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afBasePosition" />
+            <arg type="Float[]" name="afSnapPosition" />
+            <arg type="Float[]" name="afPositionChange" />
+            <arg type="Float[]" name="afMatrixTransformToLocal" />
+            <arg type="Int" name="aiSnapUnits" />
+         </args>
+         <blurb>
+            A shortcut function for the math that Cobb Positioner performs when moving an 
+            object while a "snap target" is set.
+         </blurb>
+         <description>
+            <p>
+               This is a shortcut function for the math that Cobb Positioner performs when 
+               moving an object while a "snap target" is set (akin to moving something in the 
+               Creation Kit with "Snap to Reference" active). It takes the object's current 
+               position, the (local) offset by which to move it, the snap size, and information 
+               on the snap target's rotation. From this, it produces the position to which the 
+               object should be moved.
+            </p>
+            <p>
+               This function is equivalent to the following Papyrus code:
+            </p>
+            <pre>Float[] vLocal = new Float[3]
+vLocal[0] = afMatrixTransformToLocal[0]*afBasePosition[0] + afMatrixTransformToLocal[1]*afBasePosition[1] + afMatrixTransformToLocal[2]*afBasePosition[2]
+vLocal[1] = afMatrixTransformToLocal[3]*afBasePosition[0] + afMatrixTransformToLocal[4]*afBasePosition[1] + afMatrixTransformToLocal[5]*afBasePosition[2]
+vLocal[2] = afMatrixTransformToLocal[6]*afBasePosition[0] + afMatrixTransformToLocal[7]*afBasePosition[1] + afMatrixTransformToLocal[8]*afBasePosition[2]
+If aiSnapUnits
+   ;
+   ; Now snap the thing.
+   ;
+   ; The offset variable pretty much offsets the grid we're snapping to, to 
+   ; match the position of the snap target. We'd normally just use a simple 
+   ; modulus (pos local % pos snap), but Papyrus doesn't support modulus on 
+   ; non-integers.
+   ;
+   Float[] fOffsets = new Float[3]
+   fOffsets[0] = (afSnapPosition[0] as int) % aiSnapUnits + (afSnapPosition[0] - (afSnapPosition[0] as int))
+   fOffsets[1] = (afSnapPosition[1] as int) % aiSnapUnits + (afSnapPosition[1] - (afSnapPosition[1] as int))
+   fOffsets[2] = (afSnapPosition[2] as int) % aiSnapUnits + (afSnapPosition[2] - (afSnapPosition[2] as int))
+   vLocal[0] = vLocal[0] - fOffsets[0]
+   vLocal[1] = vLocal[1] - fOffsets[1]
+   vLocal[2] = vLocal[2] - fOffsets[2]
+   vLocal[0] = Round(vLocal[0] / aiSnapUnits) * aiSnapUnits + (fPosition[0] * aiSnapUnits)
+   vLocal[1] = Round(vLocal[1] / aiSnapUnits) * aiSnapUnits + (fPosition[1] * aiSnapUnits)
+   vLocal[2] = Round(vLocal[2] / aiSnapUnits) * aiSnapUnits + (fPosition[2] * aiSnapUnits)
+   vLocal[0] = vLocal[0] + fOffsets[0]
+   vLocal[1] = vLocal[1] + fOffsets[1]
+   vLocal[2] = vLocal[2] + fOffsets[2]
+Else
+   vLocal[0] = vLocal[0] + fPosition[0]
+   vLocal[1] = vLocal[1] + fPosition[1]
+   vLocal[2] = vLocal[2] + fPosition[2]
+EndIf
+;
+; Transform back, by multiplying by the transpose.
+;
+fReturnValue[0] = afMatrixTransformToLocal[0]*vLocal[0] + afMatrixTransformToLocal[3]*vLocal[1] + afMatrixTransformToLocal[6]*vLocal[2]
+fReturnValue[1] = afMatrixTransformToLocal[1]*vLocal[0] + afMatrixTransformToLocal[4]*vLocal[1] + afMatrixTransformToLocal[7]*vLocal[2]
+fReturnValue[2] = afMatrixTransformToLocal[2]*vLocal[0] + afMatrixTransformToLocal[5]*vLocal[1] + afMatrixTransformToLocal[8]*vLocal[2]</pre>
+            <p>
+               The vector-by-matrix multiplication performed at the start and end of that code 
+               snippet is equivalent to what ApplyTransformationMatrix does.
+            </p>
+         </description>
+         <related type="method" name="ApplyTransformationMatrix" />
+         <related type="method" name="ComputeTransformationMatrix" />
+      </method>
+      <method name="ComputeTransformationMatrix" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afRotation">
+               An Euler rotation to generate a transformation matrix for.
+            </arg>
+         </args>
+         <blurb>Computes a transformation matrix for an Euler rotation.</blurb>
+         <description>
+            <p>
+               Given an Euler rotation, this function returns, as an array of nine floats, a 
+               transformation matrix for that rotation.
+            </p>
+         </description>
+         <related type="method" name="ApplyTransformationMatrix" />
+         <related type="method" name="ApplySnappedOffsetToPosition" />
+      </method>
+      <method name="GetRelativeCoordinates" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afParentPosition">
+               The position that the result should be relative to.
+            </arg>
+            <arg type="Float[]" name="afParentRotation">
+               The rotation that the result should be relative to.
+            </arg>
+            <arg type="Float[]" name="afTargetPosition">
+               The world-relative position to convert.
+            </arg>
+            <arg type="Float[]" name="afTargetRotation">
+               The world-relative rotation to convert.
+            </arg>
+         </args>
+         <blurb>
+            Converts world-relative coordinates to local coordinates.
+         </blurb>
+         <description>
+            <p>
+               This function converts a set of world-relative coordinates to coordinates that 
+               are local to a given reference frame.
+            </p>
+         </description>
+         <related type="method" name="ApplyRelativeCoordinates" />
+      </method>
+   </methods>
+</class>

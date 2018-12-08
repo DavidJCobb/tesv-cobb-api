@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIBatchSetMotionType">
+   <blurb>
+      Functions for modifying the physics of references in bulk.
+   </blurb>
+   <description>
+      <p>
+         This API allows you to modify the physics behavior for a group of references.
+      </p>
+      <p>
+         To use the API, you call a function to create a BatchSetMotionType task; this function returns a 
+         numeric "handle," which is like a ticket that you can exchange to access your task. Once you 
+         have a handle, you can use additional functions to configure your task, and then call a final 
+         function to run the task and receive results.
+      </p>
+      <p>
+         A task can only be configured or used by the same Papyrus call stack that created it; you 
+         can't pass a handle to some other part of your mod and operate on it later.
+      </p>
+   </description>
+   <concepts>
+      <concept name="Changeflags" page="Changeflags" />
+   </concepts>
+   <methods>
+      <method name="AddOperation">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSetMotionType task.
+            </arg>
+            <arg type="ObjectReference" name="akSubject">
+               The reference to move.
+            </arg>
+            <arg type="Int" name="aiMotionType">
+               The motion type to set.
+            </arg>
+            <arg type="Bool" name="abAllowActivate">
+               If this argument is True, then an object set to dynamic physics will begin simulating 
+               right away. If this argument is set to False, then the object will not begin its 
+               physics simulation until it is touched, attacked, or Z-keyed.
+            </arg>
+         </args>
+         <blurb>
+            Queues a reference to have its physics changed.
+         </blurb>
+      </method>
+      <method name="Cancel">
+         <blurb>
+            Aborts a BatchSetMotionType task, allowing its handle to be reused.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSetMotionType task.
+            </arg>
+         </args>
+      </method>
+      <method name="Create" returns="Int">
+         <blurb>
+            Creates a BatchSetMotionType task, and returns its numeric handle.
+         </blurb>
+      </method>
+      <method name="Run" returns="ObjectReference[]">
+         <blurb>
+            Executes a BatchSetMotionType task and returns an array of the references that were 
+            successfully altered.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSetMotionType task.
+            </arg>
+         </args>
+      </method>
+      <method name="SetWhetherMarkChanged">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSetMotionType task.
+            </arg>
+            <arg type="Bool" name="abMarkChanged" />
+         </args>
+         <blurb>
+            Control whether affected references have their internal "change flag" for physics 
+            set.
+         </blurb>
+         <description>
+            <p>
+               This function controls whether references affected by the task have their internal 
+               "change flag" for physics set. The default is to set the flag.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

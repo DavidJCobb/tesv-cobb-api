@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIString">
+   <blurb>
+      Functions for working with Papyrus strings. Unlike the functions 
+      offered by SKSE, these are generally UTF-8-aware.
+   </blurb>
+   <description>
+      <p>
+         These functions can be used to work with Papyrus strings. Unlike the functions offered 
+         by SKSE, these are generally UTF-8-aware.
+      </p>
+      <h2>An overview of how computers store text</h2>
+      <p>
+         In order to avoid ambiguity, I would prefer to document things using the most precise 
+         terminology possible, but much of this terminology isn't known to people who don't 
+         explicitly do "hard" text programming. I had to do some learning myself in order to 
+         offer as much functionality as I wanted to. As such, here's a "brief" primer on how 
+         computers store text.
+      </p>
+      <p>
+         Computers can only work with numeric data, so every symbol that a piece of text may 
+         contain must be represented using a number, or "code point." The oldest surviving 
+         system for this is ASCII (American Standard Code for Information Interchange), which 
+         was introduced in 1963. In this system, every single glyph is represented with a 
+         single byte, and so up to 256 glyphs (including a string terminator and other control 
+         codes) can be represented. ASCII only defined 128 glyphs, all focused on English text, 
+         leaving the last 128 glyphs undefined.
+      </p>
+      <p>
+         As such, non-English text could only be represented in alternate encodings. Because 
+         virtually all programming is done in English, these encodings are typically supersets 
+         of ASCII. For languages that have large numbers of glyphs, such as Chinese, Japanese, 
+         Korean, and Vietnamese, these encodings often have to use multiple bytes for some or 
+         all glyphs.
+      </p>
+      <p>
+         In 1991, the Unicode standard was published. It uses multiple bytes for all glyphs in 
+         order to maximize its coverage and support as many languages and scripts as possible, 
+         but there are alternate encodings (such as UTF-8) that are designed to compress Unicode 
+         text whenever possible, with a focus on representing ASCII as compactly as possible 
+         (given that markup and program code, invisible to a user, will be in ASCII).
+      </p>
+      <p>
+         Unicode has nuances that are largely invisible to native English-speaking programmers, 
+         who won't encounter or have to work with foreign-language text unless they put 
+         themselves in situations where they may encounter it. Native English-speaking 
+         programmers are used to the assumptions that one glyph will be represented one way 
+         using one byte, and all of those assumptions fall apart when using Unicode and UTF-8.
+      </p>
+      <p>
+         A single glyph can be represented using multiple code point sequences: Unicode offers 
+         better ways of representing glyphs that have diacritics, but it also retains older 
+         representations for backward compatibility's sake. Moreover, a single code point will 
+         be multiple bytes in Unicode; in UTF-8, ASCII code points are single-byte while all 
+         other code points are multi-byte (with higher code points requiring more bytes).
+      </p>
+      <p>
+         The string functions offered by CobbAPI are Unicode-aware, and the documentation will 
+         reflect this: string lengths, character comparisons, and more are done on the basis of 
+         code points, not glyphs or bytes.
+      </p>
+      <h2>String handling in Papyrus</h2>
+      <p>
+         When Papyrus strings are written to ESP and ESM files, they are always written in 
+         UTF-8, regardless of the language in use by a mod author's system. I assume that UTF-8 
+         is also used for Papyrus strings at run-time. (I'm not sure what would happen to string 
+         constants in a script, though; does the Papyrus Compiler treat all files as UTF-8?)
+      </p>
+      <p>
+         It's worth noting that non-Papyrus strings are not guaranteed to use UTF-8. In Skyrim 
+         Classic, the text encoding used by the rest of the game varies from language to 
+         language. Worse, ESP and ESM files don't contain any metadata identifying their 
+         language or their encoding. As such, Papyrus functions that pull strings from game 
+         data (such as getters for editor IDs and actors' names) will generally return data in 
+         an unknown encoding, which may or may not be UTF-8.
+      </p>
+      <p>
+         Papyrus strings are stored case-insensitively according to the C/POSIX locale (which 
+         determines what characters are considered "letters" with uppercase and lowercase 
+         forms). As such, the following glyphs, and only the following glyphs, are considered 
+         interchangeable:
+      </p>
+      <table class="sideways">
+         <tbody>
+            <tr>
+               <th>Uppercase</th>
+               <td>A</td>
+               <td>B</td>
+               <td>C</td>
+               <td>D</td>
+               <td>E</td>
+               <td>F</td>
+               <td>G</td>
+               <td>H</td>
+               <td>I</td>
+               <td>J</td>
+               <td>K</td>
+               <td>L</td>
+               <td>M</td>
+               <td>N</td>
+               <td>O</td>
+               <td>P</td>
+               <td>Q</td>
+               <td>R</td>
+               <td>S</td>
+               <td>T</td>
+               <td>U</td>
+               <td>V</td>
+               <td>W</td>
+               <td>X</td>
+               <td>Y</td>
+               <td>Z</td>
+            </tr>
+            <tr>
+               <th>Lowercase</th>
+               <td>a</td>
+               <td>b</td>
+               <td>c</td>
+               <td>d</td>
+               <td>e</td>
+               <td>f</td>
+               <td>g</td>
+               <td>h</td>
+               <td>i</td>
+               <td>j</td>
+               <td>k</td>
+               <td>l</td>
+               <td>m</td>
+               <td>n</td>
+               <td>o</td>
+               <td>p</td>
+               <td>q</td>
+               <td>r</td>
+               <td>s</td>
+               <td>t</td>
+               <td>u</td>
+               <td>v</td>
+               <td>w</td>
+               <td>x</td>
+               <td>y</td>
+               <td>z</td>
+            </tr>
+         </tbody>
+      </table>
+      <p>
+         The game handles case-insensitivity byte by byte, so an accented letter will be 
+         handled differently depending on whether it is a single code point or two (a 
+         non-accented letter followed by an accent diacritic).
+      </p>
+      <p>
+         If you specify two different strings that are identical save for case, the game will 
+         use the first variant to load. The catch is that this applies across most or all of the 
+         game engine, not just within Papyrus. In an English game, it is impossible to set a 
+         Papyrus string variable to "dog" because there is already an in-game Race form named 
+         "Dog", and so "Dog" was the first variant of the string to load. Similarly, trying to 
+         set a string to "oBjEcTreferenCE" will always yield "ObjectReference" instead.
+      </p>
+   </description>
+   <methods>
+      <method name="BinaryToInt32" returns="Int">
+         <args>
+            <arg type="String" name="asString">
+               A string representing a binary number, e.g. <code>"0010"</code> or 
+               <code>"10101010"</code>.
+            </arg>
+         </args>
+         <blurb>
+            Converts a stringified binary number to an integer.
+         </blurb>
+         <description>
+            <p>
+               This function parses <var>asString</var> in search of a valid binary  
+               number, and returns either the found number or zero. Separators, such as 
+               decimal points and commas, are not allowed; the function works by searching 
+               for the first byte representing ASCII "0" or "1", and stopping at the first 
+               byte after that that isn't an ASCII "0" or "1".
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               This call would return 18:
+            </comment>
+            <call return-var="iNumber">
+               <arg value="10010" />
+            </call>
+         </example-data>
+         <related type="method" name="HexToInt32" />
+         <related type="method" name="ToBinary" />
+         <related type="method" name="ToHex" />
+      </method>
+      <method name="CPLength" returns="Int">
+         <args>
+            <arg type="String" name="asString" />
+         </args>
+         <blurb>
+            Returns a string's length in code points.
+         </blurb>
+         <example-data>
+            <comment>
+               This call would return 6:
+            </comment>
+            <call return-var="iLength">
+               <arg value="一周有七天。" /> <!-- "There are seven days in a week." -->
+            </call>
+            <comment>
+               SKSE's length getter would return 18 &#8212; the number of bytes.
+               
+               (The Chinese phrase means, "There are seven days in a week.")
+            </comment>
+         </example-data>
+      </method>
+      <method name="HexToInt32" returns="Int">
+         <args>
+            <arg type="String" name="asString">
+               A string representing a hexadecimal number, e.g. <code>"0x0012"</code> or 
+               <code>"0xDEADBEEF"</code>.
+            </arg>
+         </args>
+         <blurb>
+            Converts a stringified hexadecimal number to an integer.
+         </blurb>
+         <description>
+            <p>
+               This function parses <var>asString</var> in search of a valid hexadecimal 
+               number, and returns either the found number or zero. Separators, such as 
+               decimal points and commas, are not allowed; the function works by searching 
+               for the first byte representing a valid digit, and continuing until it 
+               finds a byte that does not represent a valid digit.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               A code example for a SkyUI MCM that lets you enter a form ID.
+            </comment>
+            <raw>
+Form Property pkSelectedForm = None Auto Hidden
+;
+Event OnInputAcceptST(String asInput)
+   pkSelectedForm = None
+   ;
+   Int iInput = CobbAPIString.HexToInt32(asInput)
+   If iInput
+      pkSelectedForm = Game.GetFormEx(iInput)
+   EndIf
+EndEvent
+            </raw>
+         </example-data>
+         <related type="method" name="BinaryToInt32" />
+         <related type="method" name="ToBinary" />
+         <related type="method" name="ToHex" />
+      </method>
+      <method name="NaturalCompare_ASCII" returns="Int">
+         <args>
+            <arg type="String" name="a" />
+            <arg type="String" name="b" />
+         </args>
+         <blurb>
+            Perform a "natural" comparison on two strings.
+         </blurb>
+         <description>
+            <p>
+               This function performs a "natural" comparison on two strings, to indicate 
+               whether one would sort above the other. If <var>a</var> would sort below 
+               <var>b</var>, this function returns -1; if it would sort above <var>b</var>, 
+               this function returns 1; and if the two strings have the same natural sort 
+               order, this function returns 0.
+            </p>
+            <p>
+               When dealing with ASCII, the difference between a "natural" or alphabetical sort, 
+               and an "ASCIIbetical" sort, are as follows:
+            </p>
+            <table class="narrow">
+               <thead>
+                  <tr>
+                     <th>ASCIIbetical</th>
+                     <th>Alphabetical</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <td>z1</td>
+                     <td>z1</td>
+                  </tr>
+                  <tr>
+                     <td>z10</td>
+                     <td>z2</td>
+                  </tr>
+                  <tr>
+                     <td>z11</td>
+                     <td>z3</td>
+                  </tr>
+                  <tr>
+                     <td>z12</td>
+                     <td>z4</td>
+                  </tr>
+                  <tr>
+                     <td>z13</td>
+                     <td>z5</td>
+                  </tr>
+                  <tr>
+                     <td>z2</td>
+                     <td>z6</td>
+                  </tr>
+                  <tr>
+                     <td>z3</td>
+                     <td>z7</td>
+                  </tr>
+                  <tr>
+                     <td>z4</td>
+                     <td>z8</td>
+                  </tr>
+                  <tr>
+                     <td>z5</td>
+                     <td>z9</td>
+                  </tr>
+                  <tr>
+                     <td>z6</td>
+                     <td>z10</td>
+                  </tr>
+                  <tr>
+                     <td>z7</td>
+                     <td>z11</td>
+                  </tr>
+                  <tr>
+                     <td>z8</td>
+                     <td>z12</td>
+                  </tr>
+                  <tr>
+                     <td>z9</td>
+                     <td>z13</td>
+                  </tr>
+               </tbody>
+            </table>
+            <p>
+               The comparison works by comparing code points until a numeric digit is found in 
+               the same place in both strings. Once digits are found, we instead parse the digits 
+               into numbers, and then compare the numbers.
+            </p>
+         </description>
+         <related type="method" name="NaturalSort_ASCII" />
+         <related type="method" name="NaturalSortPairInt_ASCII" />
+         <related type="method" name="NaturalSortPairForm_ASCII" />
+      </method>
+      <method name="NaturalSort_ASCII" returns="Int">
+         <args>
+            <arg type="String[]" name="asStrings" />
+         </args>
+         <blurb>
+            Performs a "natural" sort on an array of strings.
+         </blurb>
+         <description>
+            <p>
+               This function creates a copy of <var>asStrings</var>, performs a "natural" sort 
+               on the copy, and then returns the copy.
+            </p>
+            <p>
+               Refer to the documentation for NaturalCompare_ASCII to better understand 
+               exactly how strings are sorted.
+            </p>
+         </description>
+         <related type="method" name="NaturalCompare_ASCII" />
+         <related type="method" name="NaturalSortPairInt_ASCII" />
+         <related type="method" name="NaturalSortPairForm_ASCII" />
+      </method>
+      <method name="NaturalSortPairForm_ASCII" returns="Int">
+         <args>
+            <arg type="String[]" name="asStrings" />
+            <arg type="Form[]" name="axSecond" />
+         </args>
+         <blurb>
+            Performs a "natural" sort on an array of strings, and on a matching array.
+         </blurb>
+         <description>
+            <p>
+               This function creates a copy of <var>asStrings</var>, performs a "natural" sort 
+               on the copy, and then returns the copy. The <var>axSecond</var> array is modified 
+               directly (<em>not</em> copied), such that its elements still match those of the 
+               string array.
+            </p>
+            <p>
+               Refer to the documentation for NaturalCompare_ASCII to better understand 
+               exactly how strings are sorted.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Get a list of all LightingTemplates, and then sort that list by their EditorIDs.
+            </comment>
+            <raw>
+Form[]   kLightingTemplates = CobbAPILightingTemplate.GetAllForms()
+String[] sEditorIDs         = CobbAPIForm.GetEditorIDs(kLightingTemplates)
+sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, kLightingTemplates)
+            </raw>
+            <comment>
+               sEditorIDs[i] == the editor ID for kLightingTemplates[i], but now they're sorted.
+            </comment>
+         </example-data>
+         <related type="method" name="NaturalCompare_ASCII" />
+         <related type="method" name="NaturalSort_ASCII" />
+         <related type="method" name="NaturalSortPairInt_ASCII" />
+      </method>
+      <method name="NaturalSortPairInt_ASCII" returns="Int">
+         <args>
+            <arg type="String[]" name="asStrings" />
+            <arg type="Int[]" name="axSecond" />
+         </args>
+         <blurb>
+            Performs a "natural" sort on an array of strings, and on a matching array.
+         </blurb>
+         <description>
+            <p>
+               This function creates a copy of <var>asStrings</var>, performs a "natural" sort 
+               on the copy, and then returns the copy. The <var>axSecond</var> array is modified 
+               directly (<em>not</em> copied), such that its elements still match those of the 
+               string array.
+            </p>
+            <p>
+               Refer to the documentation for NaturalCompare_ASCII to better understand 
+               exactly how strings are sorted.
+            </p>
+         </description>
+         <related type="method" name="NaturalCompare_ASCII" />
+         <related type="method" name="NaturalSort_ASCII" />
+         <related type="method" name="NaturalSortPairForm_ASCII" />
+      </method>
+      <method name="RegexMatch" returns="String[]">
+         <args>
+            <arg type="String" name="asHaystack">
+               The string to search for matches.
+            </arg>
+            <arg type="String" name="asRegex">
+               The regular expression to use. Regexes are in JavaScript format, but 
+               without slashes as delimiters or trailing flags. Make sure to escape 
+               any backslashes that appear in your regex.
+            </arg>
+            <arg type="String" name="asCaseSentinel">
+               A string used to guard against Papyrus mangling the capitalization of characters 
+               in the regex. This string must have the same number of code points as the regex 
+               string. Any code point that should be lowercase in the regex should be a '0' in 
+               this string; code points that should be uppercase in the regex should be '1' in 
+               this string. code points that aren't case-insensitive letters can be represented 
+               in this string using any other glyph. Make sure not to get confused by escaped 
+               backslashes in the regex.
+            </arg>
+            <arg type="Bool" name="abWholeStringMustMatch" />
+         </args>
+         <blurb>
+            Performs a regular expression match on a string.
+         </blurb>
+         <description>
+            <p>
+               This function performs a regular expression match on a string and returns an 
+               array of the results.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Find all three-letter words.
+            </comment>
+            <call return-var="sMatches" line-breaks="yes">
+               <arg value="The cat and the dog are friends." />
+               <arg value="(?:^|\W)(\w\w\w)(?:$|\W)" />
+               <arg value="------1---1-1-1-------1-" />
+               <arg value="False" />
+            </call>
+         </example-data>
+         <related type="method" name="RegexReplace" />
+         <related type="method" name="RegexSearch" />
+      </method>
+      <method name="RegexReplace" returns="String">
+         <args>
+            <arg type="String" name="asHaystack">
+               The string to search for matches.
+            </arg>
+            <arg type="String" name="asRegex">
+               The regular expression to use. Regexes are in JavaScript format, but 
+               without slashes as delimiters or trailing flags. Make sure to escape 
+               any backslashes that appear in your regex.
+            </arg>
+            <arg type="String" name="asCaseSentinel">
+               A string used to guard against Papyrus mangling the capitalization of characters 
+               in the regex. This string must have the same number of code points as the regex 
+               string. Any code point that should be lowercase in the regex should be a '0' in 
+               this string; code points that should be uppercase in the regex should be '1' in 
+               this string. Code points that aren't case-insensitive letters can be represented 
+               in this string using any other glyph. Make sure not to get confused by escaped 
+               backslashes in the regex.
+            </arg>
+            <arg type="String" name="asReplaceWith">
+               What to replace the found substring with.
+            </arg>
+         </args>
+         <blurb>
+            Replaces substrings based on a regex.
+         </blurb>
+         <description>
+            <p>
+               This function performs a regular expression replace on a string and returns the 
+               result.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Change the Chinese text "There are seven days in a week" to 
+               "There are seven days in a year."
+            </comment>
+            <call return-var="sMatches" line-breaks="yes">
+               <arg value="一周有七天。" />
+               <arg value="周" />
+               <arg value="-" />
+               <arg value="年" />
+            </call>
+            <comment>
+               Or more simply: "ABC 123 DEF" to "ABC ### DEF"
+            </comment>
+            <call return-var="sMatches" line-breaks="yes">
+               <arg value="ABC 123 DEF" />
+               <arg value="\d" />
+               <arg value="-0" />
+               <arg value="#" />
+            </call>
+         </example-data>
+         <related type="method" name="RegexMatch" />
+         <related type="method" name="RegexSearch" />
+      </method>
+      <method name="RegexSearch" returns="Bool">
+         <args>
+            <arg type="String" name="asHaystack">
+               The string to check for matches.
+            </arg>
+            <arg type="String" name="asRegex">
+               The regular expression to use. Regexes are in JavaScript format, but 
+               without slashes as delimiters or trailing flags. Make sure to escape 
+               any backslashes that appear in your regex.
+            </arg>
+            <arg type="String" name="asCaseSentinel">
+               A string used to guard against Papyrus mangling the capitalization of characters 
+               in the regex. This string must have the same number of code points as the regex 
+               string. Any code point that should be lowercase in the regex should be a '0' in 
+               this string; code points that should be uppercase in the regex should be '1' in 
+               this string. Code points that aren't case-insensitive letters can be represented 
+               in this string using any other glyph. Make sure not to get confused by escaped 
+               backslashes in the regex.
+            </arg>
+         </args>
+         <blurb>
+            Checks whether a string contains a given substring.
+         </blurb>
+         <description>
+            <p>
+               This function performs a regular expression search on a string and returns True 
+               if the regex matches, or False otherwise.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Check whether the Chinese text "There are seven days in a week" 
+               contains the word "week."
+            </comment>
+            <call return-var="sMatches" line-breaks="yes">
+               <arg value="一周有七天。" />
+               <arg value="周" />
+               <arg value="-" />
+            </call>
+         </example-data>
+         <related type="method" name="RegexMatch" />
+         <related type="method" name="RegexReplace" />
+      </method>
+      <method name="ToBinary" returns="String">
+         <args>
+            <arg type="Int" name="aiBinary">
+               The number to convert.
+            </arg>
+            <arg type="Int" name="aiDigits" default="32">
+               The number of digits to use in the resulting string. If this argument is 
+               zero, negative, or larger than 32, then it will be set to 32.
+            </arg>
+         </args>
+         <blurb>
+            Converts an integer to a binary string representation.
+         </blurb>
+         <example-data>
+            <comment>
+               This call would return "10010":
+            </comment>
+            <call return-var="sBinary">
+               <arg value="18" />
+               <arg value="5" />
+            </call>
+            <comment>
+               This call would return "0":
+            </comment>
+            <call return-var="sBinary">
+               <arg value="18" />
+               <arg value="1" />
+            </call>
+         </example-data>
+         <related type="method" name="BinaryToInt32" />
+         <related type="method" name="HexToInt32" />
+         <related type="method" name="ToHex" />
+      </method>
+      <method name="ToHex" returns="String">
+         <args>
+            <arg type="Int" name="aiHex">
+               The number to convert.
+            </arg>
+            <arg type="Int" name="aiDigits" default="8">
+               The number of digits to use in the resulting string. If this argument is 
+               zero, negative, or larger than 8, then it will be set to 8.
+            </arg>
+         </args>
+         <blurb>
+            Converts an integer to a hexadecimal string representation.
+         </blurb>
+         <example-data>
+            <comment>
+               This call would return "12":
+            </comment>
+            <call return-var="sHex">
+               <arg value="18" />
+               <arg value="2" />
+            </call>
+            <comment>
+               These calls would return "FFFF":
+            </comment>
+            <call return-var="sHex">
+               <arg value="0xFFFFFFFF" />
+               <arg value="4" />
+            </call>
+            <call return-var="sHex">
+               <arg value="-1" />
+               <arg value="4" />
+            </call>
+         </example-data>
+         <related type="method" name="BinaryToInt32" />
+         <related type="method" name="HexToInt32" />
+         <related type="method" name="ToBinary" />
+      </method>
+      <method name="Trim" returns="String">
+         <args>
+            <arg type="String" name="asString" />
+         </args>
+         <blurb>
+            Trims spaces off of the start and end of the string.
+         </blurb>
+         <description>
+            <p>
+               This function returns a copy of the input string with spaces (specifically 
+               codepoint 0x32, the ASCII space) stripped from the string's start and end.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               This call would return "abc" or some other string that is case-insensitively 
+               equal.
+            </comment>
+            <call return-var="sTrimmed">
+               <arg value="   abc       " />
+            </call>
+         </example-data>
+      </method>
+   </methods>
+</class>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIMessage">
+   <blurb>
+      Functions for working with Message forms.
+   </blurb>
+   <methods>
+      <method name="GetButtonLabels" returns="String[]">
+         <args>
+            <arg type="Message" name="akMessage" />
+         </args>
+         <blurb>
+            Returns an array of a message's button labels.
+         </blurb>
+         <description>
+            <p>
+               This function returns an array of a message's button labels. If a message 
+               doesn't have any labels defined, this function returns an empty array (whereas 
+               a message box would offer a default button with a label like "Ok").
+            </p>
+            <p>
+               Note that non-Papyrus strings can be in any of a range of character encodings, 
+               depending on the language a mod author's computer used. These strings are not 
+               converted to UTF-8 before being returned, and so may produce 
+               <a href="https://en.wikipedia.org/wiki/Mojibake" target="_blank">mojibake</a> 
+               when used elsewhere.
+            </p>
+         </description>
+      </method>
+      <method name="GetText" returns="String">
+         <args>
+            <arg type="Message" name="akMessage" />
+         </args>
+         <blurb>
+            Returns a message's text.
+         </blurb>
+         <description>
+            <p>
+               This function returns a message's text.
+            </p>
+            <p>
+               Note that non-Papyrus strings can be in any of a range of character encodings, 
+               depending on the language a mod author's computer used. These strings are not 
+               converted to UTF-8 before being returned, and so may produce 
+               <a href="https://en.wikipedia.org/wiki/Mojibake" target="_blank">mojibake</a> 
+               when used elsewhere.
+            </p>
+         </description>
+      </method>
+      <method name="GetTitle" returns="String">
+         <args>
+            <arg type="Message" name="akMessage" />
+         </args>
+         <blurb>
+            Returns a message's title.
+         </blurb>
+         <description>
+            <p>
+               This function returns a message's title. The title is not visible when the 
+               message is used in-game.
+            </p>
+            <p>
+               Note that non-Papyrus strings can be in any of a range of character encodings, 
+               depending on the language a mod author's computer used. These strings are not 
+               converted to UTF-8 before being returned, and so may produce 
+               <a href="https://en.wikipedia.org/wiki/Mojibake" target="_blank">mojibake</a> 
+               when used elsewhere.
+            </p>
+         </description>
+      </method>
+      <method name="WillCrashDueToLength" returns="String">
+         <args>
+            <arg type="Message" name="akMessage" />
+         </args>
+         <blurb>
+            Checks whether a message would cause a crash if shown in-game.
+         </blurb>
+         <description>
+            <p>
+               This function returns True if a message would crash the game if shown in-game, 
+               or False otherwise. Messages crash if their text (as written in the Creation Kit) 
+               is longer than 1023 bytes.
+            </p>
+         </description>
+      </method>
+   </methods>
+</class>

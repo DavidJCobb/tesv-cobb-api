@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIAcousticSpace">
+   <blurb>Functions for working with acoustic spaces.</blurb>
+   <methods>
+      <method name="GetAllForms" returns="Form[]">
+         <blurb>Returns an array of all AcousticSpaces.</blurb>
+         <example-data>
+            <call return-var="kAcousticSpaces" />
+         </example-data>
+      </method>
+   </methods>
+</class>

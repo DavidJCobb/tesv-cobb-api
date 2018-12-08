@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIUtility">
+   <blurb>
+      Miscellaneous functions for "deep" scripting tasks, like checking whether a Papyrus 
+      pointer has gone bad.
+   </blurb>
+   <methods>
+      <method name="ActiveEffectExists" returns="Bool">
+         <args>
+            <arg type="ActiveMagicEffect" name="akPointer" />
+         </args>
+         <blurb>
+            Returns True if the specified object still exists.
+         </blurb>
+         <description>
+            <p>
+               This method returns True if <var>akPointer</var> is non-null, or False otherwise. 
+               In a limited number of edge-cases, this can be distinct from <var>akPointer</var> 
+               being None.
+            </p>
+            <p>
+               In order to understand this method's utility, we must discuss the script engine 
+               using terms introduced in Fallout 4. Every running script instance is what 
+               Fallout 4 calls a "ScriptObject," and ScriptObjects "wrap" pointers to game 
+               engine objects such as <code>TESForm</code> or <code>TESObjectREFR</code>. 
+               Papyrus data, such as variables and properties, exists on the ScriptObject. If 
+               you pass the ScriptObject to a native method, the method receives the "wrapped 
+               pointer," i.e. the raw <code>TESForm*</code> or <code>TESObjectREFR*</code>.
+            </p>
+            <p>
+               In rare cases, it's possible for a game engine object to disappear out from under 
+               a ScriptObject. This is the cause of Papyrus warnings about calling functions on 
+               None objects, with stack traces indicating that the functions were called on 
+               NULL. ScriptObjects exist semi-independently of the wrapped pointers and can 
+               sometimes try to act on those wrapped pointers even after they've gone null. 
+               Strangely, these script objects test as <code>!= None</code>, so you have no way 
+               to check for this in a script.
+            </p>
+            <p>
+               For ActiveMagicEffect scripts, this can occur if you try to dispel the effect 
+               during its OnEffectFinish handler.
+            </p>
+         </description>
+         <example-data>
+            <raw>
+If !CobbAPIUtility.ActiveMagicEffectExists(Self)
+   ;
+   ; Somehow, the magic effect that our script is attached to no longer 
+   ; exists. If we try to call any mative methods on Self, they'll fail and 
+   ; log Papyrus errors, so just abort.
+   ;
+   Return
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="FormExists" />
+      </method>
+      <method name="FormExists" returns="Bool">
+         <args>
+            <arg type="Form" name="akPointer" />
+         </args>
+         <blurb>
+            Returns True if the specified object still exists.
+         </blurb>
+         <description>
+            <p>
+               This method returns True if <var>akPointer</var> is non-null, or False otherwise. 
+               In a limited number of edge-cases, this can be distinct from <var>akPointer</var> 
+               being None.
+            </p>
+            <p>
+               In order to understand this method's utility, we must discuss the script engine 
+               using terms introduced in Fallout 4. Every running script instance is what 
+               Fallout 4 calls a "ScriptObject," and ScriptObjects "wrap" pointers to game 
+               engine objects such as <code>TESForm</code> or <code>TESObjectREFR</code>. 
+               Papyrus data, such as variables and properties, exists on the ScriptObject. If 
+               you pass the ScriptObject to a native method, the method receives the "wrapped 
+               pointer," i.e. the raw <code>TESForm*</code> or <code>TESObjectREFR*</code>.
+            </p>
+            <p>
+               In rare cases, it's possible for a game engine object to disappear out from under 
+               a ScriptObject. This is the cause of Papyrus warnings about calling functions on 
+               None objects, with stack traces indicating that the functions were called on 
+               NULL. ScriptObjects exist semi-independently of the wrapped pointers and can 
+               sometimes try to act on those wrapped pointers even after they've gone null. 
+               Strangely, these script objects test as <code>!= None</code>, so you have no way 
+               to check for this in a script.
+            </p>
+            <p>
+               For cells, this can occur when the cell is unloaded.
+            </p>
+         </description>
+         <example-data>
+            <raw>
+If !CobbAPIUtility.FormExists(kSomeCell)
+   ;
+   ; The cell was unloaded out from under us.
+   ;
+   kSomeCell = None
+   Return
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="ActiveMagicEffectExists" />
+      </method>
+      <method name="GetBoundsToHalfwidths" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afBounds" abstract-type="bounds" />
+         </args>
+         <blurb>
+            Given a set of six floats representing an oriented bounding box, this function 
+            returns the halfwidths of that box.
+         </blurb>
+         <related type="method" name="GetBoundsToHalfwidthOffsets" />
+      </method>
+      <method name="GetBoundsToHalfwidthOffsets" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afBounds" abstract-type="bounds" />
+         </args>
+         <blurb>
+            Given a set of six floats representing an oriented bounding box, this function 
+            returns a vector representing how far the box's center is offset from the origin.
+         </blurb>
+         <related type="method" name="GetBoundsToHalfwidths" />
+      </method>
+      <method name="GetGoodObjectSpawnCoordinates" returns="Float[]">
+         <args>
+            <arg type="Float[]" name="afBounds" abstract-type="bounds" />
+            <arg type="Float[]" name="afPlayerCoordinates">
+               An array of six floats representing the player's coordinates &#8212; first, their 
+               3D position, and then, their 3D rotation.
+            </arg>
+            <arg type="Int" name="aiFlags" />
+         </args>
+         <blurb>
+            Returns coordinates representing a good place to spawn an object, such that it is 
+            within the player's view, at a somewhat comfortable distance, and the player is not 
+            trapped inside of it.
+         </blurb>
+         <description>
+            <p>
+               Given an object with bounds <var>afBounds</var>, and the player's coordinates as 
+               <var>afPlayerCoordinates</var>, this function computes a good place to spawn that 
+               object such that it will be in the player's view and at a comfortable distance. 
+               The function returns those coordinates. The math involved takes into account the 
+               player's rotation and the bounds size, although especially-off-center bounds may 
+               foul up the calculation.
+            </p>
+            <p>
+               The <var>aiFlags</var> function allows you to specify additional options:
+            </p>
+            <table data-align-col-1="right">
+               <thead>
+                  <tr>
+                     <th style="width:1%">Value</th>
+                     <th>Meaning</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>0x00000001</th>
+                     <td>Object's yaw should match the player's yaw</td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+      </method>
+   </methods>
+</class>

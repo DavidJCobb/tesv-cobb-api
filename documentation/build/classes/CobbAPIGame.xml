@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIGame">
+   <blurb>
+      Miscellaneous functions for querying and altering global game state, such as the state 
+      of the <i>ToggleCollision</i> debugging command.
+   </blurb>
+   <methods>
+      <method name="GetFormFromFile" returns="Form">
+         <args>
+            <arg type="Int" name="aiFormID">
+               The form ID to search for. The load order prefix (the first two hexadecimal 
+               digits) will be ignored.
+            </arg>
+            <arg type="String" name="asFilename">
+               The name of the file to search for the specified form ID.
+            </arg>
+         </args>
+         <blurb>
+            A clone of the vanilla <code>Game.GetFormFromFile</code>. This function doesn't 
+            write lookup failures to the Papyrus log.
+         </blurb>
+         <description>
+            <p>
+               This function is a clone of the vanilla <code>Game.GetFormFromFile</code>: given 
+               a form ID and a file, it looks up the specified form from that file. Unlike the 
+               vanilla function, this function doesn't write lookup failures to the Papyrus log.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Get the hardcoded currency form:
+            </comment>
+            <call return-var="kGoldBaseForm">
+               <arg value="0x0000000F" />
+               <arg value="Skyrim.esm" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetPlayerLastKnownOutdoorPosition" returns="Float[]">
+         <blurb>Returns the player's last-known outdoor position.</blurb>
+         <description>
+            <p>
+               If the player is in an indoor cell, this function returns their last-known 
+               outdoor position as tracked by the game. If the player is in an exterior cell, 
+               this function returns their current position.
+            </p>
+            <p>
+               The player's "last-known outdoor position" is updated every time they pass 
+               through a loading screen that takes them from an exterior cell to an interior 
+               cell. The data is used to show their last outdoor position on the world map.
+            </p>
+         </description>
+         <related type="method" name="GetPlayerLastKnownOutdoorWorldspace" />
+      </method>
+      <method name="GetPlayerLastKnownOutdoorWorldspace" returns="WorldSpace">
+         <blurb>Returns the player's last-known outdoor worldspace.</blurb>
+         <description>
+            <p>
+               If the player is in an indoor cell, this function returns the last worldspace 
+               they appear to have been in. If the player is in an exterior cell, this function 
+               returns their current worldspace.
+            </p>
+            <p>
+               The player's "last-known outdoor position" is updated every time they pass 
+               through a loading screen that takes them from an exterior cell to an interior 
+               cell. The data is used to show their last outdoor position on the world map.
+            </p>
+         </description>
+         <related type="method" name="GetPlayerLastKnownOutdoorPosition" />
+      </method>
+      <method name="IsPlayerCollisionEnabled" returns="Bool">
+         <blurb>Checks whether player collision is enabled.</blurb>
+         <description>
+            <p>
+               This function returns True if player collision has <em>not</em> been disabled 
+               through use of the ToggleCollision (TCL) command or similar means. It returns 
+               False if player collision has been disabled through those means.
+            </p>
+         </description>
+         <example-data>
+            <raw>
+If !CobbAPIGame.IsPlayerCollisionEnabled()
+   Debug.MessageBox("Hey! No cheating!")
+   CobbAPIGame.SetPlayerCollisionEnabled(True)
+EndIf
+            </raw>
+         </example-data>
+         <related type="method" name="SetPlayerCollisionEnabled" />
+      </method>
+      <method name="SetPlayerCollisionEnabled">
+         <args>
+            <arg type="Bool" name="abEnabled">
+               Whether to enable (True) or disable (False) the player's physics and collision.
+            </arg>
+            <arg type="Bool" name="abDoFullProcessing" default="True">
+               If this argument is True, then this command replicates the entire process of 
+               toggling the player's collision; due to unknown glitches in the game engine, 
+               this can lead to abnormal NPC pathing and movement. If this argument is False, 
+               then this command does only the bare minimum to toggle the player's collision, 
+               which has the desired effect without causing NPCs to experience any visible 
+               glitches. However, the consequences (if any) of skipping the glitch-prone 
+               processing are not known at this time.
+            </arg>
+         </args>
+         <blurb>
+            Sets whether player collision is enabled. This is analogous to the 
+            ToggleCollision (TCL) command.
+         </blurb>
+         <description>
+            <p>
+               This comand sets whether player collision is enabled. It is analogous to 
+               using the <code>ToggleCollision</code> (<code>TCL</code>) console command.
+            </p>
+         </description>
+         <related type="method" name="IsPlayerCollisionEnabled" />
+      </method>
+   </methods>
+</class>

@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPICellSearcher">
+   <blurb>
+      Functions for searching a cell.
+   </blurb>
+   <description>
+      <p>
+         This API allows you to search a cell for the ObjectReference that most likely occupies a 
+         particular point in space. This Papyrus class looks for all ObjectReferences whose oriented 
+         bounding boxes contain the specified coordinates, and it returns the one with the smallest 
+         bounding box (by volume). The bounding box data used is "OBND" data precomputed by the 
+         Creation Kit. Note that not all base forms have OBND data.
+      </p>
+      <p>
+         To use the API, you call a function to create a CellSearcher task; this function returns a 
+         numeric "handle," which is like a ticket that you can exchange to access your task. Once you 
+         have a handle, you can use additional functions to configure your task, and then call a final 
+         function to run the task and receive results.
+      </p>
+      <p>
+         A task can only be configured or used by the same Papyrus call stack that created it; you 
+         can't pass a handle to some other part of your mod and operate on it later.
+      </p>
+      <p>
+         This is the same API that Cobb Positioner uses to let you select objects by hitting them 
+         with a spell; it runs a search at the spell's impact position.
+      </p>
+   </description>
+   <methods>
+      <method name="AddFormList">
+         <blurb>
+            Adds a FormList to a CellSearcher task. If a reference's base form is in the form list, 
+            that reference will be able to match even if it would be excluded by other criteria on 
+            the task.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="FormList" name="akFormList" />
+         </args>
+         <example-data>
+            <comment>
+               Exclude all actors except those using any of a set of actorbases:
+            </comment>
+            <raw>Int iHandle = CobbAPICellSearcher.Create(0, 0, 0)</raw>
+            <raw>CobbAPICellSearcher.SetCriteriaA(iHandle, aiIncludeNPC_ = 0)</raw>
+            <call>
+               <arg value="iHandle" />
+               <arg value="kMyAllowedActorBaseFormList" />
+            </call>
+            <raw>ObjectReference kNearest = CobbAPICellSearcher.Run(iHandle)</raw>
+         </example-data>
+      </method>
+      <method name="Cancel">
+         <blurb>
+            Aborts a CellSearcher task, allowing its handle to be reused.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+         </args>
+      </method>
+      <method name="Create" returns="Int">
+         <blurb>
+            Creates a CellSearcher task, and returns its numeric handle.
+         </blurb>
+         <args>
+            <arg type="Float" name="x">
+               The coordinates to search.
+            </arg>
+            <arg type="Float" name="y">
+               The coordinates to search.
+            </arg>
+            <arg type="Float" name="z">
+               The coordinates to search.
+            </arg>
+         </args>
+         <example-data>
+            <call return-var="iHandle">
+               <arg value="0" />
+               <arg value="0" />
+               <arg value="0" />
+            </call>
+            <comment>
+               The bare minimum for a CellSearcher task is a cell to search in:
+            </comment>
+            <raw>CobbAPICellSearcher.SetCell(iHandle, Game.GetPlayer().GetParentCell())</raw>
+            <comment>
+               At this point, you would call some of the other methods in order to set 
+               matching criteria and exclusions for your task.
+            </comment>
+            <raw>ObjectReference kNearest = CobbAPICellSearcher.Run(iHandle)</raw>
+         </example-data>
+         <related type="method" name="CreateFromArray" />
+      </method>
+      <method name="CreateAndRun" returns="ObjectReference">
+         <blurb>
+            Creates a CellSearcher task with basic criteria, executes it, and returns the result.
+         </blurb>
+         <args>
+            <arg type="Float[]" name="afSearchPoint">
+               The coordinates to search.
+            </arg>
+            <arg type="Bool[]" name="abSearchCriteria">
+               Whether or not to include certain types of references; values are directly 
+               analogous to the arguments of SetCriteriaA and SetCriteriaB.
+            </arg>
+            <arg type="Float" name="afTolerance">
+               Refer to documentation for the SetTolerance function.
+            </arg>
+            <arg type="Cell" name="akSearchCell">
+               Refer to documentation for the SetCell function.
+            </arg>
+         </args>
+         <related type="method" name="Create" />
+      </method>
+      <method name="CreateFromArray" returns="Int">
+         <blurb>
+            Creates a CellSearcher task, and returns its numeric handle.
+         </blurb>
+         <args>
+            <arg type="Float[]" name="afSearchPoint">
+               The coordinates to search.
+            </arg>
+         </args>
+         <example-data>
+            <call return-var="iHandle" />
+            <comment>
+               The bare minimum for a CellSearcher task is a cell to search in:
+            </comment>
+            <raw>CobbAPICellSearcher.SetCell(iHandle, Game.GetPlayer().GetParentCell())</raw>
+            <comment>
+               At this point, you would call some of the other methods in order to set 
+               matching criteria and exclusions for your task.
+            </comment>
+            <raw>ObjectReference kNearest = CobbAPICellSearcher.Run(iHandle)</raw>
+         </example-data>
+         <related type="method" name="Create" />
+      </method>
+      <method name="Run" returns="ObjectReference">
+         <blurb>
+            Executes a CellSearcher task and returns its result.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+         </args>
+      </method>
+      <method name="SetCell">
+         <blurb>
+            Set which cell a CellSearcher task will search. If the CellSearcher task doesn't have a 
+            loaded cell to work with when it is run, the search will fail and return None.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Cell" name="akCellToSearch" default="None" />
+         </args>
+      </method>
+      <method name="SetCriteriaA">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Int" name="aiIncludeACTI" default="-1">
+               Whether to include or exclude activators.
+            </arg>
+            <arg type="Int" name="aiIncludeCONT" default="-1">
+               Whether to include or exclude containers.
+            </arg>
+            <arg type="Int" name="aiIncludeDOOR" default="-1">
+               Whether to include or exclude doors.
+            </arg>
+            <arg type="Int" name="aiIncludeFURN" default="-1">
+               Whether to include or exclude furniture.
+            </arg>
+            <arg type="Int" name="aiIncludeLIGH" default="-1">
+               Whether to include or exclude lights.
+            </arg>
+            <arg type="Int" name="aiIncludeMSTT" default="-1">
+               Whether to include or exclude MovableStatics.
+            </arg>
+            <arg type="Int" name="aiIncludeNPC_" default="-1">
+               Whether to include or exclude actors.
+            </arg>
+            <arg type="Int" name="aiIncludeSTAT" default="-1">
+               Whether to include or exclude statics.
+            </arg>
+            <arg type="Int" name="aiIncludeTREE" default="-1">
+               Whether to include or exclude trees.
+            </arg>
+         </args>
+         <blurb>
+            Set various matching criteria for a CellSearcher task.
+         </blurb>
+         <description>
+            <p>
+               This function allows you to exclude references from a search based on various 
+               criteria. For any given criteria, specify 0 to exclude references, 1 to include them, 
+               or -1 to avoid changing the criteria. The default criteria are to avoid excluding 
+               or filtering any references.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Disallow activators and actors, but don't bother changing any 
+               other criteria from the defaults.
+            </comment>
+            <call>
+               <arg value="iHandle" />
+               <arg value="0" force-name="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg value="0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="SetCriteriaB" />
+      </method>
+      <method name="SetCriteriaB">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Int" name="aiIncludeItem" default="-1">
+               Whether to include or exclude items.
+            </arg>
+            <arg type="Int" name="aiReserved03" default="-1">
+               Reserved for future use.
+            </arg>
+            <arg type="Int" name="aiReserved04" default="-1" />
+            <arg type="Int" name="aiReserved05" default="-1" />
+            <arg type="Int" name="aiReserved06" default="-1" />
+            <arg type="Int" name="aiReserved07" default="-1" />
+            <arg type="Int" name="aiReserved08" default="-1" />
+            <arg type="Int" name="aiReserved09" default="-1" />
+            <arg type="Int" name="aiReserved10" default="-1" />
+         </args>
+         <blurb>
+            Set various matching criteria for a CellSearcher task.
+         </blurb>
+         <description>
+            <p>
+               This function allows you to exclude references from a search based on various 
+               criteria. For any given criteria, specify 0 to exclude references, 1 to include them, 
+               or -1 to avoid changing the criteria. The default criteria are to avoid excluding 
+               or filtering any references.
+            </p>
+         </description>
+         <example-data>
+            <comment>
+               Disallow items, but don't bother changing any other criteria from the defaults.
+            </comment>
+            <call>
+               <arg value="iHandle" />
+               <arg value="0" force-name="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="SetCriteriaA" />
+      </method>
+      <method name="SetExcludesPlayer">
+         <blurb>
+            Set whether a CellSearcher task can match the player-character. CellSearcher tasks 
+            exclude the player-character from possible matches by default.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Bool" name="abExcludesPlayer" />
+         </args>
+      </method>
+      <method name="SetFilterMode">
+         <blurb>
+            Set precisely how CellSearcher applies various filters and matching criteria.
+         </blurb>
+         <description>
+            <p>
+               You can set various criteria on a CellSearcher task to filter a search and exclude 
+               references from matching even if they overlap the search point. This function controls 
+               when filters are applied. The available filter modes are:
+            </p>
+            <table>
+               <thead>
+                  <tr>
+                     <th>Filter mode</th>
+                     <th>Behavior</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <th>0</th>
+                     <td>
+                        Totally ignore non-matching objects as if they don't exist. This is marginally 
+                        faster, and it is the default mode.
+                     </td>
+                  </tr>
+                  <tr>
+                     <th>1</th>
+                     <td>
+                        Test the search point against all objects in the area, but only return a 
+                        result if that result matches your search criteria. This is more accurate.
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </description>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Int" name="aiFilterMode">
+               How filters are applied.
+            </arg>
+         </args>
+      </method>
+      <method name="SetRequiresCollision">
+         <blurb>
+            Set whether a CellSearcher task can match references with no collision geometry. 
+            CellSearcher tasks exclude references without collision by default.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Bool" name="abRequireCollision" />
+         </args>
+      </method>
+      <method name="SetSearchLoadedArea">
+         <blurb>
+            Set whether a CellSearcher task searches the whole loaded area. CellSearcher tasks do 
+            not do this by default.
+         </blurb>
+         <description>
+            <p>
+               By default, a CellSearcher task only searches the specific cell it is given. If this 
+               function is called with the argument True, and if the previously specified cell is an 
+               exterior, then the task will also search all cells in the loaded grid.
+            </p>
+         </description>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Bool" name="abSearchLoadedArea" />
+         </args>
+      </method>
+      <method name="SetTolerance">
+         <blurb>
+            Set how much an object's bounding box will be "inflated" when the CellSearcher is 
+            examining it.
+         </blurb>
+         <description>
+            <p>
+               When CellSearcher is scanning a cell and examining objects' bounding boxes, it will 
+               expand those boxes in all directions by a "tolerance" value. This makes it possible for 
+               paper-thin references (e.g. floors, rugs) to match a given search point, and it also 
+               allows you to compensate for inaccuracies in generated bounds.
+            </p>
+            <p>
+               The SetTolerance function adjusts the tolerance value. The default tolerance is 0.5 
+               world units.
+            </p>
+         </description>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a CellSearcher task.
+            </arg>
+            <arg type="Float" name="afTolerance" />
+         </args>
+      </method>
+   </methods>
+</class>

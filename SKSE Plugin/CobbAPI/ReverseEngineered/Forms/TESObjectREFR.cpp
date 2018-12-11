@@ -116,7 +116,7 @@ namespace RE {
       out = nullptr;
       return false;
       //
-      // Technically, all branches that return do it as: return (out == nullptr).
+      // Technically, all branches that return do it as: return (out != nullptr).
    };
    bool RefHandleSystem::GetRefByHandle(BSUntypedPointerHandle* refHandlePtr, refr_ptr& out) {
       auto handle = *refHandlePtr;
@@ -181,7 +181,7 @@ namespace RE {
          auto ecx = *nextIndex | eax.reuse_bits();
          *refHandlePtr = ecx;
          //
-         {  // This is actually handled by a smart pointer method, but I'm too lazy to define the smart pointer struct
+         {  // This is actually handled by a smart pointer method, but I'm too lazy to define the smart pointer struct given that it's literally only used here
             BSHandleRefObject* p = &ref->handleRefObject;
             edx->refObject->DecRefHandle();
             p->IncRef();

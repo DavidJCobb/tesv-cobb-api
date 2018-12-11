@@ -161,11 +161,11 @@ namespace RE {
          };
          //
          static Entry* GetEntries() { // access as result[0], result[1], ...
-            return RefHandleSystem::GetInstance()->GetEntries();
+            return RefHandleSystem::GetInstance()->entries;
          };
          //
-         // SKSE identifies this as "LookupREFRByHandle," but it actually exchanges 
-         // the handle -- that is, the handle you pass in is set to nullptr.
+         // SKSE identifies this as "LookupREFRByHandle." If the handle you pass in is 
+         // invalid, then the handle will be destroyed (i.e. set to zero).
          // 
          // Don't use this! Just call the SKSE LookupREFRByHandle. This version exists 
          // for documentation purposes only, and could be wrong.
@@ -175,7 +175,8 @@ namespace RE {
          // SKSE identifies this as "LookupREFRObjectByHandle," and their definition 
          // states that it yields a BSHandleRefObject. This is incorrect! It yields a 
          // TESObjectREFR, and is almost exactly identical to the other function; the 
-         // only apparent difference is that it doesn't modify the handle you pass in.
+         // only apparent difference is that it doesn't modify the handle you pass in 
+         // even if that handle is invalid.
          // 
          // Don't use this! Just call the SKSE LookupREFRObjectByHandle. This version 
          // exists for documentation purposes only, and could be wrong.
@@ -533,6 +534,12 @@ namespace RE {
          operator RE::TESObjectREFR*() const;
          refr_ptr operator=(RE::TESObjectREFR* rhs);
          refr_ptr operator=(const refr_ptr& rhs);
+         //
+         refr_ptr operator==(const refr_ptr& rhs) { return this->ref == rhs.ref; }
+         refr_ptr operator==(const std::nullptr_t&) { return this->ref == nullptr; }
+         refr_ptr operator==(const RE::TESObjectREFR* rhs) { return this->ref == rhs; }
+         refr_ptr operator==(const ::TESObjectREFR* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
+         refr_ptr operator==(const void* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
          //
          bool operator!();
          //

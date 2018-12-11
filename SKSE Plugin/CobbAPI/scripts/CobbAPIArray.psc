@@ -73,18 +73,10 @@ ObjectReference[] Function SliceReference (ObjectReference[] akArray, Int aiStar
 ;
 ; Specify a negative aiCount to copy the entirety of axSource.
 ;
-Function OverwriteFloat     (Float[]           afTarget, Float[]           afSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-Function OverwriteForm      (Form[]            akTarget, Form[]            akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-Function OverwriteInt       (Int[]             aiTarget, Int[]             aiSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-Function OverwriteReference (ObjectReference[] akTarget, ObjectReference[] akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteFloat     (Float[];/&/;           afTarget, Float[]           afSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteForm      (Form[];/&/;            akTarget, Form[]            akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteInt       (Int[];/&/;             aiTarget, Int[]             aiSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteReference (ObjectReference[];/&/; akTarget, ObjectReference[] akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
 
-Function OverwriteFloatWithInt (Float[] afTarget, Int[] aiSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-Function OverwriteIntWithFloat (Int[] aiTarget, Float[] afSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-
-; These methods are only partially functional. They choke on non-reference types (e.g. Actor) and I don't yet 
-; know why. I don't have a need for them yet, so I'm not actively working on them. If I'm still active in the 
-; community whenever you're reading this (Hello, future person!), bug me about it and I'll take a no-promises 
-; look at it again.
-;
-Function OverwriteFormWithReference (Form[] akTarget, ObjectReference[] akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
-Function OverwriteReferenceWithForm (ObjectReference[] akTarget, Form[] akSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteFloatWithInt (Float[];/&/; afTarget, Int[] aiSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native
+Function OverwriteIntWithFloat (Int[];/&/; aiTarget, Float[] afSource, Int aiStart, Int aiSourceStart = 0, Int aiCount = -1) Global Native

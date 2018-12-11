@@ -24,7 +24,7 @@ Float[] Function ApplySnappedOffsetToPosition(Float[] afBasePosition, Float[] af
    vLocal[0] = afMatrixTransformToLocal[0]*afBasePosition[0] + afMatrixTransformToLocal[1]*afBasePosition[1] + afMatrixTransformToLocal[2]*afBasePosition[2]
    vLocal[1] = afMatrixTransformToLocal[3]*afBasePosition[0] + afMatrixTransformToLocal[4]*afBasePosition[1] + afMatrixTransformToLocal[5]*afBasePosition[2]
    vLocal[2] = afMatrixTransformToLocal[6]*afBasePosition[0] + afMatrixTransformToLocal[7]*afBasePosition[1] + afMatrixTransformToLocal[8]*afBasePosition[2]
-   If _iCurrentPositionSnap
+   If aiSnapUnits
       ;
       ; Now snap the thing.
       ;

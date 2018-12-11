@@ -11,7 +11,7 @@ Scriptname CobbAPIBatchMoveRel Hidden
 
 Int Function Create() Global Native
 
-Function AddOperation            (Int aiHandle, ObjectReference akSubject, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotation) Global Native
+Function AddOperation            (Int aiHandle, ObjectReference akSubject, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotationOffset) Global Native
 Function AddOperationAroundPoint (Int aiHandle, ObjectReference akSubject, ObjectReference akAnchor, Float[] afTargetPosition, Float[] afTargetRotation, Float[] afPositionOffset, Float[] afRotation) Global Native
 
 ;
@@ -24,7 +24,7 @@ Function AddOperationAroundPoint (Int aiHandle, ObjectReference akSubject, Objec
 ; 3 = Move akSubject to its editor offset from akTarget (that is, the offest from one editor location to the other)
 ; 4 = Move akSubject's (destination's) teleport marker to its editor offset from akSubject
 ;
-Function AddOperationSpecial            (Int aiHandle, ObjectReference akSubject, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotation,                           Int aiOperationType) Global Native
+Function AddOperationSpecial            (Int aiHandle, ObjectReference akSubject, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotationOffset, Int aiOperationType) Global Native
 Function AddOperationSpecialAroundPoint (Int aiHandle, ObjectReference akSubject, ObjectReference akAnchor, Float[] afTargetPosition, Float[] afTargetRotation, Float[] afPositionOffset, Float[] afRotation, Int aiOperationType) Global Native
 
 Function SetAlsoMoveTeleportMarkers (Int aiHandle, Int aiWhich) Global Native ; 0 by default; if set to 1 and you move load doors, we will also move the matching teleport marker to keep it in the same spot relative to the door; if set to 2, we maintain the marker's offset from the door's editor position

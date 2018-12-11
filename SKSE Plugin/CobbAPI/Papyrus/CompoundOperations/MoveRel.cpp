@@ -90,13 +90,10 @@ namespace CobbPapyrus {
          //
          for (size_t i = 0; i < this->operations.size(); i++) {
             OperationData& e = this->operations[i];
-            TESObjectREFR* subject = nullptr;
-            TESObjectREFR* target  = nullptr;
-            //
-            // Look up the reference.
-            //
-            LookupREFRByHandle(&e.subjectRefrHandle, &subject);
-            if (subject == nullptr)
+            RE::refr_ptr subject;
+            RE::refr_ptr target;
+            subject.set_from_handle(&e.subjectRefrHandle);
+            if (!subject)
                continue;
             //
             // Position the subject.
@@ -112,31 +109,25 @@ namespace CobbPapyrus {
             // block and then skip to the next iteration.
             //
             if (e.operationType == kOpType_MoveToEditorLocation) {
-               bool success = ((RE::TESObjectREFR*)subject)->MoveToMyEditorLocation(false);
-               if (!success) {
+               if (!subject->MoveToMyEditorLocation(false)) {
                   DEBUG_ONLY_MESSAGE("MoveRel functor failed to return reference 0x%08X to its editor location.", subject->formID);
-                  skyrim_re_clear_refr(subject);
-                  skyrim_re_clear_refr(target);
                   continue;
                }
                if (this->alsoMoveTeleportMarkers) {
-                  RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
-                  if (destination) {
-                     TeleportMarkerService::GetInstance().ResetMarker((TESObjectREFR*) destination);
-                     skyrim_re_clear_refr(destination);
-                  }
+                  RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                  if (destination)
+                     TeleportMarkerService::GetInstance().ResetMarker(destination.get_base());
                }
-               allMoved.push_back(subject);
+               allMoved.push_back((::TESObjectREFR*) subject.abandon());
                continue;
             }
             //
-            LookupREFRByHandle(&e.targetRefrHandle, &target);
-            //
-            parentCell = subject->parentCell;
-            worldspace = CALL_MEMBER_FN(subject, GetWorldspace)();
+            target.set_from_handle(&e.targetRefrHandle);
+            parentCell = (::TESObjectCELL*) subject->parentCell;
+            worldspace = (::TESWorldSpace*) CALL_MEMBER_FN(subject, GetWorldspace)();
             if (target != nullptr) {
-               parentCell = target->parentCell;
-               worldspace = CALL_MEMBER_FN(target, GetWorldspace)();
+               parentCell = (::TESObjectCELL*) target->parentCell;
+               worldspace = (::TESWorldSpace*) CALL_MEMBER_FN(target, GetWorldspace)();
             }
             //
             // Get the coordinates to move to.
@@ -149,26 +140,20 @@ namespace CobbPapyrus {
                // position, it will be because they haven't been moved yet, in which case their current 
                // position should be used.
                //
-               if (subject->formID >> 0x18 == 0xFF) {
-                  skyrim_re_clear_refr(subject);
-                  skyrim_re_clear_refr(target);
+               if (subject->formID >> 0x18 == 0xFF)
                   continue;
-               }
-               if (target == nullptr || target->formID >> 0x18 == 0xFF) {
-                  skyrim_re_clear_refr(subject);
-                  skyrim_re_clear_refr(target);
+               if (target == nullptr || target->formID >> 0x18 == 0xFF)
                   continue;
-               }
                Cobb::Coordinates editorOffset;
                {  // Get offset.
                   NiPoint3 editorPosSubject;
                   NiPoint3 editorRotSubject;
                   NiPoint3 editorPosTarget;
                   NiPoint3 editorRotTarget;
-                  ((RE::TESObjectREFR*)subject)->GetEditorCoordinateDataAlways(&editorPosSubject, &editorRotSubject, &worldspace, &parentCell);
+                  subject->GetEditorCoordinateDataAlways(&editorPosSubject, &editorRotSubject, &worldspace, &parentCell);
                   {
                      void* dummy;
-                     bool success = ((RE::TESObjectREFR*)target)->GetEditorCoordinates(&editorPosTarget, &editorRotTarget, &dummy, nullptr);
+                     bool success = target->GetEditorCoordinates(&editorPosTarget, &editorRotTarget, &dummy, nullptr);
                      if (!success) {
                         DEBUG_ONLY_MESSAGE("MoveRel functor couldn't get editor position for 0x%08X.", target->formID);
                         editorPosTarget = target->pos;
@@ -206,14 +191,14 @@ namespace CobbPapyrus {
             //
             switch (e.operationType) {
                case kOpType_TeleportMarker:
-                  if (!TeleportMarkerService::GetInstance().MoveMarker(subject, finalPos, finalRot)) {
+                  if (!TeleportMarkerService::GetInstance().MoveMarker(subject.get_base(), finalPos, finalRot)) {
                      DEBUG_ONLY_MESSAGE("MoveRel functor wanted to move the teleport marker of something that isn't a load door.");
                   }
                   break;
                case kOpType_TeleportMarkerToEditorOffset:
                   {
-                     TESObjectREFR* destination = (TESObjectREFR*) ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
-                     if (!TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(destination, subject)) {
+                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     if (!TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(destination.get_base(), subject.get_base())) {
                         DEBUG_ONLY_MESSAGE("MoveRel functor failed to move a teleport marker to its editor offset.");
                      }
                   }
@@ -221,25 +206,22 @@ namespace CobbPapyrus {
                case kOpType_Normal:
                default:
                   if (e.operationType != kOpType_MoveToEditorLocation)
-                     ((RE::TESObjectREFR*)subject)->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
+                     subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
                   //
                   if (this->alsoMoveTeleportMarkers) {
-                     RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
+                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
                      if (destination) {
-                        if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes) {
-                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*)destination, originalPos, originalRot, finalPos, finalRot);
-                        } else if (this->alsoMoveTeleportMarkers == kMoveTeleport_EditorOffset) {
-                           TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(subject, (TESObjectREFR*)destination);
-                        }
-                        skyrim_re_clear_refr(destination);
+                        if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes)
+                           TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, finalRot);
+                        else if (this->alsoMoveTeleportMarkers == kMoveTeleport_EditorOffset)
+                           TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(subject.get_base(), destination.get_base());
                      }
                   }
             }
-            skyrim_re_clear_refr(target);
             //
             // Save spawned for result.
             //
-            allMoved.push_back(subject);
+            allMoved.push_back((::TESObjectREFR*) subject.abandon());
          }
          PackValue(&resultValue, &allMoved, registry);
       };

@@ -67,7 +67,6 @@ namespace CobbPapyrus {
                bool        searchLoadedArea  = false;
             } searchParameters;
             //
-            void AddOperation(TESObjectREFR* subject, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot);
             void AddFormList(BGSListForm* formList);
          private:
             virtual bool SearchCell(TESObjectCELL* cell, TESObjectREFR** out, float* volume);

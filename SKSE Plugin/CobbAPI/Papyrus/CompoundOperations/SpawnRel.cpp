@@ -10,6 +10,7 @@
 #include "skse/GameReferences.h"
 
 #include "Miscellaneous/math.h"
+#include "ReverseEngineered/Forms/TESObjectREFR.h"
 #include "Shared.h" // for access to our object storage
 #include "CobbRotation.h"
 #include "Papyrus/Rotations.h"
@@ -87,18 +88,17 @@ namespace CobbPapyrus {
             // Look-ups.
             //
             TESForm* spawnForm = LookupFormByID(e.spawnFormId);
-            if (spawnForm == NULL)
+            if (spawnForm == nullptr)
                continue;
             //
-            TESObjectREFR* target = NULL;
-            LookupREFRByHandle(&e.targetRefrHandle, &target);
-            if (target == NULL)
+            RE::refr_ptr target(e.targetRefrHandle);
+            if (target == nullptr)
                continue;
             //
             // Spawn the new object.
             //
-            TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target, spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
-            if (subject == NULL)
+            TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
+            if (subject == nullptr)
                continue;
             //
             // Position the subject...
@@ -106,8 +106,8 @@ namespace CobbPapyrus {
             TESObjectCELL* parentCell = subject->parentCell;
             TESWorldSpace* worldspace = CALL_MEMBER_FN(subject, GetWorldspace)();
             if (target != NULL) {
-               parentCell = target->parentCell;
-               worldspace = CALL_MEMBER_FN(target, GetWorldspace)();
+               parentCell = (TESObjectCELL*) target->parentCell;
+               worldspace = (TESWorldSpace*) CALL_MEMBER_FN(target, GetWorldspace)();
             }
             //
             NiPoint3 finalPos(e.pos);
@@ -127,10 +127,6 @@ namespace CobbPapyrus {
                }
             }
             MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &finalRot);
-            //
-            if (target) {
-               target->handleRefObject.DecRef(); target = NULL; // LookupREFRByHandle incremented the refcount
-            }
             //
             // Save spawned for result.
             //

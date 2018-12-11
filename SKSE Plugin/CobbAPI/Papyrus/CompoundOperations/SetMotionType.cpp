@@ -57,28 +57,20 @@ namespace CobbPapyrus {
       void BatchSetMotionTypeFunctor::Run(VMValue& resultValue) {
          VMClassRegistry* registry = (*g_skyrimVM)->GetClassRegistry();
          UInt32 nullHandle = *g_invalidRefHandle;
-         VMResultArray<TESObjectREFR*> allSpawned;
+         VMResultArray<RE::TESObjectREFR*> allSpawned;
          //
          for (size_t i = 0; i < this->operations.size(); i++) {
             OperationData& e = this->operations[i];
-            TESObjectREFR* subject = NULL;
-            //
-            // Look up the reference.
-            //
-            LookupREFRByHandle(&e.subjectRefrHandle, &subject);
-            if (subject == NULL)
+            RE::refr_ptr subject;
+            subject.set_from_handle(&e.subjectRefrHandle);
+            if (!subject)
                continue;
-            //
-            if (e.motionType >= 1) {
-               ((RE::TESObjectREFR*)subject)->SetMotionType(e.motionType, e.allowActivate, this->markChanged);
-            }
+            if (e.motionType >= 1)
+               subject->SetMotionType(e.motionType, e.allowActivate, this->markChanged);
             //
             // Save spawned for result.
             //
-            allSpawned.push_back(subject);
-            if (subject) {
-               subject->handleRefObject.DecRef(); subject = NULL; // LookupREFRByHandle incremented the refcount
-            }
+            allSpawned.push_back(subject.abandon());
          }
          PackValue(&resultValue, &allSpawned, registry);
       };
@@ -87,7 +79,7 @@ namespace CobbPapyrus {
          if (subjectRefrHandle == *g_invalidRefHandle)
             return;
          //
-         OperationData t = { subjectRefrHandle, motionType, allowActivate };
+         OperationData t = { subjectRefrHandle, (SInt8)motionType, allowActivate };
          this->operations.push_back(t);
       };
       void BatchSetMotionTypeFunctor::SetWhetherMarkChanged(bool markChanged) {

@@ -10,6 +10,7 @@
 #include "skse/GameReferences.h"
 
 #include "Miscellaneous/math.h"
+#include "ReverseEngineered/Forms/TESObjectREFR.h"
 #include "Shared.h" // for access to our object storage
 #include "CobbRotation.h"
 #include "Papyrus/Rotations.h"
@@ -139,25 +140,24 @@ namespace CobbPapyrus {
                // Look-ups.
                //
                TESForm* spawnForm = LookupFormByID(e.spawnFormId);
-               if (spawnForm == NULL) {
+               if (spawnForm == nullptr) {
                   s.results.push_back(nullHandle);
-                  allSpawned.push_back(NULL);
+                  allSpawned.push_back(nullptr);
                   continue;
                }
-               TESObjectREFR* target = NULL;
-               LookupREFRByHandle(&e.targetRefrHandle, &target);
-               if (target == NULL) {
+               RE::refr_ptr target(e.targetRefrHandle);
+               if (target == nullptr) {
                   s.results.push_back(nullHandle);
-                  allSpawned.push_back(NULL);
+                  allSpawned.push_back(nullptr);
                   continue;
                }
                //
                // Spawn the new object.
                //
-               TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target, spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
-               if (subject == NULL) {
+               TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
+               if (subject == nullptr) {
                   s.results.push_back(nullHandle);
-                  allSpawned.push_back(NULL);
+                  allSpawned.push_back(nullptr);
                   continue;
                }
                //
@@ -165,18 +165,18 @@ namespace CobbPapyrus {
                //
                TESObjectCELL* parentCell = subject->parentCell;
                TESWorldSpace* worldspace = CALL_MEMBER_FN(subject, GetWorldspace)();
-               if (target != NULL) {
-                  parentCell = target->parentCell;
-                  worldspace = CALL_MEMBER_FN(target, GetWorldspace)();
+               if (target != nullptr) {
+                  parentCell = (TESObjectCELL*) target->parentCell;
+                  worldspace = (TESWorldSpace*) CALL_MEMBER_FN(target, GetWorldspace)();
                }
                NiPoint3 finalPos(e.pos);
                NiPoint3 finalRot(e.rot);
                {
-                  if (target != NULL || e.usingTargetPoint) {
+                  if (target || e.usingTargetPoint) {
                      Cobb::Coordinates applied;
                      if (e.usingTargetPoint) {
                         Cobb::ApplyRelativeCoordinates(applied, e.targetPos, e.targetRot, e.pos, e.rot, true, true);
-                     } else if (target != NULL) {
+                     } else if (target) {
                         Cobb::ApplyRelativeCoordinates(applied, target->pos, target->rot, e.pos, e.rot, true, true);
                      }
                      finalPos = applied.pos;
@@ -187,10 +187,6 @@ namespace CobbPapyrus {
                }
                //
                MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &finalRot);
-               //
-               if (target) {
-                  target->handleRefObject.DecRef(); target = NULL; // LookupREFRByHandle incremented the refcount
-               }
                //
                // Save spawned for result.
                //
@@ -266,10 +262,10 @@ namespace CobbPapyrus {
          for (size_t i = 0; i < this->operationSets.size(); i++) {
             OperationSet e = this->operationSets[i];
             if (e.identifier == set) {
-               result.resize(e.results.size(), NULL);
+               result.resize(e.results.size(), nullptr);
                for (size_t j = 0; j < e.results.size(); j++) {
                   //_MESSAGE(PapyrusPrefixString("BatchSpawnComplex") " operation returning a set of results... Currently on result %d in set %d.", j, i);
-                  TESObjectREFR* current = NULL;
+                  TESObjectREFR* current = nullptr;
                   LookupREFRByHandle(&e.results[j], &current);
                   result[j] = current;
                }

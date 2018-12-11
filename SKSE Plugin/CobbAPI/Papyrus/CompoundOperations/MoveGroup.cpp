@@ -96,11 +96,11 @@ namespace CobbPapyrus {
          UInt32 nullHandle = *g_invalidRefHandle;
          VMResultArray<TESObjectREFR*> allMoved;
          //
-         TESObjectREFR* root = nullptr;
+         RE::refr_ptr root;
          NiPoint3 originalRootPos;
          NiPoint3 originalRootRot;
          {
-            LookupREFRByHandle(&_rootRefrHandle, &root);
+            root.set_from_handle(&_rootRefrHandle);
             if (root == nullptr) {
                registry->LogError("Unable to complete " PapyrusPrefixString("BatchMoveGroup") " operation; no root was ever specified.", this->_stackId);
                PackValue(&resultValue, &allMoved, registry);
@@ -109,51 +109,49 @@ namespace CobbPapyrus {
             originalRootPos = root->pos;
             originalRootRot = root->rot;
             {
-               TESObjectCELL* parentCell = this->targetCell;
-               TESWorldSpace* worldspace = nullptr;
+               RE::TESObjectCELL* parentCell = (RE::TESObjectCELL*) this->targetCell;
+               RE::TESWorldSpace* worldspace = nullptr;
                if (parentCell == nullptr) {
                   parentCell = root->parentCell;
                   worldspace = CALL_MEMBER_FN(root, GetWorldspace)();
                } else {
-                  worldspace = (TESWorldSpace*) ((RE::TESObjectCELL*)parentCell)->parentWorld;
+                  worldspace = parentCell->parentWorld;
                }
                NiPoint3 destinationRotAsRadians;
                destinationRotAsRadians.x = cobb::degrees_to_radians(this->_destinationRot.x);
                destinationRotAsRadians.y = cobb::degrees_to_radians(this->_destinationRot.y);
                destinationRotAsRadians.z = cobb::degrees_to_radians(this->_destinationRot.z);
                //
-               ((RE::TESObjectREFR*)root)->MoveTo(&nullHandle, parentCell, worldspace, &(this->_destinationPos), &destinationRotAsRadians);
+               root->MoveTo(&nullHandle, parentCell, worldspace, &(this->_destinationPos), &destinationRotAsRadians);
                //
                if (this->alsoMoveTeleportMarkers) {
-                  RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)root)->GetDestinationDoor();
-                  if (destination) {
-                     TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, originalRootPos, originalRootRot, this->_destinationPos, destinationRotAsRadians);
-                     skyrim_re_clear_refr(destination);
-                  }
+                  RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(root->GetDestinationDoor());
+                  if (destination)
+                     TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalRootPos, originalRootRot, this->_destinationPos, destinationRotAsRadians);
                }
             }
-            allMoved.push_back(root);
+            allMoved.push_back((::TESObjectREFR*) root.abandon());
          }
          //
          for (size_t i = 0; i < this->operations.size(); i++) {
             OperationData& e = this->operations[i];
-            TESObjectREFR* subject = nullptr;
+            RE::refr_ptr subject;
             //
             // Look up the reference.
             //
-            LookupREFRByHandle(&e.subjectRefrHandle, &subject);
+            subject.set_from_handle(&e.subjectRefrHandle);
             if (subject == nullptr || subject == root)
                continue;
             //
             // Position the subject.
             //
-            TESObjectCELL* parentCell = this->targetCell;
-            TESWorldSpace* worldspace = nullptr;
+            RE::TESObjectCELL* parentCell = (RE::TESObjectCELL*) this->targetCell;
+            RE::TESWorldSpace* worldspace = nullptr;
             if (parentCell == nullptr) {
                parentCell = subject->parentCell;
                worldspace = CALL_MEMBER_FN(subject, GetWorldspace)();
             } else {
-               worldspace = (TESWorldSpace*) ((RE::TESObjectCELL*)parentCell)->parentWorld;
+               worldspace = parentCell->parentWorld;
             }
             //
             NiPoint3 finalPos(subject->pos);
@@ -177,16 +175,14 @@ namespace CobbPapyrus {
             }
             //
             //MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &finalRot);
-            ((RE::TESObjectREFR*)subject)->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
+            subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
             if (this->alsoMoveTeleportMarkers) {
-               RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
-               if (destination) {
-                  TeleportMarkerService::GetInstance().MoveMarkerRelativeTo((TESObjectREFR*) destination, originalPos, originalRot, finalPos, finalRot);
-                  skyrim_re_clear_refr(destination);
-               }
+               RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+               if (destination)
+                  TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, finalRot);
             }
             //
-            allMoved.push_back(subject);
+            allMoved.push_back((::TESObjectREFR*) subject.abandon());
          }
          //
          PackValue(&resultValue, &allMoved, registry);

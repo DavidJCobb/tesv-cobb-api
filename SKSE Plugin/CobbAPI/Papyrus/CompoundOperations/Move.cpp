@@ -109,11 +109,9 @@ namespace CobbPapyrus {
                bool success = ((RE::TESObjectREFR*)subject)->MoveToMyEditorLocation(false);
                if (!success) {
                   if (this->alsoMoveTeleportMarkers) {
-                     RE::TESObjectREFR* destination = ((RE::TESObjectREFR*)subject)->GetDestinationDoor();
-                     if (destination) {
-                        TeleportMarkerService::GetInstance().ResetMarker((TESObjectREFR*) destination);
-                        skyrim_re_clear_refr(destination);
-                     }
+                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     if (destination)
+                        TeleportMarkerService::GetInstance().ResetMarker(destination.get_base());
                   }
                   //
                   // Need to prevent the refcount from net-decreasing...
@@ -144,7 +142,7 @@ namespace CobbPapyrus {
                default:
                   if (e.operationType != kOpType_MoveToEditorLocation)
                      //MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &e.rot);
-                     ((RE::TESObjectREFR*)subject)->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &e.rot);
+                     subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &e.rot);
                   //
                   if (this->alsoMoveTeleportMarkers) {
                      RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());

@@ -247,7 +247,7 @@ namespace CobbPapyrus {
          DEBUG_ONLY_CELLSEARCHER_MESSAGE("===========================================================================\n  Running searcher task at point: (%f, %f, %f)\n===========================================================================", this->searchParameters.coordinates.x, this->searchParameters.coordinates.y, this->searchParameters.coordinates.z);
          //
          TESObjectREFR* smallestMatch = nullptr;
-         float smallestVolume = 10000000000;
+         float smallestVolume = (std::numeric_limits<float>::max)();
          //
          this->SearchCell(searchCell, &smallestMatch, &smallestVolume);
          if (this->searchParameters.searchLoadedArea && (searchCell->unk2C & RE::TESObjectCELL::kCellFlag_IsInterior) == 0) {

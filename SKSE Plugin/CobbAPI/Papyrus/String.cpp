@@ -82,7 +82,7 @@ namespace CobbPapyrus {
             return strtoul(s, &discard, 16);
          }
          BSFixedString ToBinary(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
-            if (length < 0) {
+            if (length < 1) {
                registry->LogWarning("Cannot format a binary value to a negative number of bits. Defaulting to 32.", stackId);
                length = 32;
             } else if (length > 32) {
@@ -98,7 +98,7 @@ namespace CobbPapyrus {
             return bin; // passes through BSFixedString constructor, which I believe caches the string, so returning local vars should be fine
          }
          BSFixedString ToHex(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, UInt32 value, SInt32 length) {
-            if (length < 0) {
+            if (length < 1) {
                registry->LogWarning("Cannot format a hexadecimal valueinteger to a negative number of digits. Defaulting to eight.", stackId);
                length = 8;
             } else if (length > 8) {
@@ -225,7 +225,7 @@ namespace CobbPapyrus {
             }
          }
          //
-         VMResultArray<BSFixedString> NaturalSort_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr) {
+         VMResultArray<BSFixedString> NaturalSort_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, bool descending) {
             VMResultArray<BSFixedString> result;
             {  // Copy input array into output array
                UInt32 size = arr.Length();
@@ -239,13 +239,17 @@ namespace CobbPapyrus {
             std::sort(
                result.begin(),
                result.end(),
-               [](const BSFixedString& x, const BSFixedString& y) {
-                  return cobb::utf8_naturalcompare(cobb::lowerstring(x.data), cobb::lowerstring(y.data)) > 0;
+               [descending](const BSFixedString& x, const BSFixedString& y) {
+                  cobb::lowerstring a(x.data);
+                  cobb::lowerstring b(y.data);
+                  if (descending)
+                     std::swap(a, b);
+                  return cobb::utf8_naturalcompare(a, b) > 0;
                }
             );
             return result;
          }
-         template<typename T> VMResultArray<BSFixedString> NaturalSortPair_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, VMArray<T> second) {
+         template<typename T> VMResultArray<BSFixedString> NaturalSortPair_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, bool descending, VMArray<T> second) {
             UInt32 size = arr.Length();
             if (size != second.Length()) {
                registry->LogError("The two arrays must be the same length.", stackId);
@@ -277,8 +281,11 @@ namespace CobbPapyrus {
             std::sort(
                pairs.begin(),
                pairs.end(),
-               [](const _pair& x, const _pair& y) {
-                  return cobb::utf8_naturalcompare(cobb::lowerstring(x.first.data), cobb::lowerstring(y.first.data)) > 0;
+               [descending](const _pair& x, const _pair& y) {
+                  auto result = cobb::utf8_naturalcompare(cobb::lowerstring(x.first.data), cobb::lowerstring(y.first.data));
+                  if (descending)
+                     result = -result;
+                  return result > 0;
                }
             );
             for (UInt32 i = 0; i < size; i++) {
@@ -369,21 +376,21 @@ bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
          registry
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalCompare_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>>(
+      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, bool>(
          "NaturalSort_ASCII",
          PapyrusPrefixString("String"),
          String::Sort::NaturalSort_ASCII,
          registry
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSort_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<SInt32>>(
+      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, bool, VMArray<SInt32>>(
          "NaturalSortPairInt_ASCII",
          PapyrusPrefixString("String"),
          String::Sort::NaturalSortPair_ASCII<SInt32>,
          registry
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSortPairInt_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<TESForm*>>(
+      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, bool, VMArray<TESForm*>>(
          "NaturalSortPairForm_ASCII",
          PapyrusPrefixString("String"),
          String::Sort::NaturalSortPair_ASCII<TESForm*>,

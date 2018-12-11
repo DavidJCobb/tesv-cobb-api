@@ -125,68 +125,6 @@ namespace CobbPapyrus {
          };
          return result;
       };
-      //
-      // ========= SPECIFICS ==============
-      //
-      void OverwriteFormWithReference(
-         VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
-         VMArray<TESForm*> target, VMArray<TESObjectREFR*> source, SInt32 targetStart, SInt32 sourceStart, SInt32 count
-      ) {
-         UInt32 targetLength = target.Length() - targetStart;
-         UInt32 sourceLength = source.Length() - sourceStart;
-         if (count > sourceLength)
-            count = sourceLength;
-         for (UInt32 i = 0; i < count; i++) {
-            TESForm* converted;
-            {
-               TESObjectREFR* item;
-               source.Get(&item, i + sourceStart);
-               converted = (TESForm*) item;
-            }
-            target.Set(&converted, i + targetStart);
-         }
-      };
-      void OverwriteReferenceWithForm(
-         VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
-         VMArray<TESObjectREFR*> target, VMArray<TESForm*> source, SInt32 targetStart, SInt32 sourceStart, SInt32 count
-      ) {
-         UInt32 targetLength = target.Length() - targetStart;
-         UInt32 sourceLength = source.Length() - sourceStart;
-         if (count > sourceLength)
-            count = sourceLength;
-         for (UInt32 i = 0; i < count; i++) {
-            TESObjectREFR* converted;
-            {
-               TESForm* item;
-               source.Get(&item, i + sourceStart);
-               converted = DYNAMIC_CAST(item, TESForm, TESObjectREFR);
-            }
-            target.Set(&converted, i + targetStart);
-         }
-      };
-
-      /*VMResultArray<float> SliceFloat(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<float> arr, SInt32 start, SInt32 count) {
-         VMResultArray<float> result;
-         result.resize(count);
-         UInt32 length = arr.Length();
-         for (UInt32 i = 0; i < count; i++) {
-            if (start + i >= length)
-               break;
-            arr.Get(&(result[i]), start + i);
-         };
-         return result;
-      };
-      VMResultArray<SInt32> SliceInt(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<SInt32> arr, SInt32 start, SInt32 count) {
-         VMResultArray<SInt32> result;
-         result.resize(count);
-         UInt32 length = arr.Length();
-         for (UInt32 i = 0; i < count; i++) {
-            if (start + i >= length)
-               break;
-            arr.Get(&(result[i]), start + i);
-         };
-         return result;
-      };*/
    }
 }
 
@@ -360,26 +298,8 @@ bool CobbPapyrus::Array::Register(VMClassRegistry* registry) {
             registry
          )
       );
-      registry->RegisterFunction(
-         new NativeFunction5 <StaticFunctionTag, void, VMArray<TESForm*>, VMArray<TESObjectREFR*>, SInt32, SInt32, SInt32>(
-            "OverwriteFormWithReference",
-            PapyrusPrefixString("Array"),
-            Array::OverwriteFormWithReference,
-            registry
-         )
-      );
-      registry->RegisterFunction(
-         new NativeFunction5 <StaticFunctionTag, void, VMArray<TESObjectREFR*>, VMArray<TESForm*>, SInt32, SInt32, SInt32>(
-            "OverwriteReferenceWithForm",
-            PapyrusPrefixString("Array"),
-            Array::OverwriteReferenceWithForm,
-            registry
-         )
-      );
       registry->SetFunctionFlags(PapyrusPrefixString("Array"), "OverwriteFloatWithInt", VMClassRegistry::kFunctionFlag_NoWait);
       registry->SetFunctionFlags(PapyrusPrefixString("Array"), "OverwriteIntWithFloat", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->SetFunctionFlags(PapyrusPrefixString("Array"), "OverwriteFormWithReference", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->SetFunctionFlags(PapyrusPrefixString("Array"), "OverwriteReferenceWithForm", VMClassRegistry::kFunctionFlag_NoWait);
    }
    {  // Resize
       registry->RegisterFunction(

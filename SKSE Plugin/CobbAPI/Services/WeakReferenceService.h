@@ -376,7 +376,7 @@ class WeakReferenceService {
                      }
                      newRecord.handles.push_back(newEntry);
                      //
-                     if (newEntry.formID & 0xFF000000 == 0xFF000000)
+                     if ((newEntry.formID & 0xFF000000) == 0xFF000000)
                         newRecord.temporaryFormCount++;
                   }
                }

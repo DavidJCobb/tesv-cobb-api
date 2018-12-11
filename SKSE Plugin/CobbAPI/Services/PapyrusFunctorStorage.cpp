@@ -25,9 +25,9 @@ void StorablePersistentObjectStorage::CleanDroppedStacks() {
    for (UInt32 i=0; i<data_.size(); i++) {
       Entry& e = data_[i];
       if (e.obj == nullptr)
-	     continue;
+        continue;
       if (registry->GetStackInfo(e.owningStackId) != nullptr)
-	     continue;
+        continue;
       //
       // Stack no longer active; drop this entry.
       //
@@ -41,9 +41,9 @@ void StorablePersistentObjectStorage::ClearAndRelease() {
    IScopedCriticalSection scopedLock(&lock_);
    freeIndices_.clear();
    for (DataT::iterator it = data_.begin(); it != data_.end(); ++it) {
-	  Entry& e = *it;
-	  if (e.obj != nullptr)
-		 delete e.obj;
+     Entry& e = *it;
+     if (e.obj != nullptr)
+       delete e.obj;
    }
    data_.clear();
 }
@@ -72,13 +72,13 @@ bool StorablePersistentObjectStorage::Save(SKSESerializationInterface* intfc) {
    }
    for (UInt32 i = 0; i < dataSize; i++) { // Write objects.
       Entry& e = this->data_[i];
-	  if (e.obj == nullptr) // index is not in use
-		 continue;
-	  if (!WriteStorableObject(intfc, e.obj)) // skip to next entry if write fails.
-		 continue;
-	  WriteData(intfc, &e.owningStackId);
-	  UInt32 index = i;
-	  WriteData(intfc, &index);
+     if (e.obj == nullptr) // index is not in use
+       continue;
+     if (!WriteStorableObject(intfc, e.obj)) // skip to next entry if write fails.
+       continue;
+     WriteData(intfc, &e.owningStackId);
+     UInt32 index = i;
+     WriteData(intfc, &index);
    }
    return true;
 }
@@ -88,11 +88,11 @@ bool StorablePersistentObjectStorage::Load(SKSESerializationInterface* intfc, UI
    this->ClearAndRelease();
    UInt32 dataSize;
    if (!ReadData(intfc,&dataSize))
-	  return false;
+     return false;
    this->data_.resize(dataSize);
    UInt32 filledSize;
    if (!ReadData(intfc,&filledSize))
-	  return false;
+     return false;
    if (loadedVersion < 2 && filledSize > 0xFEFFFFFF) {
       //
       // This save is affected by a bug in the old (SKSE) code. We've 
@@ -101,13 +101,13 @@ bool StorablePersistentObjectStorage::Load(SKSESerializationInterface* intfc, UI
       filledSize = 0;
    }
    for (UInt32 i = 0; i < filledSize; i++)	{
-	  Entry e = { 0 };
-	  if (!ReadStorableObject(intfc, e.obj))
-		 continue;
-	  ReadData(intfc, &e.owningStackId);
-	  UInt32 index;
-	  ReadData(intfc, &index);
-	  this->data_[index] = e;
+     Entry e = { 0 };
+     if (!ReadStorableObject(intfc, e.obj))
+       continue;
+     ReadData(intfc, &e.owningStackId);
+     UInt32 index;
+     ReadData(intfc, &index);
+     this->data_[index] = e;
    }
    //
    // Rebuild the free index list.
@@ -132,50 +132,50 @@ bool WriteStorableObject(SKSESerializationInterface* intfc, IStorableObject* obj
    UInt32 len    = (std::min)(rawLen, kMaxNameLen);
    //
    if (!WriteData(intfc, &len))
-	  return false;
+     return false;
    if (! intfc->WriteRecordData(name, len))
-	  return false;
+     return false;
    //
    return obj->Save(intfc);
 }
 bool ReadStorableObject (SKSESerializationInterface* intfc, IStorableObject*& objOut) {
    UInt32 type, length, objVersion;
    if (!intfc->GetNextRecordInfo(&type, &objVersion, &length))
-	  return false;
+     return false;
    if (type != 'OBJE') {
-	  _MESSAGE("ReadStorableObject: Error loading unexpected chunk type %08X (%.4s)", type, &type);
-	  return false;
+     _MESSAGE("ReadStorableObject: Error loading unexpected chunk type %08X (%.4s)", type, &type);
+     return false;
    }
    //
    // Read the name of the serialized class.
    //
    UInt32 len;
    if (!intfc->ReadRecordData(&len, sizeof(len)))
-	  return false;
+     return false;
    if (len > kMaxNameLen) {
-	  _MESSAGE("ReadStorableObject: Serialization error. Class name len extended kMaxNameLen.");
-	  return false;
+     _MESSAGE("ReadStorableObject: Serialization error. Class name len extended kMaxNameLen.");
+     return false;
    }
    char buf[kMaxNameLen+1] = { 0 };
    if (!intfc->ReadRecordData(&buf, len))
-	  return false;
+     return false;
    //
    // Get the factory.
    //
    const IStorableObjectFactory* factory = StorableObjectRegistryInstance().GetFactoryByName(buf);
    if (factory == nullptr) {
-	  _MESSAGE("ReadStorableObject: Serialization error. Factory missing for %s.", &buf);
-	  return false;
+     _MESSAGE("ReadStorableObject: Serialization error. Factory missing for %s.", &buf);
+     return false;
    }
    //
    // Instantiate and load the actual data.
    //
    IStorableObject* obj = factory->Create();
    if (!obj->Load(intfc, objVersion)) {
-	  // Load failed. clean up.
-	  objOut = nullptr;
-	  delete obj;
-	  return false;
+     // Load failed. clean up.
+     objOut = nullptr;
+     delete obj;
+     return false;
    }
    objOut = obj;
    return true;
@@ -184,10 +184,10 @@ bool ReadStorableObject (SKSESerializationInterface* intfc, IStorableObject*& ob
 // Global instances:
 //
 StorableObjectRegistry& StorableObjectRegistryInstance() {
-	static StorableObjectRegistry instance;
-	return instance;
+   static StorableObjectRegistry instance;
+   return instance;
 }
 StorablePersistentObjectStorage& StorableObjectStorageInstance() {
-	static StorablePersistentObjectStorage instance;
-	return instance;
+   static StorablePersistentObjectStorage instance;
+   return instance;
 }

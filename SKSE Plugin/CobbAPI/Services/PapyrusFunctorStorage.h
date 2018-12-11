@@ -18,51 +18,51 @@ struct StorableSerializationTag {};
 //
 class IStorableObject { // Copy of IStorableObject
    public:
-	  virtual ~IStorableObject() {}
-	  virtual const char*	ClassName() const    = 0;
-	  virtual UInt32		ClassVersion() const = 0;
+     virtual ~IStorableObject() {}
+     virtual const char*	ClassName() const    = 0;
+     virtual UInt32		ClassVersion() const = 0;
       //
-	  virtual bool Save(SKSESerializationInterface* intfc) = 0;
-	  virtual bool Load(SKSESerializationInterface* intfc, UInt32 version) = 0;
+     virtual bool Save(SKSESerializationInterface* intfc) = 0;
+     virtual bool Load(SKSESerializationInterface* intfc, UInt32 version) = 0;
 };
 
 class IStorableObjectFactory { // Copy of IStorableObjectFactory
    public:
-	  virtual ~IStorableObjectFactory() {}
+     virtual ~IStorableObjectFactory() {}
       //
-	  virtual IStorableObject* Create() const = 0;
+     virtual IStorableObject* Create() const = 0;
 };
 
 template <typename T>
 class ConcreteStorableObjectFactory : public IStorableObjectFactory { // Copy of ConcreteSKSEObjectFactory
    public:
-	  virtual IStorableObject* Create() const {
+     virtual IStorableObject* Create() const {
          StorableSerializationTag tag;
-		 return new T(tag);
-	  }
+       return new T(tag);
+     }
 };
 
 class StorableObjectRegistry { // Copy of SKSEObjectRegistry
    private:
-	  typedef std::map<std::string,UInt32> FactoryMapT;
+     typedef std::map<std::string,UInt32> FactoryMapT;
    public:
-	  template <typename T>
-	  bool RegisterClass() {
-		 ConcreteStorableObjectFactory<T> factory;
-		 UInt32 vtbl = *reinterpret_cast<UInt32*>(&factory);
+     template <typename T>
+     bool RegisterClass() {
+       ConcreteStorableObjectFactory<T> factory;
+       UInt32 vtbl = *reinterpret_cast<UInt32*>(&factory);
          //
          StorableSerializationTag tag;
-		 T tempInstance(tag);
+       T tempInstance(tag);
          //
-		 std::string className(tempInstance.ClassName());
+       std::string className(tempInstance.ClassName());
          //
-		 factoryMap_[className] = vtbl;
+       factoryMap_[className] = vtbl;
          //
-		 return true;
-	  }
-	  const IStorableObjectFactory* GetFactoryByName(const char* name) const;
+       return true;
+     }
+     const IStorableObjectFactory* GetFactoryByName(const char* name) const;
    private:
-	  FactoryMapT factoryMap_; // Stores the vtables directly
+     FactoryMapT factoryMap_; // Stores the vtables directly
 };
 
 class StorablePersistentObjectStorage { // Copy of SKSEPersistentObjectStorage
@@ -89,12 +89,12 @@ class StorablePersistentObjectStorage { // Copy of SKSEPersistentObjectStorage
          SInt32 index;
 
          if (freeIndices_.empty()) {
-	        index = data_.size();
-	        data_.push_back(e);
+           index = data_.size();
+           data_.push_back(e);
          } else {
-	        index = freeIndices_.back();
-	        freeIndices_.pop_back();
-	        data_[index] = e;
+           index = freeIndices_.back();
+           freeIndices_.pop_back();
+           data_[index] = e;
          }
          return index + 1;
       };
@@ -105,18 +105,18 @@ class StorablePersistentObjectStorage { // Copy of SKSEPersistentObjectStorage
          //
          SInt32 index = handle - 1;
          if (index < 0 || index >= data_.size()) {
-	        _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid handle.", handle);
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid handle.", handle);
+           return nullptr;
          }
          Entry& e = data_[index];
          if (e.obj == nullptr) {
-	        _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Object was NULL.", handle);
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Object was NULL.", handle);
+           return nullptr;
          }
          T* result = dynamic_cast<T*>(e.obj);
          if (result == nullptr) {
-	        _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid type (%s).", handle, e.obj->ClassName());
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid type (%s).", handle, e.obj->ClassName());
+           return nullptr;
          }
          return result;
       };
@@ -127,21 +127,21 @@ class StorablePersistentObjectStorage { // Copy of SKSEPersistentObjectStorage
          //
          SInt32 index = handle - 1;
          if (index < 0 || index >= data_.size()) {
-	        _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid handle.", handle);
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::AccessObject(%d): Invalid handle.", handle);
+           return nullptr;
          }
          Entry& e = data_[index];
          if (e.obj == nullptr) {
-	        _MESSAGE("StorablePersistentObjectStorage::TakeObject(%d): Object was NULL.", handle);
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::TakeObject(%d): Object was NULL.", handle);
+           return nullptr;
          }
          T* result = dynamic_cast<T*>(e.obj);
          if (result != nullptr) {
-	        e.obj = nullptr;
-	        freeIndices_.push_back(index);
+           e.obj = nullptr;
+           freeIndices_.push_back(index);
          } else {
-	        _MESSAGE("StorablePersistentObjectStorage::TakeObject(%d): Invalid type (%s).", handle, e.obj->ClassName());
-	        return nullptr;
+           _MESSAGE("StorablePersistentObjectStorage::TakeObject(%d): Invalid type (%s).", handle, e.obj->ClassName());
+           return nullptr;
          }
          return result;
       };

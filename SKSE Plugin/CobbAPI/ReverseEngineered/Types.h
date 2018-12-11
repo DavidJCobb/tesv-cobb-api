@@ -5,7 +5,7 @@
 namespace RE {
    class BSString { // sizeof == 0x8
       public:
-         ~BSString() { // assumes heap allocation
+         ~BSString() { // assumes game heap allocation
             if (this->m_data) {
                FormHeap_Free(this->m_data);
                this->m_data = nullptr;

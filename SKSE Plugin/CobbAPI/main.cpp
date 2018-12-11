@@ -79,7 +79,7 @@ void Callback_Serialization_Load(SKSESerializationInterface * intfc);
 void Callback_Serialization_FormDelete(UInt64 handle);
 
 static const char*  g_pluginName    = "CobbAPI";
-const UInt32 g_pluginVersion = 0x00000001; // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
+const UInt32 g_pluginVersion = 0x01000000; // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
 
 static bool g_TESVVersionSupported = false;
 static bool g_SKSEVersionSupported = false;
@@ -298,6 +298,7 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
       CellInteriorDataService::GetInstance().ResetAll();
       DetectionInterceptService::GetInstance().Reset();
       RevealService::GetInstance().MassReset();
+      TeleportMarkerService::GetInstance().EmptyLoad();
    }
 };
 void Callback_Messaging_Cobb(SKSEMessagingInterface::Message* message) {
@@ -403,8 +404,6 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
    UInt32 length;
    bool   error = false;
    //
-   bool executedTeleportMarkerService = false;
-   //
    while (!error && intfc->GetNextRecordInfo(&type, &version, &length)) {
       DEBUG_ONLY_MESSAGE("Serialization: Loaded record of type, version, length: %c%c%c%c, %d, %d.", (char)(type >> 0x18), (char)(type >> 0x10), (char)(type >> 0x8), (char)type, version, length);
       switch (type) {
@@ -431,7 +430,6 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
                _MESSAGE("Loading teleport marker changes FAILED.");
             else
                _MESSAGE("Loaded teleport marker changes!");
-            executedTeleportMarkerService = true;
             break;
          case ce_signature_WeakReference:
             DEBUG_ONLY_MESSAGE("Loading weak references...");
@@ -454,14 +452,6 @@ void Callback_Serialization_Load(SKSESerializationInterface* intfc) {
             error = true;
             break;
       }
-   }
-   //
-   // Make sure that the Teleport Marker Service cleans after itself if we go 
-   // from a savegame with changes to a savegame with no changes (i.e. no 
-   // serialized data).
-   //
-   if (!executedTeleportMarkerService) {
-      TeleportMarkerService::GetInstance().EmptyLoad();
    }
    //
    _MESSAGE("Loading done!");

@@ -18,6 +18,12 @@ export /*Promise*/ function fetchXML(input, init) {
          }
       );
 }
+export /*bool*/ function hasBareText(/*Node*/ target) {
+   for(let node of target.childNodes)
+      if (node.nodeName == "#text" && node.textContent.trim())
+         return true;
+   return false;
+}
 export /*bool*/ function isRemoved(/*Node*/ target) {
    let p = target;
    while (p.parentNode)
@@ -30,7 +36,7 @@ export /*bool*/ function isRemoved(/*Node*/ target) {
       return false;
    return true;
 }
-export /*Element root*/ function parseAndSanitize(/*string*/ html, /*string*/ mime) {
+export /*Element root*/ function parseAndSanitize(/*string*/ html, /*string*/ mime, /*array<lowercase-strings>*/ extraTags) {
    if (!mime)
       mime = "text/html";
    let parser = new DOMParser();
@@ -46,6 +52,7 @@ export /*Element root*/ function parseAndSanitize(/*string*/ html, /*string*/ mi
          case "colgroup":
          case "dd":
          case "del":
+         case "dfn":
          case "dl":
          case "dt":
          case "em":
@@ -74,6 +81,8 @@ export /*Element root*/ function parseAndSanitize(/*string*/ html, /*string*/ mi
          case "wbr":
             break;
          default:
+            if (extraTags && extraTags.indexOf(n.nodeName.toLowerCase()) >= 0)
+               break;
             n.replaceWith(document.createTextNode(n.outerHTML));
       }
    });

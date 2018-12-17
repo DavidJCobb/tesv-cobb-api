@@ -32,6 +32,9 @@ export class PapyrusMethod {
             this.setExample(node);
          else
             this.setDefaultExample();
+         if (node = a.querySelectorAll("method>notes>note"))
+            for (let i of node)
+               this.notes.push({ content: i.innerHTML });
          if (node = a.querySelectorAll("method>related"))
             for (let i of node) {
                let entry = {};
@@ -47,12 +50,14 @@ export class PapyrusMethod {
    }
    __construct_default() {
       this.className = "";
+      this.classObj  = null;
       this.name = "";
       this.returnType = "";
       this.args = [];
       this.blurb = "";
       this.description = "";
       this.example = "";
+      this.notes = [];
       this.related = [];
    }
    //
@@ -79,6 +84,11 @@ export class PapyrusMethod {
       }
       out += ") Global Native";
       return out;
+   }
+   get templated() {
+      if (!this.classObj)
+         return { "lookup-failed": true };
+      return this.classObj.templated;
    }
    /*void*/ setDefaultExample() {
       let out = "";

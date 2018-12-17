@@ -74,3 +74,26 @@ let index_promise = dom.fetchXML("index.xml").then(function (/*XMLDocument*/ doc
    return doc;
 });
 export {index_promise as promise};
+
+export /*PapyrusMethod*/ function getClass(className) {
+   return class_promise.then(function() {
+      for(let classObj of data.classes)
+         if (classObj.name == className)
+            return classObj;
+      return null;
+   });
+}
+export /*PapyrusMethod*/ function getClassOrMethod(className, methodName) {
+   return class_promise.then(function() {
+      for(let classObj of data.classes)
+         if (classObj.name == className) {
+            if (!methodName)
+               return classObj;
+            for(let method of classObj.methods)
+               if (method.name == methodName)
+                  return method;
+            break;
+         }
+      return null;
+   });
+}

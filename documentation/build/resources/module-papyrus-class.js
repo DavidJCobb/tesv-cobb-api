@@ -1,5 +1,6 @@
 // module
 import {PapyrusMethod} from "./module-papyrus-method.js";
+import * as dom from "./module-dom-utilities.js";
 
 export class PapyrusClass {
    constructor(a) {
@@ -20,8 +21,12 @@ export class PapyrusClass {
          if (node = a.querySelectorAll("class>methods>method"))
             for (let i of node) {
                let entry = new PapyrusMethod(i);
+               entry.classObj = this;
                this.methods.push(entry);
             }
+         if (node = a.querySelectorAll("class>templated-content>template"))
+            for (let i of node)
+               this.templated[i.getAttribute("name")] = i.innerHTML;
       }
    }
    __construct_default() {
@@ -30,5 +35,6 @@ export class PapyrusClass {
       this.description = "";
       this.concepts = [];
       this.methods = [];
+      this.templated = {};
    }
 }

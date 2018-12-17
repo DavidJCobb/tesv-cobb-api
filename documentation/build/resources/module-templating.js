@@ -215,8 +215,11 @@ export function execute(node, obj, _outerWalker) {
                      node.replaceWith(document.createTextNode(data));
                } break;
                case "html": {
-                  let root = dom.parseAndSanitize(data);
-                  if (data && wrap && !root.children.length) { // text content as a bare text node
+                  let root = dom.parseAndSanitize(data, null, ["t-f"]);
+                  if (root.querySelector("t-f")) {
+                     execute(root, obj, walker);
+                  }
+                  if (data && wrap && dom.hasBareText(root)) { // text content as a bare text node
                      let p = root.ownerDocument.createElement(wrap);
                      while (root.firstChild)
                         p.appendChild(root.firstChild);

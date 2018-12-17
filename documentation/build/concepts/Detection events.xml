@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<content>
+   <p>
+      When an actor makes a noise, it creates a <dfn>detection event</dfn>. Each detection 
+      event is a piece of data stored on the noisemaking actor's AI process; detection 
+      events have a sound level, a position, and an age. Events last for a limited amount 
+      of time (configurable as the GameSetting <var>fDetectionEventExpireTime</var>) 
+      before they are deleted; these events are what allow other actors to hear the 
+      noisemaking actor.
+   </p>
+   <p>
+      An actor can only have one detection event at a time; the ongoing event is stored 
+      in their AI data. This means, among other things, that forcibly disabling an 
+      actor's AI will also terminate their detection event.
+   </p>
+</content>

@@ -26,8 +26,13 @@
          <ul>
             <t-set f="concepts" as="concept">
                <li>
-                  <t-attr f="data-class-name"><t-f f="class:name"></t-f></t-attr>
-                  <t-f f="concept:name"></t-f>
+                  <t-attr f="data-concept-name"><t-f f="concept:name"></t-f></t-attr>
+                  <a>
+                     <t-attr f="href"><!--
+                     -->?concept=<t-f f="concept:name"></t-f>
+                     </t-attr>
+                     <t-f f="concept:name"></t-f>
+                  </a>
                </li>
             </t-fset>
          </ul>
@@ -82,7 +87,7 @@
                   <li>
                      <a>
                         <t-attr f="href"><!--
-                        -->?concept=<t-f f="concept:file"></t-f>
+                        -->?concept=<t-f f="concept:name"></t-f>
                         </t-attr>
                         <t-f f="concept:name"></t-f>
                      </a>
@@ -91,6 +96,10 @@
             </ul>
          </section>
       </template>
+      <template id="template-concept">
+         <h1><t-f f="name"></t-f></h1>
+         <t-f f="content" type="html" wrap-if-bare="p"></t-f>
+      </template>
       <template id="template-class">
          <h1><t-f f="name"></t-f></h1>
          <t-f f="description||blurb" type="html" wrap-if-bare="p"></t-f>
@@ -98,7 +107,14 @@
             <h2>Relevant concepts</h2>
             <ul>
                <t-set f="concepts" as="concept">
-                  <li><t-f f="concept:name"></t-f></li>
+                  <li>
+                     <a>
+                        <t-attr f="href"><!--
+                        -->?concept=<t-f f="concept:name"></t-f>
+                        </t-attr>
+                        <t-f f="concept:name"></t-f>
+                     </a>
+                  </li>
                </t-set>
             </ul>
          </section>
@@ -260,13 +276,30 @@
                }
             });
          } else {
-            index.class_promise.then(function(docs) {
-               let main = document.querySelector("main");
-               dom.clear(main);
-               let frag = document.getElementById("template-index").content.cloneNode(true);
-               templating.execute(frag, index.data, "");
-               main.appendChild(frag);
-            });
+            let conceptName = query.get("concept");
+            if (conceptName) {
+               dom.fetchXML("concepts/" + conceptName + ".xml").then(function(/*XMLDocument*/ doc) {
+                  if (doc.documentElement.nodeName.toLowerCase() == "content") {
+                     let html = doc.documentElement.innerHTML;
+                     let data = { name: conceptName, content: html };
+                     //
+                     let main = document.querySelector("main");
+                     dom.clear(main);
+                     let frag = document.getElementById("template-concept").content.cloneNode(true);
+                     templating.execute(frag, data, "");
+                     main.appendChild(frag);
+                  }
+                  return d;
+               });
+            } else {
+               index.class_promise.then(function(docs) {
+                  let main = document.querySelector("main");
+                  dom.clear(main);
+                  let frag = document.getElementById("template-index").content.cloneNode(true);
+                  templating.execute(frag, index.data, "");
+                  main.appendChild(frag);
+               });
+            }
          }
       </script>
       <script type="application/javascript">

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<content>
+   <p>
+      All stats on an actor are stored as <dfn>actor values</dfn> &#8212; floating-point 
+      values that can have a <dfn>base value</dfn> and <dfn>modifiers</dfn>. A stat's 
+      current value is the sum of the base value and all modifiers. For the remainder of 
+      this article, an "actor value" will be referred to as an "AV," in order to avoid 
+      word-salad phrases like "the actor value's current value."
+   </p>
+   <p>
+      The <dfn>permanent modifier</dfn> is a modifier to an AV's maximum value, named 
+      because it doesn't expire after a time limit. Permanent modifiers come from an 
+      actor's enchantments and abilities, as well as from any ModActorValue script 
+      calls.
+   </p>
+   <p>
+      The <dfn>temporary modifier</dfn> is used for temporary AV buffs and drains, such 
+      as Fortify Health potions and similar.
+   </p>
+   <p>
+      The <dfn>damage modifier</dfn> is used for damage only, and for most AVs, it can 
+      only be negative. (For AVs where increases would be bad, like the delay on 
+      regenerating voicepoints, damage can only be positive).
+   </p>
+   <p>
+      The key trick with modifiers is that the game engine has to undo them manually: if 
+      an enchantment or ability is removed from an actor, or if a spell is dispelled, 
+      then the game will check what AVs the removed object influences, and by how much; 
+      the game will then undo that change exactly. (For example, if you have an ability 
+      that boosts Smithing by +10, then adding the ability increases the permanent 
+      modifier for Smithing by 10, and removing the ability later decreases the modifier 
+      by that same amount.) This is also the key difference between the damage modifier 
+      and other modifiers: you don't need to undo damage "symmetrically" &#8212; you 
+      don't need to "undo" a specific bullet wound, a specific cut, or a specific bite; 
+      damage can be inflicted and healed without bothering to keep track of its source.
+   </p>
+   <h2>Under the hood</h2>
+   <p>
+      All actors store health, magicka, stamina, and voicepoints data &#8212; a base 
+      value and all modifiers &#8212; at all times.
+   </p>
+   <p>
+      For other AVs, if a given AV on an actor hasn't been changed from the value on 
+      the ActorBase (or the race), then no data for that AV is stored on the actor. If 
+      a base value is changed, then the game stores that base value on the actor; if 
+      any of an AV's modifiers change, then all three modifiers are stored on the actor. 
+      These are each stored in a data structure analogous to an <code>unordered_map</code>; 
+      the actual data structure is a pair of arrays, one of AV indices and another of 
+      the base value or modifiers. The former array is an array of chars, so AV indices 
+      in Skyrim Classic can never exceed 254 (-1 is used in some parts of the engine as 
+      a sentinel value meaning "none").
+   </p>
+</content>

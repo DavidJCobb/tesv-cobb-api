@@ -51,8 +51,9 @@
       <class name="CobbAPIWorldspace" file="Worldspace.xml" />
    </classes>
    <concepts>
-      <concept name="Actor values"     page="Actor values" />
-      <concept name="Changeflags"      page="Changeflags" />
-      <concept name="Detection events" page="Detection Events" />
+      <concept name="Actor values" />
+      <concept name="Changeflags" />
+      <concept name="Detection events" />
+      <concept name="Load doors" />
    </concepts>
 </root>

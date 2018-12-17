@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<content>
+   <p>
+      In Skyrim, a pair of <dfn>load doors</dfn> is essentially a pair of doors that, 
+      when activated, behave like teleporters, with each door teleporting the player 
+      or an actor to the other. Appropriately, each load door has a <dfn>teleport 
+      marker</dfn> that determines where the player ends up.
+   </p>
+   <p>
+      Somewhat confusingly, teleport markers are opposite-paired. If you have a load 
+      door in Whiterun that connects to a load door in Riften, then the Whiterun load 
+      door's teleport marker is in Riften, and the Riften load door's teleport marker 
+      is in Whiterun. To make our documentation clearer, we refer to the <dfn>near 
+      teleport marker</dfn> and the <dfn>far teleport marker</dfn> when describing 
+      situations where a teleport marker is operated on. For our hypothetical Whiterun 
+      door, the near marker would be the one in Whiterun, and the far marker would be 
+      the one in Riften.
+   </p>
+</content>

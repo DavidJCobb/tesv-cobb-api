@@ -1,0 +1,1797 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPICell">
+   <blurb>
+      Functions for working with cells and their lighting properties.
+   </blurb>
+   <description>
+      <p>
+         These functions allow you to work with cells. In particular, you can modify the lighting 
+         and fog properties of any interior cell that doesn't use sky lighting, in a manner that 
+         persists in the savegame.
+      </p>
+      <h2>An overview of interior cell lighting</h2>
+      <p>
+         Interior cells have a wide array of lighting properties, allowing for precise control 
+         of fog and color. However, an interior cell can also use a <dfn>lighting template</dfn> 
+         &#8212; a separate form that offers the same range of lighting properties. A cell can 
+         borrow some or all of its values from its lighting template.
+      </p>
+      <p>
+         Internally, cells have a set of <dfn>lighting template usage flags</dfn> &#8212; a 
+         bitmask indicating which properties are borrowed from the template. Cells always define 
+         the full set of lighting data on their end, but when the game goes to look up a l
+         lighting property for the cell, it will first check the template usage flags; if the 
+         flag for the property in question is set, then the game will instead grab the property 
+         value from the lighting template. If the cell somehow has a template usage flag set 
+         without actually having a lighting template to pull from, then the game will still use 
+         the cell-side property. Properties are looked up every frame, so any changes you make 
+         will be instantaneous (not counting the time it takes for the Papyrus API to actually 
+         execute).
+      </p>
+      <p>
+         If you wish to reset your changes to a cell's lighting properties, <em>please</em> use 
+         the "reset" functions. If you get a cell's original values and then set it to those 
+         values manually, you will be baking those values into the save; if a mod changes that 
+         cell's values, the values you set will take precedence. The "reset" functions avoid this.
+      </p>
+      <h2>Lighting template usage flag list</h2>
+      <p>
+         The lighting template usage flags that cells can have are as follows:
+      </p>
+      <table class="narrow">
+         <thead>
+            <tr>
+               <th>Flag</th>
+               <th>Properties</th>
+            </tr>
+         </thead>
+         <tbody>
+            <tr>
+               <td>1</td>
+               <td>Ambient color</td>
+            </tr>
+            <tr>
+               <td>2</td>
+               <td>Directional color</td>
+            </tr>
+            <tr>
+               <td>4</td>
+               <td>Fog color (both near and far)</td>
+            </tr>
+            <tr>
+               <td>8</td>
+               <td>Fog near distance</td>
+            </tr>
+            <tr>
+               <td>16</td>
+               <td>Fog far distance</td>
+            </tr>
+            <tr>
+               <td>32</td>
+               <td>Directional rotation</td>
+            </tr>
+            <tr>
+               <td>64</td>
+               <td>Directional fade</td>
+            </tr>
+            <tr>
+               <td>128</td>
+               <td>Fog clip distance</td>
+            </tr>
+            <tr>
+               <td>256</td>
+               <td>Fog power</td>
+            </tr>
+            <tr>
+               <td>512</td>
+               <td>Fog max</td>
+            </tr>
+            <tr>
+               <td>1024</td>
+               <td>Light fade distances</td>
+            </tr>
+         </tbody>
+      </table>
+   </description>
+   <templated-content>
+      <template name="aiSource-description">
+         This parameter determines where we retrieve each property from. If the 
+         parameter is zero, a method will always return a cell's current local 
+         data; otherwise, the parameter serves as a bitmask, indicating which 
+         data to check for first (in order of highest to lowest bits). The default 
+         value for this argument, 2, will make these methods return whatever value 
+         the cell is actually using.
+         <table class="narrow">
+            <thead>
+               <tr>
+                  <th>Flag</th>
+                  <th>Meaning</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td>0</td>
+                  <td>Get cell's current data</td>
+               </tr>
+               <tr>
+                  <td>1</td>
+                  <td>Prefer cell's default data (if changes were made)</td>
+               </tr>
+               <tr>
+                  <td>2</td>
+                  <td>Prefer lighting template (if used for this property)</td>
+               </tr>
+               <tr>
+                  <td>4</td>
+                  <td>Prefer lighting template (always, unless no template is used)</td>
+               </tr>
+            </tbody>
+         </table>
+      </template>
+   </templated-content>
+   <methods>
+      <method name="ForceUniqueLighting">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            This function disables an interior cell's lighting template usage flags, forcing the 
+            cell to use only its own lighting values. If this function is called on an exterior 
+            cell, it logs a Papyrus error and does nothing.
+         </blurb>
+         <notes>
+            <note>
+               This function is equivalent to calling <code>CobbAPICell.SetLightingTemplateUsageFlags(akSubject, 0xFFFFFFFF, False, abPersist)</code>.
+            </note>
+         </notes>
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="FromColorCode" returns="Int[]">
+         <args>
+            <arg type="Int" name="aiCode">
+               A single integer representing an RGBA color as 0xAABBGGRR.
+            </arg>
+         </args>
+         <blurb>
+            Converts a color encoded as a single integer into an array of integers, one each for 
+            the red, green, and blue components. Alpha is not retained.
+         </blurb>
+         <related type="method" name="ToColorCode" />
+      </method>
+      <method name="GetAcousticSpace" returns="Form">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's acoustic space.
+         </blurb>
+         <example-data>
+            <call return-var="kAcousticSpace">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="SetAcousticSpace" />
+      </method>
+      <method name="GetAmbientColor" returns="Int">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's ambient light color as a single integer. Fails if called 
+            on an exterior cell.
+         </blurb>
+         <example-data>
+            <call return-var="iAmbient">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetDirectionalAmbientColors" returns="Int[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns a cell's directional ambient colors.
+         </blurb>
+         <description>
+            <p>
+               This function returns an interior cell's directional ambient colors as an array of 
+               six integers, representing the colors in this order: +X, -X, +Y, -Y, +Z, and -Z. 
+               Fails if called on an exterior cell.
+            </p>
+         </description>
+         <example-data>
+            <call return-var="iDirAmbients">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetDirectionalColor" returns="Int">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's directional light color as a single integer. Fails if 
+            called on an exterior cell.
+         </blurb>
+         <example-data>
+            <call return-var="iDirectional">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetDirectionalFade" returns="Float">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's directional light fade. Fails if called on an exterior 
+            cell.
+         </blurb>
+         <example-data>
+            <call return-var="fDirFade">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetDirectionalRotation" returns="Int[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's directional rotation as an array of two integers: the XY 
+            rotation in degrees, and the Z rotation in degrees. Fails if called on an exterior 
+            cell.
+         </blurb>
+         <example-data>
+            <call return-var="iDirRot">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetEditorID" returns="String">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns a cell's editor ID.
+         </blurb>
+      </method>
+      <method name="GetEncounterZone" returns="Form">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns a cell's encounter zone.
+         </blurb>
+      </method>
+      <method name="GetExteriorCellCoordinates" returns="Int[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns an exterior cell's grid coordinates.
+         </blurb>
+         <description>
+            <p>
+               If this function is given an exterior cell, it returns that cell's grid 
+               coordinates as an array of two integers, one for the X-coordinate and one for 
+               the Y-coordinate. If this function is given an interior cell, it logs a Papyrus 
+               error and returns an empty array.
+            </p>
+         </description>
+      </method>
+      <method name="GetExteriorUnitCoordinates" returns="Float[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns an exterior cell's world coordinates.
+         </blurb>
+         <description>
+            <p>
+               If this function is given an exterior cell, it returns that cell's world 
+               coordinates as an array of two floats, one for the X-coordinate and one for 
+               the Y-coordinate. If this function is given an interior cell, it logs a Papyrus 
+               error and returns an empty array.
+            </p>
+         </description>
+      </method>
+      <method name="GetFogClipDistance" returns="Float">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's fog clip distance. Fails if called on an exterior cell, or 
+            on an interior cell that uses sky lighting.
+         </blurb>
+         <example-data>
+            <call return-var="fClip">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetFogColors" returns="Int[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an array of an interior cell's near and far fog colors. Fails if called on an 
+            exterior cell, or on an interior cell that uses sky lighting.
+         </blurb>
+         <example-data>
+            <call return-var="iFogColors">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetFogDistances" returns="Float[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an array of an interior cell's near and far fog planes. Fails if called on an 
+            exterior cell, or on an interior cell that uses sky lighting.
+         </blurb>
+         <example-data>
+            <call return-var="fFogDistances">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetFogMax" returns="Float">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's fog max. Fails if called on an exterior cell, or on an 
+            interior cell that uses sky lighting.
+         </blurb>
+         <example-data>
+            <call return-var="fMax">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetFogPower" returns="Float">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's fog power. Fails if called on an exterior cell, or on an 
+            interior cell that uses sky lighting.
+         </blurb>
+         <example-data>
+            <call return-var="fPower">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetImageSpace" returns="Form">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's imagespace. Fails if called on an exterior cell.
+         </blurb>
+         <example-data>
+            <call return-var="kImageSpace">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="SetImageSpace" />
+      </method>
+      <method name="GetLightFadeDistances" returns="Float[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an array of an interior cell's "begin" and "end" light fade distances. Fails 
+            if called on an exterior cell.
+         </blurb>
+         <example-data>
+            <call return-var="fLightDistances">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+      </method>
+      <method name="GetLightingTemplate" returns="Form">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns the lighting template that the cell is using.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="GetLightingTemplateUsageDefaultFlag" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiFlag">
+               A lighting template usage flag. See the list in the main article for the 
+               CobbAPICell class.
+            </arg>
+         </args>
+         <blurb>
+            Checks a cell's original data (i.e. before any run-time changes made by 
+            CobbAPI) and returns True if the given lighting template usage flag is set, 
+            or False otherwise.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="GetLightingTemplateUsageDefaultFlags" returns="Int">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Checks a cell's original data (i.e. before any run-time changes made by 
+            CobbAPI) and returns the cell's lighting template usage flags.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="GetLightingTemplateUsageFlag" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiFlag">
+               A lighting template usage flag. See the list in the main article for the 
+               CobbAPICell class.
+            </arg>
+         </args>
+         <blurb>
+            Returns True if the given lighting template usage flag is set, or False otherwise.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="GetLightingTemplateUsageFlags" returns="Int">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns the cell's lighting template usage flags.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="GetMusicType" returns="MusicType">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiSource" default="2">
+               <t-f f="templated:aiSource-description" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Returns an interior cell's music-type. Fails if called on an exterior cell.
+         </blurb>
+         <example-data>
+            <call return-var="kMusicType">
+               <arg value="kCell" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="SetMusicType" />
+      </method>
+      <method name="GetNorthRotation" returns="Float">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns a cell's north rotation, honoring any NorthMarkers in the cell.
+         </blurb>
+      </method>
+      <method name="GetParentWorldspace" returns="Worldspace">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns a cell's parent Worldspace. For interior cells, this is always None.
+         </blurb>
+      </method>
+      <method name="IsPublic" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns True if the cell has the "Is Public" flag set, or False otherwise.
+         </blurb>
+      </method>
+      <method name="ResetFields">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiProperties">
+               A bitmask of properties to revert changes to.
+               <table class="narrow">
+                  <thead>
+                     <tr>
+                        <th>Flag</th>
+                        <th>Property</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr> <td>0x00000001</td> <td>Ambient color</td> </tr>
+                     <tr> <td>0x00000002</td> <td>Directional color</td> </tr>
+                     <tr> <td>0x00000004</td> <td>Fog color, near</td> </tr>
+                     <tr> <td>0x00000008</td> <td>Fog color, far</td> </tr>
+                     <tr> <td>0x00000010</td> <td>Fog distance, near</td> </tr>
+                     <tr> <td>0x00000020</td> <td>Fog distance, far</td> </tr>
+                     <tr> <td>0x00000040</td> <td>Fog distance, clip</td> </tr>
+                     <tr> <td>0x00000080</td> <td>Fog power</td> </tr>
+                     <tr> <td>0x00000100</td> <td>Fog max</td> </tr>
+                     <tr> <td>0x00000200</td> <td>Directional rotation, XY</td> </tr>
+                     <tr> <td>0x00000400</td> <td>Directional rotation, Z</td> </tr>
+                     <tr> <td>0x00000800</td> <td>Directional fade</td> </tr>
+                     <tr> <td>0x00001000</td> <td>Directional ambient color, X+</td> </tr>
+                     <tr> <td>0x00002000</td> <td>Directional ambient color, X-</td> </tr>
+                     <tr> <td>0x00004000</td> <td>Directional ambient color, Y+</td> </tr>
+                     <tr> <td>0x00008000</td> <td>Directional ambient color, Y-</td> </tr>
+                     <tr> <td>0x00010000</td> <td>Directional ambient color, Z+</td> </tr>
+                     <tr> <td>0x00020000</td> <td>Directional ambient color, Z-</td> </tr>
+                     <tr> <td>0x00040000</td> <td>Light fade, begin</td> </tr>
+                     <tr> <td>0x00080000</td> <td>Light fade, end</td> </tr>
+                     <tr> <td>0x10000000</td> <td>Lighting template</td> </tr>
+                     <tr> <td>0x20000000</td> <td>AcousticSpace</td> </tr>
+                     <tr> <td>0x40000000</td> <td>ImageSpace</td> </tr>
+                     <tr> <td>0x80000000</td> <td>MusicType</td> </tr>
+                  </tbody>
+               </table>
+            </arg>
+         </args>
+         <blurb>
+            Resets the specified properties for a cell, but not any changes to the lighting 
+            template usage flags associated with those properties.
+         </blurb>
+         <example-data>
+            <comment>
+               Reset changes to the directional ambient colors.
+            </comment>
+            <call>
+               <arg value="kCell" />
+               <arg value="0x0003F000" />
+            </call>
+         </example-data>
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="ResetTemplateUsageFlags">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiFlagsMask">
+               A bitmask of flags to reset. Every bit that is 1 in this mask will be 
+               reset to its original value in the cell's lighting template usage flags.
+            </arg>
+         </args>
+         <blurb>
+            Resets the specified lighting template usage flags for a cell.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="SetAcousticSpace">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Form" name="akAcousticSpace" />
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Forces a cell to use a different acoustic space.
+         </blurb>
+         <related type="method" name="GetAcousticSpace" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetAmbientColor">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCode" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abFixOther" default="false">
+               If both the <var>abForce</var> and <var>abFixOther</var> parameters are true, then 
+               the cell will copy the directional ambient colors from its lighting template. This 
+               option exists because a cell can inherit both the single ambient color and the 
+               six directional ambient colors from its lighting template, or it can inherit none 
+               of these colors; it cannot inherit just one. Using <var>abForce</var> and setting 
+               just one of those will produce a visible change in the other color(s) unless the 
+               other color(s) is/are copied from the lighting template to the cell, and 
+               <var>abFixOther</var> controls whether that copy operation is performed.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's ambient lighting color.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="0x000000FF" />
+               <arg value="True" />
+               <arg value="True" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetAmbientColor" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetDirectionalAmbientColors">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int[]" name="aiColorCodes">
+               Six integers representing directional ambient colors to set.
+            </arg>
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abFixOther" default="false">
+               If both the <var>abForce</var> and <var>abFixOther</var> parameters are true, then 
+               the cell will copy the single ambient color from its lighting template. This 
+               option exists because a cell can inherit both the single ambient color and the 
+               six directional ambient colors from its lighting template, or it can inherit none 
+               of these colors; it cannot inherit just one. Using <var>abForce</var> and setting 
+               just one of those will produce a visible change in the other color(s) unless the 
+               other color(s) is/are copied from the lighting template to the cell, and 
+               <var>abFixOther</var> controls whether that copy operation is performed.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's directional ambient lighting colors.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="iColors" />
+               <arg value="True" />
+               <arg value="True" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetDirectionalAmbientColors" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetDirectionalColor">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCode" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's directional lighting color.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="0x000000FF" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetDirectionalColor" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetDirectionalFade">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afFade" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's directional lighting fade.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="2.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetDirectionalFade" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetDirectionalRotation">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiDegrees">
+               An array of two integers, the first representing an XY rotation in degrees and the 
+               second representing a Z rotation in degrees.
+            </arg>
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's directional lighting rotation.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="iAngles" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetDirectionalRotation" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFog">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCodeNear" />
+            <arg type="Int" name="aiColorCodeFar" />
+            <arg type="Float" name="afDistanceNear" />
+            <arg type="Float" name="afDistanceFar" />
+            <arg type="Float" name="afDistanceClip" />
+            <arg type="Float" name="afPow" />
+            <arg type="Float" name="afMax" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            A shorthand setter for all of an interior cell's fog properties.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="0x00FF0000" />
+               <arg value="0x000000FF" />
+               <arg value="200.0" />
+               <arg value="800.0" />
+               <arg value="2000.0" />
+               <arg value="0.2" />
+               <arg value="1.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogClipDistance" />
+         <related type="method" name="GetFogColors" />
+         <related type="method" name="GetFogDistances" />
+         <related type="method" name="GetFogMax" />
+         <related type="method" name="GetFogPower" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogColors">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCodeNear" />
+            <arg type="Int" name="aiColorCodeFar" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your colors 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for these 
+               colors.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's near and far fog colors.
+         </blurb>
+         <example-data>
+            <call return-var="iFogColors">
+               <arg value="kCell" />
+               <arg value="0x00FF0000" />
+               <arg value="0x000000FF" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogColors" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogDistanceClip">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afDistance" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's fog clip distance.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="2000.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogClipDistance" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogDistanceFar">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afDistance" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's far fog distance.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="800.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogDistances" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogDistanceNear">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afDistance" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's near fog distance.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="200.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogDistances" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogDistances">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afDistanceNear" />
+            <arg type="Float" name="afDistanceFar" />
+            <arg type="Float" name="afDistanceClip" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies an interior cell's near, far, and clip fog distances.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="200.0" />
+               <arg value="800.0" />
+               <arg value="2000.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogClipDistance" />
+         <related type="method" name="GetFogDistances" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogFarColor">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCodeFar" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your colors 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for these 
+               colors.
+            </arg>
+            <arg type="Bool" name="abFixOther" default="false">
+               If both the <var>abForce</var> and <var>abFixOther</var> parameters are true, then 
+               the cell will copy the near fog color from its lighting template. This option 
+               exists because a cell can inherit both fog colors from its lighting template, or 
+               neither color; it cannot inherit just one. Using <var>abForce</var> and setting 
+               just one fog color will produce a visible change in the other color unless the 
+               other color is copied from the lighting template to the cell, and 
+               <var>abFixOther</var> controls whether that copy operation is performed.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's far fog color.
+         </blurb>
+         <example-data>
+            <call return-var="iFogColors">
+               <arg value="kCell" />
+               <arg value="0x000000FF" />
+               <arg value="True" />
+               <arg value="True" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogColors" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogMax">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afMax" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's fog max.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="1.0" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogMax" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogPow">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afPow" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your color 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for this 
+               color.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's fog power.
+         </blurb>
+         <example-data>
+            <call>
+               <arg value="kCell" />
+               <arg value="0.2" />
+               <arg exclude="true" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogPow" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetFogNearColor">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiColorCodeNear" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your colors 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for these 
+               colors.
+            </arg>
+            <arg type="Bool" name="abFixOther" default="false">
+               If both the <var>abForce</var> and <var>abFixOther</var> parameters are true, then 
+               the cell will copy the far fog color from its lighting template. This option 
+               exists because a cell can inherit both fog colors from its lighting template, or 
+               neither color; it cannot inherit just one. Using <var>abForce</var> and setting 
+               just one fog color will produce a visible change in the other color unless the 
+               other color is copied from the lighting template to the cell, and 
+               <var>abFixOther</var> controls whether that copy operation is performed.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies a cell's near fog color.
+         </blurb>
+         <example-data>
+            <call return-var="iFogColors">
+               <arg value="kCell" />
+               <arg value="0x000000FF" />
+               <arg value="True" />
+               <arg value="True" />
+               <arg exclude="true" />
+            </call>
+         </example-data>
+         <related type="method" name="GetFogColors" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetImageSpace">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Form" name="akImageSpace" />
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Forces a cell to use a different imagespace.
+         </blurb>
+         <related type="method" name="GetImageSpace" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetLightFadeDistances">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Float" name="afDistanceBegin" />
+            <arg type="Float" name="afDistanceEnd" />
+            <arg type="Bool" name="abForce" default="true">
+               If this parameter is set to True, then the cell will be forced to use your values 
+               even if it is using a lighting template. It's equivalent to an appropriate call to 
+               SetLightingTemplageUsageFlags, to clear the lighting template usage flag for these 
+               values.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies an interior cell's light fade distances.
+         </blurb>
+         <related type="method" name="GetLightFadeDistances" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="SetLightingTemplate">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Form" name="akLightingTemplate" />
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Forces a cell to use a different lighting template form.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="SetLightingTemplateUsageFlags">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiFlagsMask">
+               A bitmask of flags to modify. Every bit that is 1 in this mask will be 
+               modified as indicated by the other arguments.
+            </arg>
+            <arg type="Bool" name="abStateToSet">
+               Whether to set (True) or clear (False) the indicated flags.
+            </arg>
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Modifies the specified lighting template usage flags for a cell.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
+      </method>
+      <method name="SetMusicType">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="MusicType" name="akMusicType" />
+            <arg type="Bool" name="abPersist" default="true">
+               If this argument is True, then the change will be persisted in the SKSE co-save.
+            </arg>
+         </args>
+         <blurb>
+            Forces a cell to use a different music-type.
+         </blurb>
+         <related type="method" name="GetMusicType" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="StopPersistingChangedTemplateUsageFlags">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiFlagsMask">
+               A bitmask of flags to modify. Every bit that is 1 in this mask will stop 
+               being persisted in the savegame until it is next altered.
+            </arg>
+         </args>
+         <blurb>
+            Stops persisting changes to the specified lighting template usage flags in 
+            the savegame, without actually resetting the cell's in-memory data.
+         </blurb>
+         <related type="method" name="ForceUniqueLighting" />
+         <related type="method" name="GetLightingTemplate" />
+         <related type="method" name="GetLightingTemplateUsageFlag" />
+         <related type="method" name="GetLightingTemplateUsageFlags" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlag" />
+         <related type="method" name="GetLightingTemplateUsageDefaultFlags" />
+         <related type="method" name="ResetTemplateUsageFlags" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetLightingTemplateUsageFlags" />
+      </method>
+      <method name="StopPersistingChangesTo">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiProperties">
+               A bitmask of properties to stop persisting changes to.
+               <table class="narrow">
+                  <thead>
+                     <tr>
+                        <th>Flag</th>
+                        <th>Property</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr> <td>0x00000001</td> <td>Ambient color</td> </tr>
+                     <tr> <td>0x00000002</td> <td>Directional color</td> </tr>
+                     <tr> <td>0x00000004</td> <td>Fog color, near</td> </tr>
+                     <tr> <td>0x00000008</td> <td>Fog color, far</td> </tr>
+                     <tr> <td>0x00000010</td> <td>Fog distance, near</td> </tr>
+                     <tr> <td>0x00000020</td> <td>Fog distance, far</td> </tr>
+                     <tr> <td>0x00000040</td> <td>Fog distance, clip</td> </tr>
+                     <tr> <td>0x00000080</td> <td>Fog power</td> </tr>
+                     <tr> <td>0x00000100</td> <td>Fog max</td> </tr>
+                     <tr> <td>0x00000200</td> <td>Directional rotation, XY</td> </tr>
+                     <tr> <td>0x00000400</td> <td>Directional rotation, Z</td> </tr>
+                     <tr> <td>0x00000800</td> <td>Directional fade</td> </tr>
+                     <tr> <td>0x00001000</td> <td>Directional ambient color, X+</td> </tr>
+                     <tr> <td>0x00002000</td> <td>Directional ambient color, X-</td> </tr>
+                     <tr> <td>0x00004000</td> <td>Directional ambient color, Y+</td> </tr>
+                     <tr> <td>0x00008000</td> <td>Directional ambient color, Y-</td> </tr>
+                     <tr> <td>0x00010000</td> <td>Directional ambient color, Z+</td> </tr>
+                     <tr> <td>0x00020000</td> <td>Directional ambient color, Z-</td> </tr>
+                     <tr> <td>0x00040000</td> <td>Light fade, begin</td> </tr>
+                     <tr> <td>0x00080000</td> <td>Light fade, end</td> </tr>
+                     <tr> <td>0x10000000</td> <td>Lighting template</td> </tr>
+                     <tr> <td>0x20000000</td> <td>AcousticSpace</td> </tr>
+                     <tr> <td>0x40000000</td> <td>ImageSpace</td> </tr>
+                     <tr> <td>0x80000000</td> <td>MusicType</td> </tr>
+                  </tbody>
+               </table>
+            </arg>
+         </args>
+         <blurb>
+            Stops persisting changes to the specified lighting properties for an interior cell. 
+            The changes aren't actually reverted; we just stop bothering to write them to the 
+            SKSE co-save, at least until they are next changed.
+         </blurb>
+         <example-data>
+            <comment>
+               Stop persisting changes to the directional ambient colors.
+            </comment>
+            <call>
+               <arg value="kCell" />
+               <arg value="0x0003F000" />
+            </call>
+         </example-data>
+         <related type="method" name="ResetFields" />
+         <related type="method" name="SetAcousticSpace" />
+         <related type="method" name="SetAmbientColor" />
+         <related type="method" name="SetDirectionalAmbientColors" />
+         <related type="method" name="SetDirectionalColor" />
+         <related type="method" name="SetDirectionalFade" />
+         <related type="method" name="SetDirectionalRotation" />
+         <related type="method" name="SetFog" />
+         <related type="method" name="SetFogColors" />
+         <related type="method" name="SetFogDistances" />
+         <related type="method" name="SetFogDistanceClip" />
+         <related type="method" name="SetFogDistanceFar" />
+         <related type="method" name="SetFogDistanceNear" />
+         <related type="method" name="SetFogFarColor" />
+         <related type="method" name="SetFogMax" />
+         <related type="method" name="SetFogNearColor" />
+         <related type="method" name="SetFogPow" />
+         <related type="method" name="SetImageSpace" />
+         <related type="method" name="SetLightFadeDistances" />
+         <related type="method" name="SetLightingTemplate" />
+         <related type="method" name="SetMusicType" />
+      </method>
+      <method name="ToColorCode" returns="Int">
+         <args>
+            <arg type="Int" name="aiRed" />
+            <arg type="Int" name="aiGreen" />
+            <arg type="Int" name="aiBlue" />
+         </args>
+         <blurb>
+            Takes three color components as separate values, and encodes them as a single 
+            integer of the format 0xAABBGGRR, with a zero alpha.
+         </blurb>
+         <related type="method" name="FromColorCode" />
+      </method>
+      <method name="UsesSkyLighting" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns True if the cell is an exterior cell, or if it is an interior cell with the 
+            "Use Sky Lighting" flag set. Returns False otherwise.
+         </blurb>
+      </method>
+   </methods>
+</class>

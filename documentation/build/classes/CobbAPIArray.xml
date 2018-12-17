@@ -488,15 +488,13 @@
                starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
                following Papyrus instructions:
             </p>
-            <pre>
-Float[] afSlice = new Float[3] ; given aiCount == 3
+            <pre>Float[] afSlice = new Float[3] ; given aiCount == 3
 iTemporary = aiStart
 afSlice[0] = afArray[iTemporary]
 iTemporary += 1
 afSlice[1] = afArray[iTemporary]
 iTemporary += 1
-afSlice[2] = afArray[iTemporary]
-            </pre>
+afSlice[2] = afArray[iTemporary]</pre>
             <p>
                The intermediate int variable in that Papyrus snippet is needed to ensure proper 
                compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
@@ -536,15 +534,13 @@ afSlice[2] = afArray[iTemporary]
                starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
                following Papyrus instructions:
             </p>
-            <pre>
-Float[] akSlice = new Form[3] ; given aiCount == 3
+            <pre>Float[] akSlice = new Form[3] ; given aiCount == 3
 iTemporary = aiStart
 akSlice[0] = akArray[iTemporary]
 iTemporary += 1
 akSlice[1] = akArray[iTemporary]
 iTemporary += 1
-akSlice[2] = akArray[iTemporary]
-            </pre>
+akSlice[2] = akArray[iTemporary]</pre>
             <p>
                The intermediate int variable in that Papyrus snippet is needed to ensure proper 
                compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
@@ -584,15 +580,13 @@ akSlice[2] = akArray[iTemporary]
                starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
                following Papyrus instructions:
             </p>
-            <pre>
-Int[] aiSlice = new Int[3] ; given aiCount == 3
+            <pre>Int[] aiSlice = new Int[3] ; given aiCount == 3
 iTemporary = aiStart
 aiSlice[0] = aiArray[iTemporary]
 iTemporary += 1
 aiSlice[1] = aiArray[iTemporary]
 iTemporary += 1
-aiSlice[2] = aiArray[iTemporary]
-            </pre>
+aiSlice[2] = aiArray[iTemporary]</pre>
             <p>
                The intermediate int variable in that Papyrus snippet is needed to ensure proper 
                compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.
@@ -632,15 +626,13 @@ aiSlice[2] = aiArray[iTemporary]
                starting at <var>aiSize</var>, and returns the copy. It is equivalent to the 
                following Papyrus instructions:
             </p>
-            <pre>
-ObjectReference[] akSlice = new ObjectReference[3] ; given aiCount == 3
+            <pre>ObjectReference[] akSlice = new ObjectReference[3] ; given aiCount == 3
 iTemporary = aiStart
 akSlice[0] = akArray[iTemporary]
 iTemporary += 1
 akSlice[1] = akArray[iTemporary]
 iTemporary += 1
-akSlice[2] = akArray[iTemporary]
-            </pre>
+akSlice[2] = akArray[iTemporary]</pre>
             <p>
                The intermediate int variable in that Papyrus snippet is needed to ensure proper 
                compilation for indices like <code>(<var>iSomeVar</var> * 3 + i)</code>.

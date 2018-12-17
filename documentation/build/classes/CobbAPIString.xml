@@ -13,7 +13,7 @@
       <p>
          In order to avoid ambiguity, I would prefer to document things using the most precise 
          terminology possible, but much of this terminology isn't known to people who don't 
-         explicitly do "hard" text programming. I had to do some learning myself in order to 
+         explicitly do "serious" text programming. I had to do some learning myself in order to 
          offer as much functionality as I wanted to. As such, here's a "brief" primer on how 
          computers store text.
       </p>
@@ -344,6 +344,10 @@ EndEvent
       <method name="NaturalSort_ASCII" returns="Int">
          <args>
             <arg type="String[]" name="asStrings" />
+            <arg type="Bool" name="abDescending" default="False">
+               If this argument is True, then the strings will be sorted in descending 
+               order (i.e. Z to A).
+            </arg>
          </args>
          <blurb>
             Performs a "natural" sort on an array of strings.
@@ -365,6 +369,10 @@ EndEvent
       <method name="NaturalSortPairForm_ASCII" returns="Int">
          <args>
             <arg type="String[]" name="asStrings" />
+            <arg type="Bool" name="abDescending" default="False">
+               If this argument is True, then the strings will be sorted in descending 
+               order (i.e. Z to A).
+            </arg>
             <arg type="Form[]" name="axSecond" />
          </args>
          <blurb>
@@ -389,7 +397,7 @@ EndEvent
             <raw>
 Form[]   kLightingTemplates = CobbAPILightingTemplate.GetAllForms()
 String[] sEditorIDs         = CobbAPIForm.GetEditorIDs(kLightingTemplates)
-sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, kLightingTemplates)
+sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, False, kLightingTemplates)
             </raw>
             <comment>
                sEditorIDs[i] == the editor ID for kLightingTemplates[i], but now they're sorted.
@@ -402,6 +410,10 @@ sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, kLightingTempla
       <method name="NaturalSortPairInt_ASCII" returns="Int">
          <args>
             <arg type="String[]" name="asStrings" />
+            <arg type="Bool" name="abDescending" default="False">
+               If this argument is True, then the strings will be sorted in descending 
+               order (i.e. Z to A).
+            </arg>
             <arg type="Int[]" name="axSecond" />
          </args>
          <blurb>

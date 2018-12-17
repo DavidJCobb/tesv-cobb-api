@@ -48,7 +48,7 @@
                   <t-attr f="data-method-name"><t-f f="method:name"></t-f></t-attr>
                   <a>
                      <t-attr f="href"><!--
-                     -->?class=<t-f f="file"></t-f>&method=<t-f f="method:name"></t-f>
+                     -->?class=<t-f f="name"></t-f>&method=<t-f f="method:name"></t-f>
                      </t-attr>
                      <t-f f="method:name"></t-f>
                   </a>
@@ -112,7 +112,7 @@
                      </t-if>
                      <a><!--
                      --><t-attr f="href"><!--
-                        -->?class=<t-f f="file"></t-f>&method=<t-f f="method:name"></t-f>
+                        -->?class=<t-f f="name"></t-f>&method=<t-f f="method:name"></t-f>
                         </t-attr><!--
                      --><t-f f="method:name"></t-f><!--
                   --></a><!--
@@ -154,6 +154,16 @@
             <h2>Example</h2>
             <pre><t-f f="example"></t-f></pre>
          </section>
+         <section t-if="notes">
+            <h2>Notes</h2>
+            <ul>
+               <t-set f="notes" as="note">
+                  <li>
+                     <t-f f="note:content" type="html" wrap-if-bare="p"></t-f>
+                  </li>
+               </t-set>
+            </ul>
+         </section>
          <section t-if="related">
             <h2>See also</h2>
             <ul>
@@ -193,29 +203,25 @@
          
          let url   = new URL(window.location.href);
          let query = url.searchParams;
-         let subject;
-         if (subject = query.get("class")) {
-            let classPromise = dom.fetchXML("classes/" + subject + ".xml");
-            Promise.all([index.promise, classPromise]).then(function(responses) {
-               let doc = responses[1]; // class XML
+         let className = query.get("class")
+         if (className) {
+            index.getClassOrMethod(className, query.get("method")).then(function(p_obj) {
                let main = document.querySelector("main");
-               let p_class = new PapyrusClass(doc.documentElement);
-               p_class.file = query.get("class");
-               //
                dom.clear(main);
+               //
+               let p_class  = (p_obj instanceof PapyrusMethod) ? p_obj.classObj : p_obj;
+               let p_method = (p_obj instanceof PapyrusMethod) ? p_obj : null;
+               //
                let sidebar_item_class = document.querySelector(`#sidebar li[data-class-name="${p_class.name}"]`);
                if (sidebar_item_class)
                   sidebar_item_class.classList.add("selected");
-               if (subject = query.get("method")) {
-                  let data = doc.querySelector("method[name='" + subject + "']");
-                  if (!data)
-                     alert("Unable to find requested method.");
-                  data = new PapyrusMethod(data);
-                  data.setFile(doc.sourceFile);
-                  data.updateAbstractTypes(index.data.abstractTypes);
+               //
+               if (p_method) {
+                  //p_method.setFile(doc.sourceFile);
+                  p_method.updateAbstractTypes(index.data.abstractTypes);
                   //
                   let frag = document.getElementById("template-method").content.cloneNode(true);
-                  templating.execute(frag, data, "");
+                  templating.execute(frag, p_method, "");
                   main.appendChild(frag);
                   //
                   {  // Special rendering for "selected" method in sidebar
@@ -224,7 +230,7 @@
                         templating.execute(frag, p_class, "");
                         sidebar_item_class.appendChild(frag);
                         //
-                        let method = sidebar_item_class.querySelector(`li[data-method-name="${data.name}"]`);
+                        let method = sidebar_item_class.querySelector(`li[data-method-name="${p_method.name}"]`);
                         if (method) {
                            method.classList.add("selected");
                            let link = method.querySelector("a");
@@ -236,7 +242,7 @@
                         }
                      }
                   }
-               } else {
+               } else { // not a method
                   let templated = document.getElementById("template-class");
                   let frag      = templated.content.cloneNode(true);
                   templating.execute(frag, p_class, "");

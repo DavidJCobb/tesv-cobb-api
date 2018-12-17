@@ -2,8 +2,8 @@
 <class name="CobbAPIActor">
    <blurb>Functions for working with actors.</blurb>
    <concepts>
-      <concept name="Actor Values"     page="Actor Values" />
-      <concept name="Detection events" page="Detection Events" />
+      <concept name="Actor values" />
+      <concept name="Detection events" />
    </concepts>
    <methods>
       <method name="CeaseDetectionEvent">

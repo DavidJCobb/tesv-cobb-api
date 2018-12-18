@@ -238,13 +238,6 @@ namespace CobbPapyrus {
          result[1] = data->directionalRotZ;
          return result;
       };
-      BSFixedString GetEditorID(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         auto data = (RE::ExtraEditorID*) cell->extraData.GetByType(kExtraData_EditorID);
-         if (!data)
-            return nullptr;
-         return data->data;
-      };
       BGSEncounterZone* GetEncounterZone(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          return CALL_MEMBER_FN((RE::BaseExtraList*) &cell->extraData, GetExtraEncounterZone)();
@@ -287,24 +280,6 @@ namespace CobbPapyrus {
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(fogClipDistance, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance);
-         /*//
-         return _GetLightingField<float>(cell, data, offsetof(RE::TESObjectCELL::InteriorData, fogClipDistance), getWhich, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance);
-         //*/
-         /*//
-         if (getWhich & kGetterSourceBit_TemplateAlways) {
-            if (cell->lightingTemplate)
-               return cell->lightingTemplate->data.fogClipDistance;
-         } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-            if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance))
-               return cell->lightingTemplate->data.fogClipDistance;
-         }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
-               return def.data.fogClipDistance;
-         }
-         return data->fogClipDistance;
-         //*/
       };
       VMResultArray<SInt32> GetFogColors(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<SInt32> result;
@@ -1090,14 +1065,6 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
          "GetDirectionalRotation",
          PapyrusPrefixString("Cell"),
          Cell::GetDirectionalRotation,
-         registry
-      )
-   );
-   registry->RegisterFunction(
-      new NativeFunction1<StaticFunctionTag, BSFixedString, RE::TESObjectCELL*>(
-         "GetEditorID",
-         PapyrusPrefixString("Cell"),
-         Cell::GetEditorID,
          registry
       )
    );

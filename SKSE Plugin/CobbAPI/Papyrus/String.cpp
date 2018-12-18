@@ -249,7 +249,7 @@ namespace CobbPapyrus {
             );
             return result;
          }
-         template<typename T> VMResultArray<BSFixedString> NaturalSortPair_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, bool descending, VMArray<T> second) {
+         template<typename T> VMResultArray<BSFixedString> NaturalSortPair_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, VMArray<BSFixedString> arr, VMArray<T> second, bool descending) {
             UInt32 size = arr.Length();
             if (size != second.Length()) {
                registry->LogError("The two arrays must be the same length.", stackId);
@@ -383,14 +383,14 @@ bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
          registry
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSort_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, bool, VMArray<SInt32>>(
+      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<SInt32>, bool>(
          "NaturalSortPairInt_ASCII",
          PapyrusPrefixString("String"),
          String::Sort::NaturalSortPair_ASCII<SInt32>,
          registry
       ));
       registry->SetFunctionFlags(PapyrusPrefixString("String"), "NaturalSortPairInt_ASCII", VMClassRegistry::kFunctionFlag_NoWait);
-      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, bool, VMArray<TESForm*>>(
+      registry->RegisterFunction(new NativeFunction3<StaticFunctionTag, VMResultArray<BSFixedString>, VMArray<BSFixedString>, VMArray<TESForm*>, bool>(
          "NaturalSortPairForm_ASCII",
          PapyrusPrefixString("String"),
          String::Sort::NaturalSortPair_ASCII<TESForm*>,

@@ -63,47 +63,6 @@ RE::BSFurnitureMarkerNode* _GetFRN(TESObjectREFR* reference, VMClassRegistry* re
 namespace CobbPapyrus {
    namespace ObjectReference {
       namespace CollisionPrimitives {
-         VMResultArray<float> GetBoundsToHalfwidthOffsets(
-            VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
-            TESForm* form
-         ) {
-            VMResultArray<float> result;
-            if (form == nullptr) {
-               registry->LogError("Invalid or None form specified.", stackId);
-               return result;
-            }
-            RE::TESBoundObject* bounded = (RE::TESBoundObject*) DYNAMIC_CAST(form, TESForm, TESBoundObject);
-            if (bounded == nullptr) {
-               registry->LogError("Invalid form specified.", stackId);
-               return result;
-            }
-            auto offset = [](SInt32 low, SInt32 high) { return ((high - low) / 2) + low; };
-            result.resize(3);
-            result[0] = offset(bounded->boundsMax.x, bounded->boundsMin.x);
-            result[1] = offset(bounded->boundsMax.y, bounded->boundsMin.y);
-            result[2] = offset(bounded->boundsMax.z, bounded->boundsMin.z);
-            return result;
-         };
-         VMResultArray<float> GetBoundsToHalfwidths(
-            VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
-            TESForm* form
-         ) {
-            VMResultArray<float> result;
-            if (form == nullptr) {
-               registry->LogError("Invalid or None form specified.", stackId);
-               return result;
-            }
-            RE::TESBoundObject* bounded = (RE::TESBoundObject*) DYNAMIC_CAST(form, TESForm, TESBoundObject);
-            if (bounded == nullptr) {
-               registry->LogError("Invalid form specified.", stackId);
-               return result;
-            }
-            result.resize(3);
-            result[0] = abs((SInt32) bounded->boundsMax.x - (SInt32) bounded->boundsMin.x) / 2;
-            result[1] = abs((SInt32) bounded->boundsMax.y - (SInt32) bounded->boundsMin.y) / 2;
-            result[2] = abs((SInt32) bounded->boundsMax.z - (SInt32) bounded->boundsMin.z) / 2;
-            return result;
-         };
          SInt32 MakeCollisionPrimitiveBox(
             VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
             TESObjectREFR* subject,
@@ -467,9 +426,10 @@ namespace CobbPapyrus {
             ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot check if a non-existent reference is a load door.", registry, stackId);
             return subject->extraData.HasType(kExtraData_Teleport);
          };
-         bool IsTeleportMarkerInAttachedCell(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESObjectREFR* subject, TESObjectREFR* destination) {
+         bool IsTeleportMarkerInAttachedCell(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESObjectREFR* subject, RE::TESObjectREFR* destination) {
             ERROR_AND_RETURN_0_IF(subject == nullptr && destination == nullptr, "Cannot check if a non-existent reference has a loaded teleport marker.", registry, stackId);
-            return ((RE::TESObjectREFR*)subject)->IsTeleportMarkerInAttachedCell(destination);
+            RE::refr_ptr d(destination);
+            return ((RE::TESObjectREFR*)subject)->IsTeleportMarkerInAttachedCell(d);
          };
          TESObjectREFR* GetDestinationLoadDoor(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESObjectREFR* subject) {
             ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot get the destination door for an unspecified or None reference.", registry, stackId);
@@ -998,16 +958,6 @@ bool CobbPapyrus::ObjectReference::Register(VMClassRegistry* registry) {
       3, SInt32, ObjectReference::CollisionPrimitives::MakeCollisionPrimitiveBox,
       TESObjectREFR*, UInt32, VMArray<float>
    );
-   REGISTER_PAPYRUS_FUNCTION(
-      "ObjectReference", "GetBoundsToHalfwidths",
-      1, VMResultArray<float>, ObjectReference::CollisionPrimitives::GetBoundsToHalfwidths,
-      TESForm*
-   );
-   REGISTER_PAPYRUS_FUNCTION(
-      "ObjectReference", "GetBoundsToHalfwidthOffsets",
-      1, VMResultArray<float>, ObjectReference::CollisionPrimitives::GetBoundsToHalfwidthOffsets,
-      TESForm*
-   );
    //
    // COORDINATES FUNCTIONS
    //
@@ -1169,7 +1119,7 @@ bool CobbPapyrus::ObjectReference::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("ObjectReference"), "IsLoadDoor", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, bool, TESObjectREFR*, TESObjectREFR*>(
+      new NativeFunction2<StaticFunctionTag, bool, TESObjectREFR*, RE::TESObjectREFR*>(
          "IsTeleportMarkerInAttachedCell",
          PapyrusPrefixString("ObjectReference"),
          ObjectReference::LoadDoors::IsTeleportMarkerInAttachedCell,

@@ -42,6 +42,41 @@ namespace CobbPapyrus {
          }
          return result;
       };
+      VMResultArray<float> GetBoundsToHalfwidthOffsets(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* form) {
+         VMResultArray<float> result;
+         if (form == nullptr) {
+            registry->LogError("Invalid or None form specified.", stackId);
+            return result;
+         }
+         RE::TESBoundObject* bounded = (RE::TESBoundObject*) DYNAMIC_CAST(form, TESForm, TESBoundObject);
+         if (bounded == nullptr) {
+            registry->LogError("Invalid form specified.", stackId);
+            return result;
+         }
+         auto offset = [](SInt32 low, SInt32 high) { return ((high - low) / 2) + low; };
+         result.resize(3);
+         result[0] = offset(bounded->boundsMax.x, bounded->boundsMin.x);
+         result[1] = offset(bounded->boundsMax.y, bounded->boundsMin.y);
+         result[2] = offset(bounded->boundsMax.z, bounded->boundsMin.z);
+         return result;
+      };
+      VMResultArray<float> GetBoundsToHalfwidths(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESForm* form) {
+         VMResultArray<float> result;
+         if (form == nullptr) {
+            registry->LogError("Invalid or None form specified.", stackId);
+            return result;
+         }
+         RE::TESBoundObject* bounded = (RE::TESBoundObject*) DYNAMIC_CAST(form, TESForm, TESBoundObject);
+         if (bounded == nullptr) {
+            registry->LogError("Invalid form specified.", stackId);
+            return result;
+         }
+         result.resize(3);
+         result[0] = (float)abs((SInt32)bounded->boundsMax.x - (SInt32)bounded->boundsMin.x) / 2.0;
+         result[1] = (float)abs((SInt32)bounded->boundsMax.y - (SInt32)bounded->boundsMin.y) / 2.0;
+         result[2] = (float)abs((SInt32)bounded->boundsMax.z - (SInt32)bounded->boundsMin.z) / 2.0;
+         return result;
+      };
       BSFixedString GetEditorID(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESForm* subject) {
          BSFixedString result = subject->GetEditorID();
          if (result.data && strlen(result.data))
@@ -117,6 +152,24 @@ bool CobbPapyrus::Form::Register(VMClassRegistry* registry) {
       )
    );
    registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetBounds", VMClassRegistry::kFunctionFlag_NoWait);
+   registry->RegisterFunction(
+      new NativeFunction1 <StaticFunctionTag, VMResultArray<float>, TESForm*>(
+         "GetBoundsToHalfwidths",
+         PapyrusPrefixString("Form"),
+         Form::GetBoundsToHalfwidths,
+         registry
+      )
+   );
+   registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetBoundsToHalfwidths", VMClassRegistry::kFunctionFlag_NoWait);
+   registry->RegisterFunction(
+      new NativeFunction1 <StaticFunctionTag, VMResultArray<float>, TESForm*>(
+         "GetBoundsToHalfwidthOffsets",
+         PapyrusPrefixString("Form"),
+         Form::GetBoundsToHalfwidthOffsets,
+         registry
+      )
+   );
+   registry->SetFunctionFlags(PapyrusPrefixString("Form"), "GetBoundsToHalfwidthOffsets", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
       new NativeFunction1 <StaticFunctionTag, BSFixedString, RE::TESForm*>(
          "GetEditorID",

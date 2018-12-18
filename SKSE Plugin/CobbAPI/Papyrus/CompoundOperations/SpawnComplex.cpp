@@ -86,15 +86,22 @@ namespace CobbPapyrus {
                e.operations.resize(operationCount);
                for (size_t j = 0; j < operationCount; j++) {
                   OperationData f;
-                  if (version < 2) {
+                  if (version < 3) {
+                     UInt32 dummy;
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.spawnFormId), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "form to spawn");
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.targetRefrHandle), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "anchor reference");
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.pos), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "position");
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.rot), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "rotation");
-                     SERIALIZATION_ASSERT(ReadData(intfc, &f.count), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "count");
+                     SERIALIZATION_ASSERT(ReadData(intfc, &dummy), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "count (now unused)");
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.bForcePersist), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "persist flag");
                      SERIALIZATION_ASSERT(ReadData(intfc, &f.bInitiallyDisabled), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "disabled flag");
-                     f.usingTargetPoint = false;
+                     if (version < 2) {
+                        f.usingTargetPoint = false;
+                     } else {
+                        SERIALIZATION_ASSERT(ReadData(intfc, &f.usingTargetPoint), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "using-target-point flag");
+                        SERIALIZATION_ASSERT(ReadData(intfc, &f.targetPos), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "target position");
+                        SERIALIZATION_ASSERT(ReadData(intfc, &f.targetRot), "Failed to read operation %d for set %d (identifier %d) (save version: %d): %s wasn't valid.", j, i, e.identifier, version, "target rotation");
+                     }
                   } else {
                      SERIALIZATION_ASSERT(ReadData(intfc, &f), "Failed to read operation %d for set %d (identifier %d).", j, i, e.identifier);
                   }
@@ -154,7 +161,7 @@ namespace CobbPapyrus {
                //
                // Spawn the new object.
                //
-               TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
+               TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, 1, e.bForcePersist, e.bInitiallyDisabled);
                if (subject == nullptr) {
                   s.results.push_back(nullHandle);
                   allSpawned.push_back(nullptr);
@@ -197,7 +204,7 @@ namespace CobbPapyrus {
          this->_completed = true;
          PackValue(&resultValue, &allSpawned, registry);
       };
-      void BatchSpawnComplexFunctor::AddSpawn(UInt32 set, TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, UInt32 count, bool bForcePersist, bool bInitiallyDisabled) {
+      void BatchSpawnComplexFunctor::AddSpawn(UInt32 set, TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, bool bForcePersist, bool bInitiallyDisabled) {
          if (this->_completed)
             return;
          //
@@ -206,7 +213,7 @@ namespace CobbPapyrus {
             formId = form->formID;
          UInt32 targetRefrHandle = GetOrCreateRefrHandle(target);
          //
-         OperationData t = { formId, targetRefrHandle, pos, rot, count, bForcePersist, bInitiallyDisabled };
+         OperationData t = { formId, targetRefrHandle, pos, rot, bForcePersist, bInitiallyDisabled };
          //
          bool found = false;
          for (size_t i = 0; i < this->operationSets.size(); i++) {
@@ -238,7 +245,7 @@ namespace CobbPapyrus {
             formId = form->formID;
          UInt32 targetRefrHandle = GetOrCreateRefrHandle(anchor);
          //
-         OperationData t = { formId, targetRefrHandle, pos, rot, 1, bForcePersist, bInitiallyDisabled, true, targetPos, targetRot };
+         OperationData t = { formId, targetRefrHandle, pos, rot, bForcePersist, bInitiallyDisabled, true, targetPos, targetRot };
          //
          bool found = false;
          for (size_t i = 0; i < this->operationSets.size(); i++) {
@@ -285,10 +292,9 @@ namespace CobbPapyrus {
       void AddSpawn(
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
          SInt32 handle, UInt32 set, TESForm* form, TESObjectREFR* target,
-         VMArray<float> position, VMArray<float> rotation, SInt32 count, bool bForcePersist, bool bInitiallyDisabled
+         VMArray<float> position, VMArray<float> rotation, bool bForcePersist, bool bInitiallyDisabled
       ) {
          ERROR_AND_RETURN_IF(handle <= 0, "Invalid handle.", registry, stackId);
-         ERROR_AND_RETURN_IF(count <= 0, "Count parameter must be greater than zero.", registry, stackId);
          ERROR_AND_RETURN_IF(position.Length() != 3, "Position parameter must be an array of length 3.", registry, stackId);
          ERROR_AND_RETURN_IF(rotation.Length() != 3, "Rotation parameter must be an array of length 3.", registry, stackId);
          //
@@ -309,7 +315,7 @@ namespace CobbPapyrus {
          rot.y = cobb::degrees_to_radians(rot.y);
          rot.z = cobb::degrees_to_radians(rot.z);
          //
-         func->AddSpawn(set, form, target, pos, rot, count, bForcePersist, bInitiallyDisabled);
+         func->AddSpawn(set, form, target, pos, rot, bForcePersist, bInitiallyDisabled);
       }
       void AddSpawnAroundPoint(
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
@@ -430,7 +436,7 @@ bool CobbPapyrus::BatchSpawnComplex::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("BatchSpawnComplex"), "Create", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
-      new NativeFunction9<StaticFunctionTag, void, SInt32, UInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, SInt32, bool, bool>(
+      new NativeFunction8<StaticFunctionTag, void, SInt32, UInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, bool, bool>(
          "AddSpawn",
          PapyrusPrefixString("BatchSpawnComplex"),
          BatchSpawnComplex::AddSpawn,

@@ -50,15 +50,22 @@ namespace CobbPapyrus {
          this->operations.reserve(operationCount);
          for (UInt32 i = 0; i < operationCount; i++) {
             OperationData e;
-            if (version < 2) {
+            if (version < 3) {
+               UInt32 dummy;
                SERIALIZATION_ASSERT(ReadData(intfc, &e.spawnFormId), "Failed to read operation %d form-to-spawn (save version: %d).", i, version);
                SERIALIZATION_ASSERT(ReadData(intfc, &e.targetRefrHandle), "Failed to read operation %d target handle (save version: %d).", i, version);
                SERIALIZATION_ASSERT(ReadData(intfc, &e.pos), "Failed to read operation %d position (save version: %d).", i, version);
                SERIALIZATION_ASSERT(ReadData(intfc, &e.rot), "Failed to read operation %d rotation (save version: %d).", i, version);
-               SERIALIZATION_ASSERT(ReadData(intfc, &e.count), "Failed to read operation %d count (save version: %d).", i, version);
+               SERIALIZATION_ASSERT(ReadData(intfc, &dummy), "Failed to read operation %d unused-count (save version: %d).", i, version);
                SERIALIZATION_ASSERT(ReadData(intfc, &e.bForcePersist), "Failed to read operation %d persist flag (save version: %d).", i, version);
                SERIALIZATION_ASSERT(ReadData(intfc, &e.bInitiallyDisabled), "Failed to read operation %d disabled flag (save version: %d).", i, version);
-               e.usingTargetPoint = false;
+               if (version < 2) {
+                  e.usingTargetPoint = false;
+               } else {
+                  SERIALIZATION_ASSERT(ReadData(intfc, &e.usingTargetPoint), "Failed to read operation %d (save version: %d): %s wasn't valid.", i, version, "using-target-point flag");
+                  SERIALIZATION_ASSERT(ReadData(intfc, &e.targetPos), "Failed to read operation %d (save version: %d): %s wasn't valid.", i, version, "target position");
+                  SERIALIZATION_ASSERT(ReadData(intfc, &e.targetRot), "Failed to read operation %d (save version: %d): %s wasn't valid.", i, version, "target rotation");
+               }
             } else {
                SERIALIZATION_ASSERT(ReadData(intfc, &e), "Failed to read operation %d.", i);
             }
@@ -97,7 +104,7 @@ namespace CobbPapyrus {
             //
             // Spawn the new object.
             //
-            TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, e.count, e.bForcePersist, e.bInitiallyDisabled);
+            TESObjectREFR* subject = PlaceAtMe_Native(registry, this->_stackId, target.get_base(), spawnForm, 1, e.bForcePersist, e.bInitiallyDisabled);
             if (subject == nullptr)
                continue;
             //
@@ -134,23 +141,23 @@ namespace CobbPapyrus {
          }
          PackValue(&resultValue, &allSpawned, registry);
       };
-      void BatchSpawnRelFunctor::AddSpawn(TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, UInt32 count, bool bForcePersist, bool bInitiallyDisabled) {
+      void BatchSpawnRelFunctor::AddSpawn(TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, bool bForcePersist, bool bInitiallyDisabled) {
          UInt32 formId = form->formID;
          UInt32 targetRefrHandle = GetOrCreateRefrHandle(target);
          if (targetRefrHandle == *g_invalidRefHandle)
             return;
          //
          NiPoint3 dummy(0, 0, 0);
-         OperationData t = { formId, targetRefrHandle, pos, rot, count, bForcePersist, bInitiallyDisabled, false, dummy, dummy };
+         OperationData t = { formId, targetRefrHandle, pos, rot, bForcePersist, bInitiallyDisabled, false, dummy, dummy };
          this->operations.push_back(t);
       };
-      void BatchSpawnRelFunctor::AddSpawn(TESForm* form, TESObjectREFR* anchor, const NiPoint3& targetPos, const NiPoint3& targetRot, const NiPoint3& pos, const NiPoint3& rot, UInt32 count, bool bForcePersist, bool bInitiallyDisabled) {
+      void BatchSpawnRelFunctor::AddSpawn(TESForm* form, TESObjectREFR* anchor, const NiPoint3& targetPos, const NiPoint3& targetRot, const NiPoint3& pos, const NiPoint3& rot, bool bForcePersist, bool bInitiallyDisabled) {
          UInt32 formId = form->formID;
          UInt32 targetRefrHandle = GetOrCreateRefrHandle(anchor);
          if (targetRefrHandle == *g_invalidRefHandle)
             return;
          //
-         OperationData t = { formId, targetRefrHandle, pos, rot, count, bForcePersist, bInitiallyDisabled, true, targetPos, targetRot };
+         OperationData t = { formId, targetRefrHandle, pos, rot, bForcePersist, bInitiallyDisabled, true, targetPos, targetRot };
          this->operations.push_back(t);
       };
       //
@@ -163,12 +170,11 @@ namespace CobbPapyrus {
       }
       void AddSpawn(
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, SInt32 handle, TESForm* form, TESObjectREFR* target,
-         VMArray<float> position, VMArray<float> rotation, SInt32 count, bool bForcePersist, bool bInitiallyDisabled
+         VMArray<float> position, VMArray<float> rotation, bool bForcePersist, bool bInitiallyDisabled
       ) {
          ERROR_AND_RETURN_IF(handle <= 0, "Invalid handle.", registry, stackId);
          ERROR_AND_RETURN_IF(form == NULL, "FormToPlace parameter must not be none.", registry, stackId);
          ERROR_AND_RETURN_IF(target == NULL, "Target parameter must not be none.", registry, stackId);
-         ERROR_AND_RETURN_IF(count <= 0, "Count parameter must be greater zero.", registry, stackId);
          ERROR_AND_RETURN_IF(position.Length() != 3, "Position parameter must be an array of length 3.", registry, stackId);
          ERROR_AND_RETURN_IF(rotation.Length() != 3, "Rotation parameter must be an array of length 3.", registry, stackId);
          //
@@ -189,7 +195,7 @@ namespace CobbPapyrus {
          rot.y = cobb::degrees_to_radians(rot.y);
          rot.z = cobb::degrees_to_radians(rot.z);
          //
-         func->AddSpawn(form, target, pos, rot, count, bForcePersist, bInitiallyDisabled);
+         func->AddSpawn(form, target, pos, rot, bForcePersist, bInitiallyDisabled);
       }
       void AddSpawnAroundPoint(
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
@@ -197,12 +203,11 @@ namespace CobbPapyrus {
          TESForm* form, TESObjectREFR* target,
          VMArray<float> position, VMArray<float> rotation,
          VMArray<float> targetPosition, VMArray<float> targetRotation,
-         SInt32 count, bool bForcePersist, bool bInitiallyDisabled
+         bool bForcePersist, bool bInitiallyDisabled
       ) {
          ERROR_AND_RETURN_IF(handle <= 0, "Invalid handle.", registry, stackId);
          ERROR_AND_RETURN_IF(form == NULL, "FormToPlace parameter must not be none.", registry, stackId);
          ERROR_AND_RETURN_IF(target == NULL, "Target parameter must not be none.", registry, stackId);
-         ERROR_AND_RETURN_IF(count <= 0, "Count parameter must be greater zero.", registry, stackId);
          ERROR_AND_RETURN_IF(position.Length() != 3, "Position parameter must be an array of length 3.", registry, stackId);
          ERROR_AND_RETURN_IF(rotation.Length() != 3, "Rotation parameter must be an array of length 3.", registry, stackId);
          ERROR_AND_RETURN_IF(targetPosition.Length() != 3, "Target position parameter must be an array of length 3.", registry, stackId);
@@ -238,7 +243,7 @@ namespace CobbPapyrus {
          rotTarget.y = cobb::degrees_to_radians(rotTarget.y);
          rotTarget.z = cobb::degrees_to_radians(rotTarget.z);
          //
-         func->AddSpawn(form, target, pos, rot, posTarget, rotTarget, count, bForcePersist, bInitiallyDisabled);
+         func->AddSpawn(form, target, pos, rot, posTarget, rotTarget, bForcePersist, bInitiallyDisabled);
       }
       bool Run(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, SInt32 handle) {
          ERROR_AND_RETURN_0_IF(handle <= 0, "Invalid handle.", registry, stackId);
@@ -284,7 +289,7 @@ bool CobbPapyrus::BatchSpawnRel::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("BatchSpawnRel"), "Create", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
-      new NativeFunction8<StaticFunctionTag, void, SInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, SInt32, bool, bool>(
+      new NativeFunction7<StaticFunctionTag, void, SInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, bool, bool>(
          "AddSpawn",
          PapyrusPrefixString("BatchSpawnRel"),
          BatchSpawnRel::AddSpawn,
@@ -293,7 +298,7 @@ bool CobbPapyrus::BatchSpawnRel::Register(VMClassRegistry* registry) {
    );
    registry->SetFunctionFlags(PapyrusPrefixString("BatchSpawnRel"), "AddSpawn", VMClassRegistry::kFunctionFlag_NoWait);
    registry->RegisterFunction(
-      new NativeFunction10<StaticFunctionTag, void, SInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, VMArray<float>, VMArray<float>, SInt32, bool, bool>(
+      new NativeFunction9<StaticFunctionTag, void, SInt32, TESForm*, TESObjectREFR*, VMArray<float>, VMArray<float>, VMArray<float>, VMArray<float>, bool, bool>(
          "AddSpawnAroundPoint",
          PapyrusPrefixString("BatchSpawnRel"),
          BatchSpawnRel::AddSpawnAroundPoint,

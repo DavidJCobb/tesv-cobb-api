@@ -20,21 +20,20 @@ namespace CobbPapyrus {
             virtual const char*  ClassName() const { return PapyrusPrefixString("BatchSpawnRelFunctor"); }
             virtual UInt32    ClassVersion() const { return 1; }
             //
-            enum { kSaveVersion = 2 };
+            enum { kSaveVersion = 3 };
             virtual bool OnSave(SKSESerializationInterface* intfc);
             virtual bool OnLoad(SKSESerializationInterface* intfc, UInt32 version);
             //
             virtual void Run(VMValue& resultValue);
             //
-            void AddSpawn(TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, UInt32 count, bool bForcePersist, bool bInitiallyDisabled);
-            void AddSpawn(TESForm* form, TESObjectREFR* anchor, const NiPoint3& targetPos, const NiPoint3& targetRot, const NiPoint3& pos, const NiPoint3& rot, UInt32 count, bool bForcePersist, bool bInitiallyDisabled);
+            void AddSpawn(TESForm* form, TESObjectREFR* target, const NiPoint3& pos, const NiPoint3& rot, bool bForcePersist, bool bInitiallyDisabled);
+            void AddSpawn(TESForm* form, TESObjectREFR* anchor, const NiPoint3& targetPos, const NiPoint3& targetRot, const NiPoint3& pos, const NiPoint3& rot, bool bForcePersist, bool bInitiallyDisabled);
          private:
             struct OperationData {
                UInt32     spawnFormId;
                UInt32     targetRefrHandle;
                NiPoint3   pos;
                NiPoint3   rot;
-               UInt32     count;
                bool       bForcePersist;
                bool       bInitiallyDisabled;
                bool       usingTargetPoint;

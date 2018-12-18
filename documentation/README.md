@@ -12,7 +12,7 @@ Anyway, open the "oven" HTML file (not in Google Chrome) and then click the "Zip
 
 The build process can fail for some pages due to the limitations of cross-frame scripting and the like. To detect this, use something like Notepad++ to scan all saved files (except for the root index.html) for:
 
-    <link rel="stylesheet" href="resources/main.css" />
+    <link rel="stylesheet" href="resources/main.css">
 
 If a file contains that tag, then its asset paths weren't updated to account for the folder(s) it would be nested in. You can double-check by opening the file and seeing if it appears unstyled and possibly missing content.
 

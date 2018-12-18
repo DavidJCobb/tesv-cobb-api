@@ -14,9 +14,7 @@ Scriptname CobbAPIObjectReference Hidden
 ;
 ;  - The NAVCUT layer is 49.
 ;
-Float[] Function GetBoundsToHalfwidths       (Form akBaseForm) Global Native ; Checks the bounds on a form and returns the halfwidths you'd need for a primitive to take up those bounds; note that primitives are centered and bounds aren't always
-Float[] Function GetBoundsToHalfwidthOffsets (Form akBaseForm) Global Native ; Checks the bounds on a form and returns how far off-center they are, i.e. the offset a primitive would need for its halfwidths to align with the bounds
-Int     Function MakeCollisionPrimitiveBox (ObjectReference akSubject, Int aiCollisionLayer, Float[] afHalfwidths) Global Native
+Int Function MakeCollisionPrimitiveBox (ObjectReference akSubject, Int aiCollisionLayer, Float[] afHalfwidths) Global Native
 
 ;
 ; Coordinates

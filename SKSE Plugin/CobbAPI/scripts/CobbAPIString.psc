@@ -148,8 +148,8 @@ Int Function NaturalCompare_ASCII (String a, String b) Global Native ; same retu
 ; array of FormIDs (or forms themselves).
 ;
 String[] Function NaturalSort_ASCII         (String[] asStrings, Bool abDescending = False) Global Native
-String[] Function NaturalSortPairInt_ASCII  (String[] asStrings, Bool abDescending = False, Int[];/&/;  axSecond) Global Native
-String[] Function NaturalSortPairForm_ASCII (String[] asStrings, Bool abDescending = False, Form[];/&/; axSecond) Global Native
+String[] Function NaturalSortPairInt_ASCII  (String[] asStrings, Int[];/&/;  axSecond, Bool abDescending = False) Global Native
+String[] Function NaturalSortPairForm_ASCII (String[] asStrings, Form[];/&/; axSecond, Bool abDescending = False) Global Native
 
 ; ---------------------------------------------------------------------------------------
 ;    REGULAR EXPRESSIONS

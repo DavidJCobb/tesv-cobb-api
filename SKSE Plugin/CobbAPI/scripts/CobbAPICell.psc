@@ -22,7 +22,6 @@ Scriptname CobbAPICell Hidden
 Int[] Function FromColorCode (Int aiCode) Global Native
 Int   Function ToColorCode   (Int aiRed, Int aiGreen, Int aiBlue) Global Native ; Color codes are just 0xAABBGGRR, typically with a zero alpha.
 
-String        Function GetEditorID      (Cell akSubject) Global Native
 EncounterZone Function GetEncounterZone (Cell akSubject) Global Native
 Int[]         Function GetExteriorCellCoordinates (Cell akSubject) Global Native ; only valid for exteriors; coordinates measured in cells e.g. (-1, 2)
 Float[]       Function GetExteriorUnitCoordinates (Cell akSubject) Global Native ; only valid for exteriors; coordinates measured in units e.g. (-4096, 8192)

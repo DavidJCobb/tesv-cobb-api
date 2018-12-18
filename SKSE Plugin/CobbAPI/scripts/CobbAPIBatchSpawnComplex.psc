@@ -17,7 +17,7 @@ Scriptname CobbAPIBatchSpawnComplex Hidden
 
 Int Function Create() Global Native
 
-Function AddSpawn            (Int aiHandle, Int aiSet, Form akBase, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotation, Int aiCount = 1, Bool abForcePersist = False, Bool abInitiallyDisabled = False) Global Native
+Function AddSpawn            (Int aiHandle, Int aiSet, Form akBase, ObjectReference akTarget, Float[] afPositionOffset, Float[] afRotation, Bool abForcePersist = False, Bool abInitiallyDisabled = False) Global Native
 Function AddSpawnAroundPoint (Int aiHandle, Int aiSet, Form akBase, ObjectReference akAnchor, Float[] afTargetPosition, Float[] afTargetRotation, Float[] afPositionOffset, Float[] afRotation, Bool abForcePersist = False, Bool abInitiallyDisabled = False) Global Native
 
 ObjectReference[] Function Run        (Int aiHandle)            Global Native ; Returns an array of all objects that were spawned.

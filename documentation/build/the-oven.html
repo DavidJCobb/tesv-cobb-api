@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+   <head>
+      <style>
+         body{padding:0;margin:0;display:flex;flex-flow:column nowrap}
+         #frame{flex:1 1 90vh}
+         #bar{flex:0 0 auto;padding:.5em;display:flex;flex-flow:row nowrap}
+            #bar button{flex:0 0 auto}
+            #bar hr{margin:0 .5em}
+            #out{margin-left:1em;flex:1 1 auto}
+      </style>
+      <script src="oven-resources/JSZip/jszip.min.js"></script>
+   </head>
+   <body>
+      <iframe id="frame" src="index.html"></iframe>
+      <div id="bar">
+         <button id="zip">Zip!</button>
+         <hr />
+         <button id="revert">Revert!</button>
+         <button id="bake">Bake!</button>
+         <textarea id="out">
+         </textarea>
+      </div>
+      <script type="module">
+         import * as zipSystem from "./oven-resources/core.js";
+         //
+         let frame = document.getElementById("frame");
+         frame.src = "index.html"; // reset
+         //
+         let pending = false;
+         frame.addEventListener("load", function(e) {
+            //
+            // We need to give the contained page time to process and strip templates.
+            //
+            window.setTimeout(function(){
+               let out = document.getElementById("out");
+               if (pending)
+                  out.value = "<!doctype html>" + frame.contentDocument.documentElement.outerHTML;
+               else
+                  out.value = "";
+               pending = false;
+            }, 500);
+         });
+         document.getElementById("zip").addEventListener("click", async function(e) {
+            let out = document.getElementById("out");
+            out.value = "Don't use this until the zipping is complete!";
+            await zipSystem.zip();
+            out.value = "";
+         });
+         document.getElementById("revert").addEventListener("click", function(e) {
+            let url = new URL(frame.contentWindow.location.href);
+            let params = url.searchParams;
+            params.delete("bake");
+            pending = false;
+            frame.src = "index.html?" + params.toString();
+         });
+         document.getElementById("bake").addEventListener("click", function(e) {
+            let url = new URL(frame.contentWindow.location.href);
+            let params = url.searchParams;
+            params.set("bake", "");
+            pending = true;
+            frame.src = "index.html?" + params.toString();
+         });
+      </script>
+   </body>
+</html>

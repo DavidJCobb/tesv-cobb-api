@@ -49,31 +49,6 @@
             in this format: [ iMinX, iMinY, iMinZ, iMaxX, iMaxY, iMaxZ ].
          </blurb>
       </method>
-      <method name="GetBoundsToHalfwidths" returns="Float[]">
-         <args>
-            <arg type="Form" name="akBaseForm">
-               A base form to check.
-            </arg>
-         </args>
-         <blurb>
-            Checks the bounds on a form, and returns the halfwidths needed for a box primitive 
-            to fully contain those bounds.
-         </blurb>
-         <related type="method" name="GetBoundsToHalfwidthOffsets" />
-         <related type="method" name="MakeCollisionPrimitiveBox" />
-      </method>
-      <method name="GetBoundsToHalfwidthOffsets" returns="Float[]">
-         <args>
-            <arg type="Form" name="akBaseForm">
-               A base form to check.
-            </arg>
-         </args>
-         <blurb>
-            Checks the bounds on a form, and returns how far off-center they are.
-         </blurb>
-         <related type="method" name="GetBoundsToHalfwidths" />
-         <related type="method" name="MakeCollisionPrimitiveBox" />
-      </method>
       <method name="GetChangeFlags" returns="Int">
          <args>
             <arg type="ObjectReference" name="akSubject" />
@@ -618,8 +593,6 @@ EndIf
 kMyRef.MoveTo(kMyRef)
             </raw>
          </example-data>
-         <related type="method" name="GetBoundsToHalfwidths" />
-         <related type="method" name="GetBoundsToHalfwidthOffsets" />
       </method>
       <method name="MarkChanged">
          <args>

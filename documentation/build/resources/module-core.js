@@ -1,7 +1,7 @@
 import * as dom from "./module-dom-utilities.js";
 import {PapyrusClass}  from "./module-papyrus-class.js";
 import {PapyrusMethod} from "./module-papyrus-method.js";
-import {PromiseShim}   from "./module-pending-promise.js";
+import {Deferred}      from "./module-pending-promise.js";
 
 export let data = {
    classes:  [],
@@ -11,9 +11,8 @@ export let data = {
 let index_document = null;
 export {index_document as document};
 
-let class_promise = new PromiseShim();
-let __c = class_promise.readonly(); // yOu CaN oNlY hAvE eXpOrTs At ThE tOp LeVeL sCoPe
-export {__c as class_promise};
+let class_deferred = new Deferred();
+export let class_promise = class_deferred.promise();
 
 let index_promise = dom.fetchXML("index.xml").then(function (/*XMLDocument*/ doc) {
    let node = doc.querySelector("root");
@@ -56,10 +55,10 @@ let index_promise = dom.fetchXML("index.xml").then(function (/*XMLDocument*/ doc
       );
    }
    Promise.all(_promises).then(function(values) {
-      class_promise.resolve(values);
+      class_deferred.resolve(values);
    },
    function(fail) {
-      class_promise.reject(fail);
+      class_deferred.reject(fail);
    });
    for(let item of node.querySelectorAll("concepts>concept")) {
       let name = item.getAttribute("name");

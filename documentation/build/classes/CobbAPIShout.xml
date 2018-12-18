@@ -36,7 +36,7 @@
          </description>
          <related type="method" name="GetAllShoutsUsingSpell" />
          <related type="method" name="GetAllShoutsUsingWord" />
-         <related type="method" name="GetAnyShoutsUsingWord" />
+         <related type="method" name="GetAnyShoutUsingWord" />
       </method>
       <method name="GetAllShoutsUsingWord" returns="Shout[]">
          <args>
@@ -51,8 +51,8 @@
                array of all shouts that use the specified word of power.
             </p>
          </description>
-         <related type="method" name="GetAnyShoutUsingSpell" />
          <related type="method" name="GetAllShoutsUsingSpell" />
+         <related type="method" name="GetAnyShoutUsingSpell" />
          <related type="method" name="GetAnyShoutUsingWord" />
       </method>
       <method name="GetAnyShoutUsingWord" returns="Shout">
@@ -69,8 +69,8 @@
             </p>
          </description>
          <related type="method" name="GetAllShoutsUsingSpell" />
-         <related type="method" name="GetAnyShoutsUsingSpell" />
          <related type="method" name="GetAllShoutsUsingWord" />
+         <related type="method" name="GetAnyShoutUsingSpell" />
       </method>
       <method name="GetShoutMenuDisplayObject" returns="Static">
          <args>

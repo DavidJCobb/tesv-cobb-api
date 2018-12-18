@@ -101,7 +101,7 @@ If !CobbAPIUtility.FormExists(kSomeCell)
 EndIf
             </raw>
          </example-data>
-         <related type="method" name="ActiveMagicEffectExists" />
+         <related type="method" name="ActiveEffectExists" />
       </method>
       <method name="GetBoundsToHalfwidths" returns="Float[]">
          <args>

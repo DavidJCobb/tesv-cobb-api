@@ -369,11 +369,11 @@ EndEvent
       <method name="NaturalSortPairForm_ASCII" returns="Int">
          <args>
             <arg type="String[]" name="asStrings" />
+            <arg type="Form[]" name="axSecond" />
             <arg type="Bool" name="abDescending" default="False">
                If this argument is True, then the strings will be sorted in descending 
                order (i.e. Z to A).
             </arg>
-            <arg type="Form[]" name="axSecond" />
          </args>
          <blurb>
             Performs a "natural" sort on an array of strings, and on a matching array.
@@ -397,7 +397,7 @@ EndEvent
             <raw>
 Form[]   kLightingTemplates = CobbAPILightingTemplate.GetAllForms()
 String[] sEditorIDs         = CobbAPIForm.GetEditorIDs(kLightingTemplates)
-sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, False, kLightingTemplates)
+sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, kLightingTemplates)
             </raw>
             <comment>
                sEditorIDs[i] == the editor ID for kLightingTemplates[i], but now they're sorted.
@@ -410,11 +410,11 @@ sEditorIDs = CobbAPIString.NaturalSortPairForm_ASCII(sEditorIDs, False, kLightin
       <method name="NaturalSortPairInt_ASCII" returns="Int">
          <args>
             <arg type="String[]" name="asStrings" />
+            <arg type="Int[]" name="axSecond" />
             <arg type="Bool" name="abDescending" default="False">
                If this argument is True, then the strings will be sorted in descending 
                order (i.e. Z to A).
             </arg>
-            <arg type="Int[]" name="axSecond" />
          </args>
          <blurb>
             Performs a "natural" sort on an array of strings, and on a matching array.

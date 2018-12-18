@@ -23,6 +23,34 @@
                bounding box.
             </p>
          </description>
+         <related type="method" name="GetBoundsToHalfwidths" />
+         <related type="method" name="GetBoundsToHalfwidthOffsets" />
+      </method>
+      <method name="GetBoundsToHalfwidths" returns="Float[]">
+         <args>
+            <arg type="Form" name="akBaseForm">
+               A base form to check.
+            </arg>
+         </args>
+         <blurb>
+            Checks the bounds on a base form, and returns the halfwidths needed for a box primitive 
+            to fully contain those bounds.
+         </blurb>
+         <related type="method" name="GetBounds" />
+         <related type="method" name="GetBoundsToHalfwidthOffsets" />
+      </method>
+      <method name="GetBoundsToHalfwidthOffsets" returns="Float[]">
+         <args>
+            <arg type="Form" name="akBaseForm">
+               A base form to check.
+            </arg>
+         </args>
+         <blurb>
+            Checks the bounds on a base form, and returns how far off-center they are from the 
+            origin (0, 0, 0).
+         </blurb>
+         <related type="method" name="GetBounds" />
+         <related type="method" name="GetBoundsToHalfwidths" />
       </method>
       <method name="GetEditorID" returns="String">
          <args>

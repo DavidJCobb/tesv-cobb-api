@@ -78,7 +78,7 @@
             Register multiple markers with the reveal service.
          </blurb>
          <related type="method" name="GetMarkerRevealState" />
-         <related type="method" name="RegisterMarkers" />
+         <related type="method" name="RegisterMarker" />
          <related type="method" name="SetMarkerRevealState" />
       </method>
       <method name="SetAllRevealStates">

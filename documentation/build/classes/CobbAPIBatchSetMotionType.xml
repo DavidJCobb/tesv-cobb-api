@@ -15,7 +15,9 @@
       </p>
       <p>
          A task can only be configured or used by the same Papyrus call stack that created it; you 
-         can't pass a handle to some other part of your mod and operate on it later.
+         can't pass a handle to some other part of your mod and operate on it later. If the call stack 
+         runs to completion without actually using or canceling its task handle, that handle will be 
+         cleaned up when the game is next saved or loaded.
       </p>
    </description>
    <concepts>

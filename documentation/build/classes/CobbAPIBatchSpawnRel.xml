@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIBatchSpawnRel">
+   <blurb>
+      Functions for spawning references in bulk, optionally with an offset relative to the target.
+   </blurb>
+   <description>
+      <p>
+         This API allows you to spawn references in bulk, optionally with local offsets. It differs 
+         from SKSE's SpawnerTask in that the offset position and rotation that you specify are 
+         applied relative to the rotation of the target reference.
+      </p>
+      <p>
+         To use the API, you call a function to create a BatchSpawnRel task; this function returns a 
+         numeric "handle," which is like a ticket that you can exchange to access your task. Once 
+         you have a handle, you can use additional functions to configure your task, and then call a 
+         final function to run the task and receive results.
+      </p>
+      <p>
+         A task can only be configured or used by the same Papyrus call stack that created it; you 
+         can't pass a handle to some other part of your mod and operate on it later. If the call stack 
+         runs to completion without actually using or canceling its task handle, that handle will be 
+         cleaned up when the game is next saved or loaded.
+      </p>
+   </description>
+   <methods>
+      <method name="AddSpawn">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSpawnRel task.
+            </arg>
+            <arg type="Form" name="akBase">
+               The base form to spawn.
+            </arg>
+            <arg type="ObjectReference" name="akTarget">
+               The reference that the created reference should be created at.
+            </arg>
+            <arg type="Float[]" name="afPositionOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s position. 
+               The created reference will be moved to the position of <var>akTarget</var> plus this 
+               offset. This argument is required, but if you don't want an offset, a quick shortcut 
+               is to pass <code>new Float[3]</code>.
+            </arg>
+            <arg type="Float[]" name="afRotationOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s rotation, relative to 
+               <var>akTarget</var>'s rotation. The created reference will be rotated to match. This 
+               argument is required, but if you don't want an offset, a quick shortcut is to pass 
+               <code>new Float[3]</code>.
+            </arg>
+            <arg type="Bool" name="abForcePersist" default="False">
+               Whether the reference should be flagged as persistent.
+            </arg>
+            <arg type="Bool" name="abInitiallyDisabled" default="False">
+               Whether the reference should be flagged as disabled.
+            </arg>
+         </args>
+         <blurb>
+            Queues the creation of a new reference at the position of an existing reference.
+         </blurb>
+      </method>
+      <method name="AddSpawnAroundPoint">
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSpawnRel task.
+            </arg>
+            <arg type="Form" name="akBase">
+               The base form to spawn.
+            </arg>
+            <arg type="ObjectReference" name="akAnchor">
+               A reference that exists in the same space (i.e. the same worldspace or cell) that 
+               the new reference should be created in.
+            </arg>
+            <arg type="Float[]" name="afTargetPosition">
+               A world-relative position to move the created reference to on the same frame that it 
+               is created.
+            </arg>
+            <arg type="Float[]" name="afTargetRotation">
+               A rotation to serve as a reference frame when applying position and rotation offsets.
+            </arg>
+            <arg type="Float[]" name="afPositionOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s position. 
+               The created reference will be moved to the position of <var>akTarget</var> plus this 
+               offset. This argument is required, but if you don't want an offset, a quick shortcut 
+               is to pass <code>new Float[3]</code>.
+            </arg>
+            <arg type="Float[]" name="afRotationOffset">
+               Three floats specifying an offset from <var>akTarget</var>'s rotation, relative to 
+               <var>akTarget</var>'s rotation. The created reference will be rotated to match. This 
+               argument is required, but if you don't want an offset, a quick shortcut is to pass 
+               <code>new Float[3]</code>.
+            </arg>
+            <arg type="Bool" name="abForcePersist" default="False">
+               Whether the reference should be flagged as persistent.
+            </arg>
+            <arg type="Bool" name="abInitiallyDisabled" default="False">
+               Whether the reference should be flagged as disabled.
+            </arg>
+         </args>
+         <blurb>
+            Queues the creation of a new reference at a point in space.
+         </blurb>
+         <example-data>
+            <comment>
+               This code creates a reference 64 units below the target point, because we specify an 
+               offset 64 units above, but the target rotation is upside-down.
+               
+               We're moving within the same cell, so the subject can be its own anchor.
+            </comment>
+            <raw>
+Float fTargetPos = new Float[3]
+Float fTargetRot = new Float[3]
+Float fOffsetPos = new Float[3]
+fTargetRot[0] = 180
+fOffsetPos[2] = 64
+            </raw>
+            <call>
+               <arg value="iHandle" />
+               <arg value="kFormToCreate" />
+               <arg value="kSubject" />
+               <arg value="fTargetPos" />
+               <arg value="fTargetRot" />
+               <arg value="fOffsetPos" />
+               <arg value="new Float[3]" />
+            </call>
+         </example-data>
+      </method>
+      <method name="Cancel">
+         <blurb>
+            Aborts a BatchSpawnRel task, allowing its handle to be reused.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSpawnRel task.
+            </arg>
+         </args>
+      </method>
+      <method name="Create" returns="Int">
+         <blurb>
+            Creates a BatchSpawnRel task, and returns its numeric handle.
+         </blurb>
+         <example-data>
+            <call return-var="iHandle" />
+            <raw>CobbAPIBatchMove.AddOperation(iHandle, kRefToMove, kMoveTo, new Float[3], new Float[3])</raw>
+            <raw>CobbAPIBatchMove.Run(iHandle)</raw>
+         </example-data>
+      </method>
+      <method name="Run" returns="ObjectReference[]">
+         <blurb>
+            Executes a BatchSpawnRel task and returns an array of the references that were 
+            successfully moved.
+         </blurb>
+         <args>
+            <arg type="Int" name="aiHandle">
+               The numeric handle for a BatchSpawnRel task.
+            </arg>
+         </args>
+      </method>
+   </methods>
+</class>

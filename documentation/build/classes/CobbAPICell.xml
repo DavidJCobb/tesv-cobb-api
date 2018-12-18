@@ -7,7 +7,7 @@
       <p>
          These functions allow you to work with cells. In particular, you can modify the lighting 
          and fog properties of any interior cell that doesn't use sky lighting, in a manner that 
-         persists in the savegame.
+         persists in the SKSE co-save.
       </p>
       <h2>An overview of interior cell lighting</h2>
       <p>
@@ -19,7 +19,7 @@
       <p>
          Internally, cells have a set of <dfn>lighting template usage flags</dfn> &#8212; a 
          bitmask indicating which properties are borrowed from the template. Cells always define 
-         the full set of lighting data on their end, but when the game goes to look up a l
+         the full set of lighting data on their end, but when the game goes to look up a 
          lighting property for the cell, it will first check the template usage flags; if the 
          flag for the property in question is set, then the game will instead grab the property 
          value from the lighting template. If the cell somehow has a template usage flag set 
@@ -283,14 +283,6 @@
             </call>
          </example-data>
       </method>
-      <method name="GetEditorID" returns="String">
-         <args>
-            <arg type="Cell" name="akSubject" />
-         </args>
-         <blurb>
-            Returns a cell's editor ID.
-         </blurb>
-      </method>
       <method name="GetEncounterZone" returns="Form">
          <args>
             <arg type="Cell" name="akSubject" />
@@ -403,7 +395,7 @@
             </call>
          </example-data>
       </method>
-      <method name="GetFogPower" returns="Float">
+      <method name="GetFogPow" returns="Float">
          <args>
             <arg type="Cell" name="akSubject" />
             <arg type="Int" name="aiSource" default="2">
@@ -1034,7 +1026,7 @@
          <related type="method" name="GetFogColors" />
          <related type="method" name="GetFogDistances" />
          <related type="method" name="GetFogMax" />
-         <related type="method" name="GetFogPower" />
+         <related type="method" name="GetFogPow" />
          <related type="method" name="ResetFields" />
          <related type="method" name="SetAcousticSpace" />
          <related type="method" name="SetAmbientColor" />

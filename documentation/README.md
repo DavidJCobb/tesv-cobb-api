@@ -8,7 +8,7 @@ One small luxury is that our XML/JS doesn't have to be perfect. It's fine if we 
 
 I'll warn you right now that this process is ugly. I've never done something like this before; I ran into some unexpected obstacles and worked around them with a focus on speed rather than perfection. If the "template and bake pages" system were *itself* the project I'm working on -- something I was contributing to the public to use or learn from -- I'd aim for perfection, but as it is, the literal goal was to make something that was better than nothing.
 
-Anyway, open the "oven" HTML file (not in Google Chrome) and then click the "Zip!" button. This will use an IFRAME to request each of the documentation pages, "bake" them, and offer you a ZIP file containing all of these pages to save.
+Anyway, open the "oven" HTML file (not in Google Chrome) and then click the "Zip!" button. This will use an IFRAME to request each of the documentation pages, "bake" them, and offer you a ZIP file containing all of these pages to save. Note that this archive doesn't include the "resources" folder or the CSS.
 
 The build process can fail for some pages due to the limitations of cross-frame scripting and the like. To detect this, use something like Notepad++ to scan all saved files (except for the root index.html) for:
 

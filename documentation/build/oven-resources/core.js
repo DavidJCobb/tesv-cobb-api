@@ -108,6 +108,8 @@ async function _zip_loaded() {
       state.zip_process.toCrawl.delete(path);
    }
    doc.querySelectorAll("a[href]").forEach(function(node) {
+      if (node.href.indexOf("http") == 0)
+         return;
       let path = sanitizeBakedPath(node.href);
       if (!state.zip_process.crawled.has(path))
          state.zip_process.toCrawl.add(path);

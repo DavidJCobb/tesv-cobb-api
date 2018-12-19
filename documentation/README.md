@@ -10,10 +10,4 @@ I'll warn you right now that this process is ugly. I've never done something lik
 
 Anyway, open the "oven" HTML file (not in Google Chrome) and then click the "Zip!" button. This will use an IFRAME to request each of the documentation pages, "bake" them, and offer you a ZIP file containing all of these pages to save. Note that this archive doesn't include the "resources" folder or the CSS.
 
-The build process can fail for some pages due to the limitations of cross-frame scripting and the like. To detect this, use something like Notepad++ to scan all saved files (except for the root index.html) for:
-
-    <link rel="stylesheet" href="resources/main.css">
-
-If a file contains that tag, then its asset paths weren't updated to account for the folder(s) it would be nested in. You can double-check by opening the file and seeing if it appears unstyled and possibly missing content.
-
-To fix these files, you can use the oven page to bake them one at a time. In its iframe, navigate to the target page. Then, in the bottom bar, click "Bake!" This will convert the page to its "baked" equivalent (i.e. hyperlinks and asset paths are ready for ship) and copy its baked HTML code into the textbox for you to copy and save. Once you've grabbed that HTML, you can click "Revert!" to return the framed page to a usable state and keep browsing.
+You can also browse and bake single pages, by navigating within the IFRAME and using the "Bake!" and "Revert!" buttons. The "Bake!" button copies the HTML of the baked page into the textbox on the bottom, for you to copy and save.

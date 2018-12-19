@@ -8,7 +8,9 @@ let state = {
       zip: null,
       crawled: new Set(),
       toCrawl: new Set(),
+      failed_pages: [],
    },
+   pending_load_timeout: 0,
 };
 let load_callbacks = [];
 
@@ -38,6 +40,7 @@ export async function zip() {
    state.zip_process.crawled = new Set();
    state.zip_process.toCrawl = new Set();
    state.is_zipping = false;
+   console.log("Failed pages:\n\n" + state.zip_process.failed_pages.join("\n"));
 }
 
 /*[stem, path]*/ function bakePath(/*URLSearchParams*/ query) {
@@ -129,29 +132,47 @@ function __fireLoadCallback() {
       else
          console.warn("load_callbacks contains a non-function: ", c);
 }
+window.addEventListener("bakecomplete", function(e) {
+   if (state.pending_load_timeout !== null) {
+      window.clearTimeout(state.pending_load_timeout);
+      state.pending_load_timeout = null;
+      __fireLoadCallback();
+   }
+});
 frame.addEventListener("load", function(e) {
    //
    // We need to give the contained page time to process and strip templates.
    //
    __waits = 0;
-   window.setTimeout(function wait(){
+   state.pending_load_timeout = window.setTimeout(function wait(){
       if (!state.is_zipping)
          return;
       state.is_pending = false;
       try {
-         let doc = frame.contentDocument.documentElement.querySelectorAll("t-set");
-         if (doc.length)
+         let nodes = frame.contentDocument.documentElement.querySelectorAll("template");
+         if (nodes.length)
             throw new Error("");
       } catch (e) {
          //
          // The document is inaccessible, OR there is unprocessed template content 
          // in the document indicating that the frame-side scripts need more time.
          //
-         if (++__waits < 5) {
-            window.setTimeout(wait, 500);
+         if (++__waits < 50) {
+            if (__waits == 10) {
+               console.log("Framed page is taking a long time to bake...");
+            } else if (__waits == 20) {
+               console.log("Framed page is taking an unusual amount of time to bake...");
+            }
+            state.pending_load_timeout = window.setTimeout(wait, 500);
             return;
          } // else give up and just fire the callback
+         console.log("Giving up; saving this page even if it's not fully baked.");
+         try {
+            let url = frame.contentWindow.location.href;
+            state.zip_process.failed_pages.push(sanitizeBakedPath(url));
+         } catch (e) {}
       }
+      state.pending_load_timeout = null;
       __fireLoadCallback();
    }, 500);
 });

@@ -251,6 +251,10 @@
                url = stem + url;
                node.setAttribute("href", url);
             });
+            if (window.parent != window) {
+               let e = new Event("bakecomplete", {});
+               window.parent.dispatchEvent(e);
+            }
          });
          
          function _failedRender(/*Element*/ parsererror) {

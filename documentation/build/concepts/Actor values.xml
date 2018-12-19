@@ -23,16 +23,17 @@
       regenerating voicepoints, damage can only be positive).
    </p>
    <p>
-      The key trick with modifiers is that the game engine has to undo them manually: if 
-      an enchantment or ability is removed from an actor, or if a spell is dispelled, 
-      then the game will check what AVs the removed object influences, and by how much; 
-      the game will then undo that change exactly. (For example, if you have an ability 
-      that boosts Smithing by +10, then adding the ability increases the permanent 
-      modifier for Smithing by 10, and removing the ability later decreases the modifier 
-      by that same amount.) This is also the key difference between the damage modifier 
-      and other modifiers: you don't need to undo damage "symmetrically" &#8212; you 
-      don't need to "undo" a specific bullet wound, a specific cut, or a specific bite; 
-      damage can be inflicted and healed without bothering to keep track of its source.
+      The key trick with modifiers is that the game engine has to undo them manually. 
+      Each modifier is tracked as a total, not as a list. If an enchantment or ability 
+      is removed from an actor, or if a spell is disabled, thne the game will check what 
+      AVs the removed object influences, and manually subtract their influence from the 
+      total. (For example, if you have an ability that boosts Smithing by +10, then 
+      adding the ability increases the permanent modifier for Smithing by 10, and 
+      removing the ability later decreases the modifier by that same amount.) This is 
+      also the key difference between the damage modifier and other modifiers: you don't 
+      need to undo damage "symmetrically" &#8212; you don't need to "undo" a specific 
+      bullet wound, a specific cut, or a specific bite; damage can be inflicted and 
+      healed without bothering to keep track of its source.
    </p>
    <h2>Under the hood</h2>
    <p>

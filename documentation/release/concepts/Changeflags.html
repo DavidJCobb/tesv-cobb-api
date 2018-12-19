@@ -313,8 +313,8 @@
    <p>
       There are a wide variety of changeflags, and a single bit can have a different 
       meaning depending on the type of form that is being saved. Changeflags should in 
-      theory only influence when data gets saved, but they have been observed causing 
-      different behavior in at least one situation: if, in Skyrim Classic, an animating 
+      theory only influence when data gets saved, but they have been observed affecting 
+      run-time behavior in at least one situation: if, in Skyrim Classic, an animating 
       door has the HAVOK_MOVE changeflag, then its physics and position will break at 
       run-time if the door is moved, whether by scripts or console commands.
    </p>
@@ -340,7 +340,7 @@
       </thead>
       <tbody>
          <tr> <td>0x00000002</td> <td>Item value</td> </tr>
-         <tr> <td>0x00000002</td> <td>Item name</td> </tr>
+         <tr> <td>0x00000004</td> <td>Item name</td> </tr>
       </tbody>
    </table>
    <h2>Changeflags for books</h2>

@@ -1,7 +1,7 @@
 <!doctype html><html><head>
       <meta charset="UTF-8">
       <link rel="stylesheet" href="../../resources/main.css">
-   <title>FormExists - CobbAPIUtility - CobbAPI Documentation</title></head>
+   <title>WillCrashDueToLength - CobbAPIMessage - CobbAPI Documentation</title></head>
    <body>
       <nav id="sidebar" t-context="index">
          <h1>Navigation</h1>
@@ -180,14 +180,50 @@
                   </a>
                </li>
             
-               <li data-class-name="CobbAPIMessage" data-class-file="Message.xml">
+               <li data-class-name="CobbAPIMessage" data-class-file="Message.xml" class="selected">
                   
                   
                   <a href="../../classes/CobbAPIMessage.html">
                      
                      CobbAPIMessage
                   </a>
+               
+         <ul>
+            
+               <li data-method-name="GetButtonLabels">
+                  
+                  <a href="../../classes/CobbAPIMessage/GetButtonLabels.html">
+                     
+                     GetButtonLabels
+                  </a>
                </li>
+            
+               <li data-method-name="GetText">
+                  
+                  <a href="../../classes/CobbAPIMessage/GetText.html">
+                     
+                     GetText
+                  </a>
+               </li>
+            
+               <li data-method-name="GetTitle">
+                  
+                  <a href="../../classes/CobbAPIMessage/GetTitle.html">
+                     
+                     GetTitle
+                  </a>
+               </li>
+            
+               <li data-method-name="WillCrashDueToLength" class="selected">
+                  
+                  <span>
+                     
+                     WillCrashDueToLength
+                  </span>
+               </li>
+            
+         </ul>
+      </li>
             
                <li data-class-name="CobbAPIObjectReference" data-class-file="ObjectReference.xml">
                   
@@ -243,58 +279,14 @@
                   </a>
                </li>
             
-               <li data-class-name="CobbAPIUtility" data-class-file="Utility.xml" class="selected">
+               <li data-class-name="CobbAPIUtility" data-class-file="Utility.xml">
                   
                   
                   <a href="../../classes/CobbAPIUtility.html">
                      
                      CobbAPIUtility
                   </a>
-               
-         <ul>
-            
-               <li data-method-name="ActiveEffectExists">
-                  
-                  <a href="../../classes/CobbAPIUtility/ActiveEffectExists.html">
-                     
-                     ActiveEffectExists
-                  </a>
                </li>
-            
-               <li data-method-name="FormExists" class="selected">
-                  
-                  <span>
-                     
-                     FormExists
-                  </span>
-               </li>
-            
-               <li data-method-name="GetBoundsToHalfwidths">
-                  
-                  <a href="../../classes/CobbAPIUtility/GetBoundsToHalfwidths.html">
-                     
-                     GetBoundsToHalfwidths
-                  </a>
-               </li>
-            
-               <li data-method-name="GetBoundsToHalfwidthOffsets">
-                  
-                  <a href="../../classes/CobbAPIUtility/GetBoundsToHalfwidthOffsets.html">
-                     
-                     GetBoundsToHalfwidthOffsets
-                  </a>
-               </li>
-            
-               <li data-method-name="GetGoodObjectSpawnCoordinates">
-                  
-                  <a href="../../classes/CobbAPIUtility/GetGoodObjectSpawnCoordinates.html">
-                     
-                     GetGoodObjectSpawnCoordinates
-                  </a>
-               </li>
-            
-         </ul>
-      </li>
             
                <li data-class-name="CobbAPIWorldspace" data-class-file="Worldspace.xml">
                   
@@ -347,44 +339,23 @@
          </ul>
       </nav>
       <main>
-         <h1>FormExists</h1>
+         <h1>WillCrashDueToLength</h1>
          <p>
-               This method returns True if <var>akPointer</var> is non-null, or False otherwise. 
-               In a limited number of edge-cases, this can be distinct from <var>akPointer</var> 
-               being None.
-            </p>
-            <p>
-               In order to understand this method's utility, we must discuss the script engine 
-               using terms introduced in Fallout 4. Every running script instance is what 
-               Fallout 4 calls a "ScriptObject," and ScriptObjects "wrap" pointers to game 
-               engine objects such as <code>TESForm</code> or <code>TESObjectREFR</code>. 
-               Papyrus data, such as variables and properties, exists on the ScriptObject. If 
-               you pass the ScriptObject to a native method, the method receives the "wrapped 
-               pointer," i.e. the raw <code>TESForm*</code> or <code>TESObjectREFR*</code>.
-            </p>
-            <p>
-               In rare cases, it's possible for a game engine object to disappear out from under 
-               a ScriptObject. This is the cause of Papyrus warnings about calling functions on 
-               None objects, with stack traces indicating that the functions were called on 
-               NULL. ScriptObjects exist semi-independently of the wrapped pointers and can 
-               sometimes try to act on those wrapped pointers even after they've gone null. 
-               Strangely, these script objects test as <code>!= None</code>, so you have no way 
-               to check for this in a script.
-            </p>
-            <p>
-               For cells, this can occur when the cell is unloaded.
+               This function returns True if a message would crash the game if shown in-game, 
+               or False otherwise. Messages crash if their text (as written in the Creation Kit) 
+               is longer than 1023 bytes.
             </p>
          
          <section>
             <h2>Declaration</h2>
-            <pre>Bool Function FormExists(Form akPointer) Global Native</pre>
+            <pre>String Function WillCrashDueToLength(Message akMessage) Global Native</pre>
          </section>
          
             <h2>Parameters</h2>
             <ul class="papyrus-args">
                
                   <li>
-                     <label>akPointer</label><!--
+                     <label>akMessage</label><!--
                   -->
                   </li>
                
@@ -392,28 +363,9 @@
          
          <section>
             <h2>Example</h2>
-            <pre>If !CobbAPIUtility.FormExists(kSomeCell)
-   ;
-   ; The cell was unloaded out from under us.
-   ;
-   kSomeCell = None
-   Return
-EndIf
-</pre>
+            <pre>String result = CobbAPIMessage.WillCrashDueToLength(akMessage)</pre>
          </section>
          
-         
-            <h2>See also</h2>
-            <ul>
-               
-                  <li>
-                     <a href="../../classes/CobbAPIUtility/ActiveEffectExists.html">
-                        
-                        ActiveEffectExists
-                     </a>
-                  </li>
-               
-            </ul>
          
       </main>
       

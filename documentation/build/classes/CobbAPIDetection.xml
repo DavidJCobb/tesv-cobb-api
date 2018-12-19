@@ -17,10 +17,11 @@
       </p>
       <h2>Persistence forms</h2>
       <p>
-         When you obtain a handle, you must also pass in a "persistence form." This is so that if 
-         your mod is uninstalled and your script ceases to exist, the handle can be freed instead of 
-         hanging around forever. The form you pass in must be from your mod, but there are otherwise 
-         no restrictions; CobbAPI only stores its load order slot, so don't worry about modifying or 
+         When you register an actor to have its detection altered, you must also pass in a 
+         "persistence form." This is so that if your mod is uninstalled and your script ceases to 
+         exist, your registration can be deleted (returning the actor to normal) instead of hanging 
+         around forever. The form you pass in must be from your mod, but there are otherwise no 
+         restrictions; CobbAPI only stores its load order slot, so don't worry about modifying or 
          even deleting the form when updating your mod.
       </p>
       <p>

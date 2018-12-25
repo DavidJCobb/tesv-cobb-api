@@ -330,15 +330,11 @@ namespace RE {
             UInt32 handle = *(current->refHandle);
             DEBUG_ONLY_MESSAGE("TESObjectREFR::GetActivateParents - ExtraActivateRef - entry with handle 0x%06X.", handle);
             if (handle && handle != *g_invalidRefHandle) {
-               ::TESObjectREFR* reference = nullptr;
-               LookupREFRByHandle(&handle, &reference);
-               if (reference) {
-                  if (baseFormFilter == nullptr || reference->baseForm == baseFormFilter) {
-                     result.push_back(reference);
-                  } else {
-                     skyrim_re_clear_refr(reference);
-                     DEBUG_ONLY_MESSAGE("TESObjectREFR::GetActivateParents - ExtraActivateRef - reference rejected; base form doesn't match.");
-                  }
+               refr_ptr ref;
+               ref.set_from_handle(handle);
+               if (ref) {
+                  if (baseFormFilter == nullptr || ref->baseForm == (RE::TESForm*) baseFormFilter)
+                     result.push_back(ref.get_base());
                } else {
                   DEBUG_ONLY_MESSAGE("TESObjectREFR::GetActivateParents - ExtraActivateRef - handle lookup failed.");
                }
@@ -415,17 +411,18 @@ namespace RE {
       return Subroutine00448260(this);
    };
    TESObjectREFR* TESObjectREFR::GetDestinationDoor() {
+      RE::refr_ptr otherDoor;
+      this->GetDestinationDoor(otherDoor);
+      return (TESObjectREFR*) otherDoor.get_base();
+   };
+   void TESObjectREFR::GetDestinationDoor(refr_ptr& out) {
+      out = nullptr;
       if (!this->extraData.HasType(kExtraData_Teleport))
-         return nullptr;
+         return;
       RE::ExtraTeleport::TeleportData* data = CALL_MEMBER_FN(((RE::BaseExtraList*)&(this->extraData)), GetExtraTeleportData)();
       if (!data)
-         return nullptr;
-      ::TESObjectREFR* otherDoor = nullptr;
-      {
-         UInt32 handle = data->refHandle; // copy, to ensure that the original handle isn't changed by the next call
-         LookupREFRByHandle(&handle, &otherDoor);
-      }
-      return (RE::TESObjectREFR*)otherDoor;
+         return;
+      out.set_from_handle(data->refHandle);
    };
    bool TESObjectREFR::GetEditorCoordinateData(NiPoint3* pos, NiPoint3* rot, ::TESWorldSpace** worldspace, ::TESObjectCELL** cell) {
       void* couldBeAnything = nullptr;
@@ -506,7 +503,7 @@ namespace RE {
    bool TESObjectREFR::IsActivationBlocked() {
       return CALL_MEMBER_FN((RE::BaseExtraList*)(&this->extraData), GetExtraFlagByIndex)(1);
    };
-   bool TESObjectREFR::IsTeleportMarkerInAttachedCell(::TESObjectREFR* destination) {
+   bool TESObjectREFR::IsTeleportMarkerInAttachedCell(refr_ptr& destination) {
       if (!this->extraData.HasType(kExtraData_Teleport))
          return false;
       NiPoint3 pos;
@@ -522,13 +519,12 @@ namespace RE {
                handle = data->refHandle;
             }
             if (!destination) {
-               LookupREFRByHandle(&handle, &destination);
+               destination.set_from_handle(&handle);
                if (!destination)
                   return false;
             }
          }
-         targetCell = ((RE::TESObjectREFR*)destination)->GetParentOrPersistentCell();
-         skyrim_re_clear_refr(destination);
+         targetCell = destination->GetParentOrPersistentCell();
          if (!targetCell)
             return false;
          {  // Get marker's probable parent cell.
@@ -552,21 +548,11 @@ namespace RE {
       if (!worldspace)
          return (targetCell->unk30 == 0x07);
       {  // Get position.
-         ::TESObjectREFR* otherDoor = nullptr;
-         {  // Get destination door.
-            UInt32 handle = 0;
-            {
-               RE::ExtraTeleport::TeleportData* data = CALL_MEMBER_FN(((RE::BaseExtraList*)&(this->extraData)), GetExtraTeleportData)();
-               if (!data)
-                  return false;
-               handle = data->refHandle;
-            }
-            LookupREFRByHandle(&handle, &otherDoor);
-            if (!otherDoor)
-               return false;
-         }
+         refr_ptr otherDoor;
+         this->GetDestinationDoor(otherDoor);
+         if (!otherDoor)
+            return false;
          RE::ExtraTeleport::TeleportData* data = CALL_MEMBER_FN(((RE::BaseExtraList*)&(otherDoor->extraData)), GetExtraTeleportData)();
-         skyrim_re_clear_refr(otherDoor);
          if (!data)
             return false;
          pos = data->markerPosition;
@@ -584,13 +570,11 @@ namespace RE {
       if (!data)
          return false;
       if (!quick) {  // Make sure the destination door is valid.
-         ::TESObjectREFR* otherDoor = nullptr;
-         UInt32 handle = data->refHandle; // copy, to ensure that the original handle isn't changed by the next call
-         LookupREFRByHandle(&handle, &otherDoor);
+         refr_ptr otherDoor;
+         otherDoor.set_from_handle(data->refHandle);
          if (!otherDoor)
             return false;
          RE::ExtraTeleport::TeleportData* otherData = CALL_MEMBER_FN(((RE::BaseExtraList*)&(otherDoor->extraData)), GetExtraTeleportData)();
-         skyrim_re_clear_refr(otherDoor);
          if (!otherData)
             return false;
       }

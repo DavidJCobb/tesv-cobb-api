@@ -100,9 +100,14 @@ namespace RE {
          return (*this < other) || (*this == other);
       };
    };
-   class RefHandleSystem {
+   class TESObjectREFRHandleInterface {
       //
       // Basic concept:
+      //
+      //  - Handles and the refr_ptr struct are analogous to the smart pointers 
+      //    introduced in C++11. Specifically, handles are analogous to weak 
+      //    pointers, refr_ptrs are analogous to shared pointers, and the RefHand-
+      //    leSystem converts between the two akin to make_shared.
       //
       //  - Handles can be used to refer to TESObjectREFRs that are not currently 
       //    loaded (whereas pointers would break when references are unloaded).
@@ -156,13 +161,19 @@ namespace RE {
          //
          // Technically, this struct has no member functions; everything is a static method.
          //
-         inline static RefHandleSystem* GetInstance() {
-            return (RefHandleSystem*) 0x01310638;
+         inline static TESObjectREFRHandleInterface* GetInstance() {
+            return (TESObjectREFRHandleInterface*) 0x01310638;
          };
          //
          static Entry* GetEntries() { // access as result[0], result[1], ...
-            return RefHandleSystem::GetInstance()->entries;
+            return TESObjectREFRHandleInterface::GetInstance()->entries;
          };
+         /*// TODO: rename "decoded" functions to Inl_Name and set up Name as calls to the vanilla functions
+         inline static bool GetRefByHandle(BSUntypedPointerHandle* refHandlePtr, refr_ptr&) {
+            // 0x004951F0
+
+         }
+         //*/
          //
          // SKSE identifies this as "LookupREFRByHandle." If the handle you pass in is 
          // invalid, then the handle will be destroyed (i.e. set to zero).
@@ -209,6 +220,7 @@ namespace RE {
          //
          static void ReleaseAndLoseHandle(BSUntypedPointerHandle& refHandlePtr); // at 0x0079DDF0
    };
+   typedef TESObjectREFRHandleInterface RefHandleSystem;
    class BSHandleRefObject : public NiRefObject {
       public:
          enum {
@@ -426,6 +438,7 @@ namespace RE {
          UInt32 GetChangeFlags();
          SInt32 GetCurrentDestructionStage();
          TESObjectREFR* GetDestinationDoor(); // if the current reference is a load door
+         void           GetDestinationDoor(refr_ptr& out);
          bool   GetEditorCoordinateData(NiPoint3* pos, NiPoint3* rot, ::TESWorldSpace** worldspace, ::TESObjectCELL** cell);
          void   GetEditorCoordinateDataAlways(NiPoint3* pos, NiPoint3* rot, ::TESWorldSpace** worldspace, ::TESObjectCELL** cell); // Return editor coordinates if any, or current coordinates otherwise
          TESKey* GetKey();
@@ -437,7 +450,7 @@ namespace RE {
          bool   HasCollision();
          bool   IsActivationBlocked();
          bool   IsDestinationTeleportMarkerInAttachedCell();
-         bool   IsTeleportMarkerInAttachedCell(::TESObjectREFR* destination = NULL); // pass destination to micro-optimize
+         bool   IsTeleportMarkerInAttachedCell(refr_ptr& destination); // pass destination to micro-optimize
          bool   IsValidLoadDoor(bool quick = false);
          void   MoveTo(UInt32* pTargetHandle, void* parentCell, void* worldSpace, NiPoint3* postion, NiPoint3* rotation); // MoveRefrToPosition wrapper with some additions
          bool   MoveToMyEditorLocation(bool native = false);

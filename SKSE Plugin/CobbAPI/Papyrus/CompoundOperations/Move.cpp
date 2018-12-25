@@ -158,7 +158,7 @@ namespace CobbPapyrus {
             //
             // Save spawned for result.
             //
-            allSpawned.push_back((::TESObjectREFR*) subject.abandon());
+            allSpawned.push_back((::TESObjectREFR*) subject.get_base());
          }
          PackValue(&resultValue, &allSpawned, registry);
       };

@@ -118,7 +118,7 @@ namespace CobbPapyrus {
                   if (destination)
                      TeleportMarkerService::GetInstance().ResetMarker(destination.get_base());
                }
-               allMoved.push_back((::TESObjectREFR*) subject.abandon());
+               allMoved.push_back((::TESObjectREFR*) subject.get_base());
                continue;
             }
             //
@@ -221,7 +221,7 @@ namespace CobbPapyrus {
             //
             // Save spawned for result.
             //
-            allMoved.push_back((::TESObjectREFR*) subject.abandon());
+            allMoved.push_back((::TESObjectREFR*) subject.get_base());
          }
          PackValue(&resultValue, &allMoved, registry);
       };

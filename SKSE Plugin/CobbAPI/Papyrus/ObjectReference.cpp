@@ -436,13 +436,10 @@ namespace CobbPapyrus {
             ERROR_AND_RETURN_0_IF(!subject->extraData.HasType(kExtraData_Teleport), "The specified reference is not a load door.", registry, stackId);
             RE::ExtraTeleport::TeleportData* data = CALL_MEMBER_FN(((RE::BaseExtraList*)&(subject->extraData)), GetExtraTeleportData)();
             ERROR_AND_RETURN_0_IF(!data, "Unable to access teleport data on the specified reference.", registry, stackId);
-            TESObjectREFR* result = nullptr;
-            {
-               UInt32 handle = data->refHandle; // copy, to ensure that the original handle isn't changed by the next call
-               LookupREFRByHandle(&handle, &result);
-            }
+            RE::refr_ptr result;
+            result.set_from_handle(data->refHandle);
             ERROR_AND_RETURN_0_IF(!result, "Unable to locate the specified load door's destination door.", registry, stackId);
-            return result;
+            return result.get_base();
          };
          VMResultArray<float> GetTeleportMarkerCoordinates(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, TESObjectREFR* subject) {
             VMResultArray<float> result;
@@ -841,16 +838,16 @@ namespace CobbPapyrus {
          if (!data)
             return result;
          {
-            TESObjectREFR* current = nullptr;
-            LookupREFRByHandle(&data->firstHandle, &current); // this is either a handle or flags; we should probably check that sometime
+            RE::refr_ptr current;
+            current.set_from_handle(data->firstHandle);
             if (current)
-               result.push_back(current);
+               result.push_back(current.get_base());
          }
          for (RE::ExtraEnableStateChildren::Entry* current = data->nextEntry; current && current != nullptr; current = current->nextEntry) {
-            TESObjectREFR* reference = nullptr;
-            LookupREFRByHandle(&current->refHandle, &reference);
-            if (reference != nullptr)
-               result.push_back(reference);
+            RE::refr_ptr ref;
+            ref.set_from_handle(current->refHandle);
+            if (ref)
+               result.push_back(ref.get_base());
          }
          return result;
       };

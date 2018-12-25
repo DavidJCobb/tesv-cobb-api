@@ -57,7 +57,7 @@ namespace CobbPapyrus {
       void BatchSetMotionTypeFunctor::Run(VMValue& resultValue) {
          VMClassRegistry* registry = (*g_skyrimVM)->GetClassRegistry();
          UInt32 nullHandle = *g_invalidRefHandle;
-         VMResultArray<RE::TESObjectREFR*> allSpawned;
+         VMResultArray<::TESObjectREFR*> allSpawned;
          //
          for (size_t i = 0; i < this->operations.size(); i++) {
             OperationData& e = this->operations[i];
@@ -70,7 +70,7 @@ namespace CobbPapyrus {
             //
             // Save spawned for result.
             //
-            allSpawned.push_back(subject.abandon());
+            allSpawned.push_back(subject.get_base());
          }
          PackValue(&resultValue, &allSpawned, registry);
       };

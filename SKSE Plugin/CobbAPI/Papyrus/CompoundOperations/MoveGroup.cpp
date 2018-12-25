@@ -130,7 +130,7 @@ namespace CobbPapyrus {
                      TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalRootPos, originalRootRot, this->_destinationPos, destinationRotAsRadians);
                }
             }
-            allMoved.push_back((::TESObjectREFR*) root.abandon());
+            allMoved.push_back((::TESObjectREFR*) root.get_base());
          }
          //
          for (size_t i = 0; i < this->operations.size(); i++) {
@@ -182,7 +182,7 @@ namespace CobbPapyrus {
                   TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, finalRot);
             }
             //
-            allMoved.push_back((::TESObjectREFR*) subject.abandon());
+            allMoved.push_back((::TESObjectREFR*) subject.get_base());
          }
          //
          PackValue(&resultValue, &allMoved, registry);

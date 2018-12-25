@@ -272,9 +272,9 @@ namespace CobbPapyrus {
                result.resize(e.results.size(), nullptr);
                for (size_t j = 0; j < e.results.size(); j++) {
                   //_MESSAGE(PapyrusPrefixString("BatchSpawnComplex") " operation returning a set of results... Currently on result %d in set %d.", j, i);
-                  TESObjectREFR* current = nullptr;
-                  LookupREFRByHandle(&e.results[j], &current);
-                  result[j] = current;
+                  RE::refr_ptr current;
+                  current.set_from_handle(&e.results[j]);
+                  result[j] = current.get_base();
                }
                break;
             }

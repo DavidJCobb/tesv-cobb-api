@@ -77,11 +77,14 @@ class CellInteriorDataService {
       //
    public:
       void StoreDefaults(FormID cellID, RE::TESObjectCELL* cell);
+      //
       void Reset(FormID);
       void ResetFields(FormID cellID, UInt32 fieldMask, bool alsoModifyCell = true);
       void ResetTemplateUsageFlags(FormID cellID, UInt32 flagsMask, bool alsoModifyCell = true);
       void ResetAll();
+      //
       bool GetDefaults(FormID cellID, CellDefaults& out); // zeroes (out) if there is no matching entry; returns bool indicating whether the cell is in the dataset
+      void GetModifications(FormID cellID, UInt32& outChangeflags, UInt32& outChangedTemplateFlags);
       void Modify(RE::TESObjectCELL*, UInt32 traitFlags, UInt32 usageFlags);
       //
       enum { kSaveVersion = 3 };

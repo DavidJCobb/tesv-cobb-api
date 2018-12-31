@@ -165,6 +165,17 @@ bool CellInteriorDataService::GetDefaults(FormID id, CellDefaults& out) {
    }
    return true;
 };
+void CellInteriorDataService::GetModifications(FormID id, UInt32& outChangeflags, UInt32& outChangedTemplateFlags) {
+   std::lock_guard<decltype(this->_lock)> scopedLock(this->_lock);
+   try {
+      auto& record = this->_changes.at(id);
+      outChangeflags = record.changes;
+      outChangedTemplateFlags = record.changedTemplateUsage;
+   } catch (std::out_of_range) {
+      outChangeflags = 0;
+      outChangedTemplateFlags = 0;
+   }
+}
 void CellInteriorDataService::Modify(RE::TESObjectCELL* cell, UInt32 traitFlags, UInt32 usageFlags) {
    if (!cell)
       return;

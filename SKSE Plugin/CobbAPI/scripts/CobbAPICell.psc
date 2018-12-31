@@ -16,12 +16,6 @@ Scriptname CobbAPICell Hidden
 ; names start with the word "Reset."
 ;
 
-;
-; Utilities
-;
-Int[] Function FromColorCode (Int aiCode) Global Native
-Int   Function ToColorCode   (Int aiRed, Int aiGreen, Int aiBlue) Global Native ; Color codes are just 0xAABBGGRR, typically with a zero alpha.
-
 EncounterZone Function GetEncounterZone (Cell akSubject) Global Native
 Int[]         Function GetExteriorCellCoordinates (Cell akSubject) Global Native ; only valid for exteriors; coordinates measured in cells e.g. (-1, 2)
 Float[]       Function GetExteriorUnitCoordinates (Cell akSubject) Global Native ; only valid for exteriors; coordinates measured in units e.g. (-4096, 8192)
@@ -81,11 +75,10 @@ Int[]      Function GetDirectionalAmbientColors (Cell akSubject, Int aiSource = 
 Int        Function GetDirectionalColor         (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
 Float      Function GetDirectionalFade          (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
 Int[]      Function GetDirectionalRotation      (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors ; returns [XY, Z]
-Float      Function GetFogClipDistance          (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
 Int[]      Function GetFogColors                (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors; returns near and far fog RGB colors
-Float[]    Function GetFogDistances             (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors; returns near and far fog planes
+Float[]    Function GetFogDistances             (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors; returns near, far, and clip distances
 Float      Function GetFogMax                   (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
-Float      Function GetFogPower                 (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
+Float      Function GetFogPow                   (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
 Form       Function GetImageSpace               (Cell akSubject, Int aiSource = 2) Global Native ; can be used on any cell, but probably only valid for interiors
 Float[]    Function GetLightFadeDistances       (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
 MusicType  Function GetMusicType                (Cell akSubject, Int aiSource = 2) Global Native ; can be used on any cell, but probably only valid for interiors
@@ -187,3 +180,10 @@ Function ResetFields (Cell akSubject, Int aiProperties) Global Native
 ; in-memory properties. Same arguments as above.
 ;
 Function StopPersistingChangesTo (Cell akSubject, Int aiProperties) Global Native
+
+;
+; Detect changes made through this API:
+;
+Int[] Function GetChanges                         (Cell akSubject) Global Native             ; returns array of bitmasks: [changed fields, changed template usage flag]
+Bool  Function IsFieldChanged                     (Cell akSubject, Int aiMask) Global Native ; if multiple flags are specified, requires all to be changed in order to return True
+Bool  Function IsLightingTemplateUsageFlagChanged (Cell akSubject, Int aiMask) Global Native ; if multiple flags are specified, requires all to be changed in order to return True 

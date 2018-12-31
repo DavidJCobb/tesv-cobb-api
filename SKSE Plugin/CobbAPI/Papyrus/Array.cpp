@@ -65,8 +65,14 @@ namespace CobbPapyrus {
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
          VMArray<T> target, VMArray<T> source, SInt32 targetStart, SInt32 sourceStart, SInt32 count
       ) {
-         UInt32 targetLength = target.Length() - targetStart;
-         UInt32 sourceLength = source.Length() - sourceStart;
+         UInt32 targetLength = target.Length();
+         if (targetLength < targetStart)
+            return;
+         targetLength -= targetStart;
+         UInt32 sourceLength = source.Length();
+         if (sourceLength < sourceStart)
+            return;
+         sourceLength -= sourceStart;
          if (count > sourceLength)
             count = sourceLength;
          for (UInt32 i = 0; i < count; i++) {
@@ -81,8 +87,14 @@ namespace CobbPapyrus {
          VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*,
          VMArray<T1> target, VMArray<T2> source, SInt32 targetStart, SInt32 sourceStart, SInt32 count
       ) {
-         UInt32 targetLength = target.Length() - targetStart;
-         UInt32 sourceLength = source.Length() - sourceStart;
+         UInt32 targetLength = target.Length();
+         if (targetLength < targetStart)
+            return;
+         targetLength -= targetStart;
+         UInt32 sourceLength = source.Length();
+         if (sourceLength < sourceStart)
+            return;
+         sourceLength -= sourceStart;
          if (count > sourceLength)
             count = sourceLength;
          for (UInt32 i = 0; i < count; i++) {

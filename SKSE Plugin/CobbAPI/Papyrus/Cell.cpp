@@ -822,7 +822,7 @@ namespace CobbPapyrus {
          ERROR_AND_RETURN_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot modify lighting for a cell that uses sky lighting.", registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          ERROR_AND_RETURN_IF(data == nullptr, "Cannot modify the lighting data of an exterior cell.", registry, stackId);
-         data->fogPlaneNear = distance;
+         data->fogPlaneFar = distance;
          if (force)
             data->inheritFromTemplate &= ~RE::TESObjectCELL::kLightingTemplateUsageFlag_FogFarDistance;
          if (persist) {

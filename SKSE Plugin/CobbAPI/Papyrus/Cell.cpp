@@ -23,21 +23,44 @@ namespace CobbPapyrus {
          kGetterSourceBit_TemplateInUse  = 2,
          kGetterSourceBit_TemplateAlways = 4,
       };
+      //
+      //
+      // In order to retrieve a lighting property, we have to check some combination of 
+      // the cell's own data, the defaults stored in the CellInteriorDataService, and 
+      // the cell's lighting template (if any). Unfortunately, we can't template on a 
+      // field name, so we cheat a little bit and use a templated function with a macro 
+      // that does offsetof() for us. Our macro pulls some of the Papyrus functions' 
+      // arguments directly; the (cell), (data), and (getWhich) variables need to be 
+      // ready.
+      //
+      //
       template <typename T> T _GetLightingField(RE::TESObjectCELL* cell, RE::TESObjectCELL::InteriorData* data, UInt32 fieldOffset, SInt32 which, UInt32 flag) {
+         //
+         // Pointer arithmetic doesn't work the way you'd expect... If you do math on a 
+         // T*, the unit of measurement isn't a byte; it's sizeof(T). If you write some 
+         // code like
+         //
+         //    T* p = 0;
+         //    p += 1;
+         //
+         // then (p) will equal sizeof(T), not 1. The fix is to reinterpret-cast your 
+         // pointers to char* pointers, given that a char is one byte, and then do your 
+         // math.
+         //
          if (which & kGetterSourceBit_TemplateAlways) {
             if (cell->lightingTemplate)
-               return *(T*)(&cell->lightingTemplate->data + fieldOffset);
+               return *(T*)(reinterpret_cast<char*>(&cell->lightingTemplate->data) + fieldOffset);
          }
          if ((which & kGetterSourceBit_TemplateInUse) && (data->inheritFromTemplate & flag)) {
             if (cell->lightingTemplate)
-               return *(T*)(&cell->lightingTemplate->data + fieldOffset);
+               return *(T*)(reinterpret_cast<char*>(&cell->lightingTemplate->data) + fieldOffset);
          }
          if (which & kGetterSourceBit_Defaults) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
-               return *(T*)(&def.data + fieldOffset);
+               return *(T*)(reinterpret_cast<char*>(&def.data) + fieldOffset);
          }
-         return *(T*)(data + fieldOffset);
+         return *(T*)(reinterpret_cast<char*>(data) + fieldOffset);
       };
       #define PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(field, flag) \
          return _GetLightingField<decltype(RE::TESObjectCELL::InteriorData::field)>(cell, data, offsetof(RE::TESObjectCELL::InteriorData, field), getWhich, flag);
@@ -53,14 +76,6 @@ namespace CobbPapyrus {
          data->inheritFromTemplate = 0;
          if (persist)
             CellInteriorDataService::GetInstance().Modify(cell, 0, 0xFFFFFFFF);
-      };
-      VMResultArray<SInt32> FromColorCode(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, SInt32 code) {
-         VMResultArray<SInt32> result;
-         result.resize(3);
-         result[0] = code & 0xFF;
-         result[1] = (code >> 0x8) & 0xFF;
-         result[2] = (code >> 0x10) & 0xFF;
-         return result;
       };
       TESForm* GetAcousticSpace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
@@ -96,7 +111,21 @@ namespace CobbPapyrus {
          return data->ambientColor.abgr;
          //*/
       };
-      SInt32 GetDirectionalColor(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
+      VMResultArray<SInt32> GetChanges(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
+         VMResultArray<SInt32> out;
+         if (cell == nullptr) {
+            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            return out;
+         }
+         out.resize(2);
+         UInt32 changes;
+         UInt32 changedFlags;
+         CellInteriorDataService::GetInstance().GetModifications(cell->formID, changes, changedFlags);
+         out[0] = changes;
+         out[1] = changedFlags;
+         return out;
+      }
+      UInt32 GetDirectionalColor(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
@@ -274,13 +303,6 @@ namespace CobbPapyrus {
          result[1] = data->unitY;
          return result;
       };
-      float GetFogClipDistance(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot retrieve lighting data for a cell that uses sky lighting.", registry, stackId);
-         auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
-         PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(fogClipDistance, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance);
-      };
       VMResultArray<SInt32> GetFogColors(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<SInt32> result;
          if (cell == nullptr) {
@@ -296,25 +318,17 @@ namespace CobbPapyrus {
             registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
             return result;
          }
-         result.resize(6);
+         result.resize(2);
          if (cell->lightingTemplate) {
             auto tmpl = cell->lightingTemplate;
             if (getWhich & kGetterSourceBit_TemplateAlways) {
-               result[0] = tmpl->data.fogColorNear.color.red;
-               result[1] = tmpl->data.fogColorNear.color.green;
-               result[2] = tmpl->data.fogColorNear.color.blue;
-               result[3] = tmpl->data.fogColorFar.color.red;
-               result[4] = tmpl->data.fogColorFar.color.green;
-               result[5] = tmpl->data.fogColorFar.color.blue;
+               result[0] = tmpl->data.fogColorNear.abgr;
+               result[1] = tmpl->data.fogColorFar.abgr;
                return result;
             } else if (getWhich & kGetterSourceBit_TemplateInUse) {
                if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogColor)) {
-                  result[0] = tmpl->data.fogColorNear.color.red;
-                  result[1] = tmpl->data.fogColorNear.color.green;
-                  result[2] = tmpl->data.fogColorNear.color.blue;
-                  result[3] = tmpl->data.fogColorFar.color.red;
-                  result[4] = tmpl->data.fogColorFar.color.green;
-                  result[5] = tmpl->data.fogColorFar.color.blue;
+                  result[0] = tmpl->data.fogColorNear.abgr;
+                  result[1] = tmpl->data.fogColorFar.abgr;
                   return result;
                }
             }
@@ -322,21 +336,13 @@ namespace CobbPapyrus {
          if (getWhich & kGetterSourceBit_Defaults) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
-               result[0] = def.data.fogColorNear.color.red;
-               result[1] = def.data.fogColorNear.color.green;
-               result[2] = def.data.fogColorNear.color.blue;
-               result[3] = def.data.fogColorFar.color.red;
-               result[4] = def.data.fogColorFar.color.green;
-               result[5] = def.data.fogColorFar.color.blue;
+               result[0] = def.data.fogColorNear.abgr;
+               result[1] = def.data.fogColorFar.abgr;
                return result;
             }
          }
-         result[0] = data->fogColorNear.color.red;
-         result[1] = data->fogColorNear.color.green;
-         result[2] = data->fogColorNear.color.blue;
-         result[3] = data->fogColorFar.color.red;
-         result[4] = data->fogColorFar.color.green;
-         result[5] = data->fogColorFar.color.blue;
+         result[0] = data->fogColorNear.abgr;
+         result[1] = data->fogColorFar.abgr;
          return result;
       };
       VMResultArray<float> GetFogDistances(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
@@ -354,22 +360,25 @@ namespace CobbPapyrus {
             registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
             return result;
          }
-         result.resize(2);
+         result.resize(3);
          if (getWhich & kGetterSourceBit_TemplateAlways) {
             auto tmpl = cell->lightingTemplate;
             if (tmpl) {
                result[0] = tmpl->data.fogPlaneNear;
                result[1] = tmpl->data.fogPlaneFar;
+               result[2] = tmpl->data.fogClipDistance;
                return result;
             }
          }
          result[0] = data->fogPlaneNear;
          result[1] = data->fogPlaneFar;
+         result[2] = data->fogClipDistance;
          if (getWhich & kGetterSourceBit_Defaults) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
                result[0] = def.data.fogPlaneNear;
                result[1] = def.data.fogPlaneFar;
+               result[2] = def.data.fogClipDistance;
             }
          }
          if (getWhich & kGetterSourceBit_TemplateInUse) {
@@ -379,6 +388,8 @@ namespace CobbPapyrus {
                   result[0] = tmpl->data.fogPlaneNear;
                if (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogFarDistance)
                   result[1] = tmpl->data.fogPlaneFar;
+               if (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance)
+                  result[2] = tmpl->data.fogClipDistance;
             }
          }
          return result;
@@ -390,7 +401,7 @@ namespace CobbPapyrus {
          ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(fogMax, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogMax);
       };
-      float GetFogPower(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
+      float GetFogPow(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot retrieve lighting data for a cell that uses sky lighting.", registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
@@ -512,6 +523,20 @@ namespace CobbPapyrus {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          return cell->parentWorld;
       };
+      bool IsFieldChanged(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
+         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         UInt32 changes;
+         UInt32 changedFlags;
+         CellInteriorDataService::GetInstance().GetModifications(cell->formID, changes, changedFlags);
+         return (changes & flag) == flag;
+      }
+      bool IsLightingTemplateUsageFlagChanged(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
+         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         UInt32 changes;
+         UInt32 changedFlags;
+         CellInteriorDataService::GetInstance().GetModifications(cell->formID, changes, changedFlags);
+         return (changedFlags & flag) == flag;
+      }
       bool IsPublic(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          return !!(cell->unk2C & RE::TESObjectCELL::kCellFlag_IsPublic);
@@ -984,15 +1009,6 @@ namespace CobbPapyrus {
          ERROR_AND_RETURN_IF(cell == nullptr, "Cannot reset data for a None cell.", registry, stackId);
          CellInteriorDataService::GetInstance().ResetTemplateUsageFlags(cell->formID, flagsMask, false);
       };
-      SInt32 ToColorCode(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, SInt32 r, SInt32 g, SInt32 b) {
-         // 0xAABBGGRR
-         SInt32 result = min(255, max(0, r));
-         g = min(255, max(0, g));
-         b = min(255, max(0, b));
-         result |= (g << 0x8);
-         result |= (b << 0x10);
-         return result;
-      };
       bool UsesSkyLighting(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
          if (!(cell->unk2C & RE::TESObjectCELL::kCellFlag_IsInterior))
@@ -1012,15 +1028,6 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
       )
    );
    registry->RegisterFunction(
-      new NativeFunction1<StaticFunctionTag, VMResultArray<SInt32>, SInt32>(
-         "FromColorCode",
-         PapyrusPrefixString("Cell"),
-         Cell::FromColorCode,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("Cell"), "FromColorCode", VMClassRegistry::kFunctionFlag_NoWait);
-   registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, TESForm*, RE::TESObjectCELL*, SInt32>(
          "GetAcousticSpace",
          PapyrusPrefixString("Cell"),
@@ -1037,6 +1044,14 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
       )
    );
    registry->RegisterFunction(
+      new NativeFunction1<StaticFunctionTag, VMResultArray<SInt32>, RE::TESObjectCELL*>(
+         "GetChanges",
+         PapyrusPrefixString("Cell"),
+         Cell::GetChanges,
+         registry
+      )
+   );
+   registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, VMResultArray<SInt32>, RE::TESObjectCELL*, SInt32>(
          "GetDirectionalAmbientColors",
          PapyrusPrefixString("Cell"),
@@ -1045,7 +1060,7 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
       )
    );
    registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, SInt32, RE::TESObjectCELL*, SInt32>(
+      new NativeFunction2<StaticFunctionTag, UInt32, RE::TESObjectCELL*, SInt32>(
          "GetDirectionalColor",
          PapyrusPrefixString("Cell"),
          Cell::GetDirectionalColor,
@@ -1093,14 +1108,6 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
       )
    );
    registry->RegisterFunction(
-      new NativeFunction2<StaticFunctionTag, float, RE::TESObjectCELL*, SInt32>(
-         "GetFogClipDistance",
-         PapyrusPrefixString("Cell"),
-         Cell::GetFogClipDistance,
-         registry
-      )
-   );
-   registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, VMResultArray<SInt32>, RE::TESObjectCELL*, SInt32>(
          "GetFogColors",
          PapyrusPrefixString("Cell"),
@@ -1126,9 +1133,9 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
    );
    registry->RegisterFunction(
       new NativeFunction2<StaticFunctionTag, float, RE::TESObjectCELL*, SInt32>(
-         "GetFogPower",
+         "GetFogPow",
          PapyrusPrefixString("Cell"),
-         Cell::GetFogPower,
+         Cell::GetFogPow,
          registry
       )
    );
@@ -1212,6 +1219,18 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
          registry
       )
    );
+   registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, bool, RE::TESObjectCELL*, SInt32>(
+      "IsFieldChanged",
+      PapyrusPrefixString("Cell"),
+      Cell::IsFieldChanged,
+      registry
+   ));
+   registry->RegisterFunction(new NativeFunction2<StaticFunctionTag, bool, RE::TESObjectCELL*, SInt32>(
+      "IsLightingTemplateUsageFlagChanged",
+      PapyrusPrefixString("Cell"),
+      Cell::IsLightingTemplateUsageFlagChanged,
+      registry
+   ));
    registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, bool, RE::TESObjectCELL*>(
          "IsPublic",
@@ -1421,15 +1440,6 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
       )
    );
    registry->RegisterFunction(
-      new NativeFunction3<StaticFunctionTag, SInt32, SInt32, SInt32, SInt32>(
-         "ToColorCode",
-         PapyrusPrefixString("Cell"),
-         Cell::ToColorCode,
-         registry
-      )
-   );
-   registry->SetFunctionFlags(PapyrusPrefixString("Cell"), "ToColorCode", VMClassRegistry::kFunctionFlag_NoWait);
-   registry->RegisterFunction(
       new NativeFunction1<StaticFunctionTag, bool, RE::TESObjectCELL*>(
          "UsesSkyLighting",
          PapyrusPrefixString("Cell"),
@@ -1437,6 +1447,7 @@ bool CobbPapyrus::Cell::Register(VMClassRegistry* registry) {
          registry
       )
    );
+   registry->SetFunctionFlags(PapyrusPrefixString("Cell"), "UsesSkyLighting", VMClassRegistry::kFunctionFlag_NoWait);
    //
    return true;
 };

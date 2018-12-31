@@ -78,6 +78,8 @@ namespace CobbPapyrus {
          return result;
       };
       BSFixedString GetEditorID(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESForm* subject) {
+         if (subject == nullptr)
+            return "";
          BSFixedString result = subject->GetEditorID();
          if (result.data && strlen(result.data))
             return result;
@@ -89,13 +91,16 @@ namespace CobbPapyrus {
          VMResultArray<BSFixedString> result;
          UInt32 size = forms.Length();
          result.reserve(size);
-         std::string editorID;
+         //std::string editorID;
          for (UInt32 i = 0; i < size; i++) {
             RE::TESForm* form;
             forms.Get(&form, i);
             if (form) {
-               ExtendedEditorIDService::GetInstance().GetEditorID(form, editorID);
-               result.push_back(editorID.c_str());
+               //editorID = form->GetEditorID();
+               ////if (editorID.empty()) // TESForm::GetEditorID is already patched to do this
+               ////   ExtendedEditorIDService::GetInstance().GetEditorID(form, editorID);
+               //result.push_back(editorID.c_str());
+               result.push_back(form->GetEditorID());
             } else {
                result.push_back("");
             }

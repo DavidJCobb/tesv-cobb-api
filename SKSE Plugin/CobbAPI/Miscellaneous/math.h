@@ -14,4 +14,8 @@ namespace cobb {
          return 0.0;
       return radians * 180.0 / pi;
    }
+   //
+   template<class T, class L, class H> inline constexpr const T& clamp(const T& v, const L& lo, const H& hi) {
+      return (v < (T)lo) ? (T)lo : ((v < (T)hi) ? (T)hi : v);
+   }
 };

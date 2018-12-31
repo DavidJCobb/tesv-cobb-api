@@ -31,7 +31,6 @@
 #include "Papyrus/Actor.h"
 #include "Papyrus/Array.h"
 #include "Papyrus/Cell.h"
-#include "Papyrus/CobbAPI.h"
 #include "Papyrus/Detection.h"
 #include "Papyrus/Form.h"
 #include "Papyrus/Furniture.h"
@@ -39,6 +38,7 @@
 #include "Papyrus/ImageSpace.h"
 #include "Papyrus/Light.h"
 #include "Papyrus/LightingTemplate.h"
+#include "Papyrus/Math.h"
 #include "Papyrus/Message.h"
 #include "Papyrus/ObjectReference.h"
 #include "Papyrus/RevealService.h"
@@ -185,7 +185,7 @@ extern "C" {
       {  // Patches
          CobbPatches::Exploratory::Apply();
          CobbPatches::CellDefaultData::Apply();
-         //CobbPatches::Detection::Apply(); // Do this later, so that we can tell whether ESODeath is present and patched-in
+         //CobbPatches::Detection::Apply(); // Do this later, so that we can tell whether another mod has already claimed our patch site
          CobbPatches::LoadMoreEditorIDs::Apply();
          CobbPatches::MessageQuitGame::Apply();
          //CobbPatches::OnLeveledActorRegenerated::Apply(); // delay the patch to avoid startup spam
@@ -217,8 +217,8 @@ extern "C" {
       //   UTILITIES:
       //-----------------------------------------------------------------------------------------------
       _RegisterAndEchoPapyrus(CobbPapyrus::Array::Register,          "Array");
-      _RegisterAndEchoPapyrus(CobbPapyrus::CobbAPI::Register,        "CobbAPI");
       _RegisterAndEchoPapyrus(CobbPapyrus::Game::Register,           "Game");
+      _RegisterAndEchoPapyrus(CobbPapyrus::Math::Register,           "Math");
       _RegisterAndEchoPapyrus(CobbPapyrus::Rotations::Register,      "Rotations");
       _RegisterAndEchoPapyrus(CobbPapyrus::SimpleSearches::Register, "SimpleSearches");
       _RegisterAndEchoPapyrus(CobbPapyrus::String::Register,         "String");
@@ -283,7 +283,7 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
          g_ISKSEMessaging->RegisterListener(g_pluginHandle, "CobbAPI", Callback_Messaging_Cobb); // maybe in the future
       }
    } else if (message->type == SKSEMessagingInterface::kMessage_PostPostLoad) {
-      CobbPatches::Detection::Apply(); // Done here so we can tell if ESODeath is present and patched-in
+      CobbPatches::Detection::Apply(); // Done here so we can tell if another mod has already claimed our patch site
    } else if (message->type == SKSEMessagingInterface::kMessage_DataLoaded) {
       CobbPatches::PlaceableCollisionPrimitives::OnFormsLoaded();
       CobbPatches::OnLeveledActorRegenerated::Apply(); // deferred to avoid startup spam

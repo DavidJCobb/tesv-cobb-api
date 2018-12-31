@@ -121,7 +121,6 @@
     <ClCompile Include="Papyrus\Actor.cpp" />
     <ClCompile Include="Papyrus\Array.cpp" />
     <ClCompile Include="Papyrus\Cell.cpp" />
-    <ClCompile Include="Papyrus\CobbAPI.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\Base.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\CellSearcher.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\Move.cpp" />
@@ -137,6 +136,7 @@
     <ClCompile Include="Papyrus\Light.cpp" />
     <ClCompile Include="Papyrus\CompoundOperations\MoveGroup.cpp" />
     <ClCompile Include="Papyrus\LightingTemplate.cpp" />
+    <ClCompile Include="Papyrus\Math.cpp" />
     <ClCompile Include="Papyrus\Message.cpp" />
     <ClCompile Include="Papyrus\ObjectReference.cpp" />
     <ClCompile Include="Papyrus\RevealService.cpp" />
@@ -188,7 +188,6 @@
     <ClInclude Include="Papyrus\AcousticSpace.h" />
     <ClInclude Include="Papyrus\Actor.h" />
     <ClInclude Include="Papyrus\Cell.h" />
-    <ClInclude Include="Papyrus\CobbAPI.h" />
     <ClInclude Include="Papyrus\Detection.h" />
     <ClInclude Include="Papyrus\Form.h" />
     <ClInclude Include="Papyrus\Array.h" />
@@ -196,6 +195,7 @@
     <ClInclude Include="Papyrus\Game.h" />
     <ClInclude Include="Papyrus\ImageSpace.h" />
     <ClInclude Include="Papyrus\LightingTemplate.h" />
+    <ClInclude Include="Papyrus\Math.h" />
     <ClInclude Include="Papyrus\Message.h" />
     <ClInclude Include="Papyrus\Shout.h" />
     <ClInclude Include="Papyrus\SKSEDebug.h" />
@@ -305,7 +305,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
-    <None Include="scripts\CobbAPI.psc" />
     <None Include="scripts\CobbAPIAcousticSpace.psc" />
     <None Include="scripts\CobbAPIActor.psc" />
     <None Include="scripts\CobbAPIArray.psc" />
@@ -324,6 +323,7 @@
     <None Include="scripts\CobbAPIImageSpace.psc" />
     <None Include="scripts\CobbAPILight.psc" />
     <None Include="scripts\CobbAPILightingTemplate.psc" />
+    <None Include="scripts\CobbAPIMath.psc" />
     <None Include="scripts\CobbAPIMessage.psc" />
     <None Include="scripts\CobbAPIObjectReference.psc" />
     <None Include="scripts\CobbAPIRevealService.psc" />

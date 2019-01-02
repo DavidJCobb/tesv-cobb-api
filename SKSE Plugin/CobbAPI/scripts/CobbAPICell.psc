@@ -54,34 +54,35 @@ Int  Function GetLightingTemplateUsageDefaultFlags (Cell akSubject)             
      Function StopPersistingChangedTemplateUsageFlags (Cell akSubject, Int aiFlagsMask) Global Native ; stops persisting changes to the specified flags in the savegame, without actually resetting the cell's in-memory data
 
 ;
-; The aiSource parameter determines where we retrieve each property from. 
-; If the parameter is zero, a method will always return a cell's current 
-; local data; otherwise, the parameter serves as a bitmask, indicating 
-; which data to check for first (in order of highest to lowest bits).
+; The aiSource parameter determines where we retrieve each property from.
+; The parameter is an enum:
 ;
-;    1 = Prefer cell's default data (if changes were made)
-;    2 = Prefer lighting template (if used for this property)
-;    4 = Prefer lighting template (always, unless no template is used)
+;    0 = Return the current cell-side data.
 ;
-; As such, a value of 7 will always return values from the lighting temp-
-; late if there is one, or otherwise the cell's default (ESP/ESM-specified) 
-; data (regardless of whether the cell has been modified at run-time). The 
-; default value for this argument, 2, will make these methods return what-
-; ever value the cell is actually using.
+;    1 = Return the current effective data (i.e. whichever value the cell 
+;        is using from its lighting template or its own fields).
 ;
-Form       Function GetAcousticSpace            (Cell akSubject, Int aiSource = 2) Global Native ; can be used on any cell, but probably only valid for interiors
-Int        Function GetAmbientColor             (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
-Int[]      Function GetDirectionalAmbientColors (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
-Int        Function GetDirectionalColor         (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
-Float      Function GetDirectionalFade          (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
-Int[]      Function GetDirectionalRotation      (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors ; returns [XY, Z]
-Int[]      Function GetFogColors                (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors; returns near and far fog RGB colors
-Float[]    Function GetFogDistances             (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors; returns near, far, and clip distances
-Float      Function GetFogMax                   (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
-Float      Function GetFogPow                   (Cell akSubject, Int aiSource = 2) Global Native ; only valid for non-skylit interiors
-Form       Function GetImageSpace               (Cell akSubject, Int aiSource = 2) Global Native ; can be used on any cell, but probably only valid for interiors
-Float[]    Function GetLightFadeDistances       (Cell akSubject, Int aiSource = 2) Global Native ; only valid for interiors
-MusicType  Function GetMusicType                (Cell akSubject, Int aiSource = 2) Global Native ; can be used on any cell, but probably only valid for interiors
+;    2 = Return the default cell-side data.
+;
+;    3 = Return the default effective data (i.e. whichever value the cell 
+;        would use from its lighting template or its own fields).
+;
+; "Default" here refers to a cell's original values as loaded from its 
+; ESP/ESM file.
+;
+Form       Function GetAcousticSpace            (Cell akSubject, Int aiSource = 1) Global Native ; can be used on any cell, but probably only valid for interiors
+Int        Function GetAmbientColor             (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors
+Int[]      Function GetDirectionalAmbientColors (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors
+Int        Function GetDirectionalColor         (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors
+Float      Function GetDirectionalFade          (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors
+Int[]      Function GetDirectionalRotation      (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors ; returns [XY, Z]
+Int[]      Function GetFogColors                (Cell akSubject, Int aiSource = 1) Global Native ; only valid for non-skylit interiors; returns near and far fog RGB colors
+Float[]    Function GetFogDistances             (Cell akSubject, Int aiSource = 1) Global Native ; only valid for non-skylit interiors; returns near, far, and clip distances
+Float      Function GetFogMax                   (Cell akSubject, Int aiSource = 1) Global Native ; only valid for non-skylit interiors
+Float      Function GetFogPow                   (Cell akSubject, Int aiSource = 1) Global Native ; only valid for non-skylit interiors
+Form       Function GetImageSpace               (Cell akSubject, Int aiSource = 1) Global Native ; can be used on any cell, but probably only valid for interiors
+Float[]    Function GetLightFadeDistances       (Cell akSubject, Int aiSource = 1) Global Native ; only valid for interiors
+MusicType  Function GetMusicType                (Cell akSubject, Int aiSource = 1) Global Native ; can be used on any cell, but probably only valid for interiors
 Float      Function GetNorthRotation            (Cell akSubject) Global Native
 Worldspace Function GetParentWorldspace         (Cell akSubject) Global Native
 Bool       Function IsPublic                    (Cell akSubject) Global Native

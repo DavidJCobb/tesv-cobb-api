@@ -18,10 +18,15 @@
 
 namespace CobbPapyrus {
    namespace Cell {
+      constexpr char* ce_errorBadSourceArg      = "You specified an invalid aiSource parameter. The current cell-side data will be returned -- but this isn't backward-compatible. Fix your script!";
+      constexpr char* ce_errorGetterExteriorLighting = "Cannot retrieve lighting data for an exterior cell.";
+      constexpr char* ce_errorGetterNoneCell    = "Cannot retrieve data for a None cell.";
+      constexpr char* ce_errorGetterSkyLighting = "Cannot retrieve lighting data for a cell that uses sky lighting.";
       enum GetterSource {
-         kGetterSourceBit_Defaults       = 1,
-         kGetterSourceBit_TemplateInUse  = 2,
-         kGetterSourceBit_TemplateAlways = 4,
+         kGetterSource_CurrentCell = 0,
+         kGetterSource_CurrentEffective = 1,
+         kGetterSource_DefaultCell = 2,
+         kGetterSource_DefaultEffective = 3,
       };
       //
       //
@@ -30,11 +35,24 @@ namespace CobbPapyrus {
       // the cell's lighting template (if any). Unfortunately, we can't template on a 
       // field name, so we cheat a little bit and use a templated function with a macro 
       // that does offsetof() for us. Our macro pulls some of the Papyrus functions' 
-      // arguments directly; the (cell), (data), and (getWhich) variables need to be 
-      // ready.
+      // arguments directly; the (cell), (data), (getWhich), (registry), and (stackId) 
+      // variables should be accessible.
+      //
+      // When updating this function, you also need to update the following Papyrus 
+      // methods, which use their own logic (generally because they need to return 
+      // arrays, or because they return data not stored on the lighting template):
+      //
+      //  - GetAcousticSpace
+      //  - GetDirectionalAmbientColors
+      //  - GetDirectionalRotation
+      //  - GetFogColors
+      //  - GetFogDistances
+      //  - GetImageSpace
+      //  - GetLightFadeDistances
+      //  - GetMusicType
       //
       //
-      template <typename T> T _GetLightingField(RE::TESObjectCELL* cell, RE::TESObjectCELL::InteriorData* data, UInt32 fieldOffset, SInt32 which, UInt32 flag) {
+      template <typename T> T _GetLightingField(RE::TESObjectCELL* cell, RE::TESObjectCELL::InteriorData* data, UInt32 fieldOffset, SInt32 which, UInt32 flag, VMClassRegistry* registry, UInt32 stackId) {
          //
          // Pointer arithmetic doesn't work the way you'd expect... If you do math on a 
          // T*, the unit of measurement isn't a byte; it's sizeof(T). If you write some 
@@ -47,23 +65,29 @@ namespace CobbPapyrus {
          // pointers to char* pointers, given that a char is one byte, and then do your 
          // math.
          //
-         if (which & kGetterSourceBit_TemplateAlways) {
-            if (cell->lightingTemplate)
-               return *(T*)(reinterpret_cast<char*>(&cell->lightingTemplate->data) + fieldOffset);
-         }
-         if ((which & kGetterSourceBit_TemplateInUse) && (data->inheritFromTemplate & flag)) {
-            if (cell->lightingTemplate)
-               return *(T*)(reinterpret_cast<char*>(&cell->lightingTemplate->data) + fieldOffset);
-         }
-         if (which & kGetterSourceBit_Defaults) {
+         if (which == kGetterSource_DefaultEffective || which == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
+            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
+               if (which == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form && (def.data.inheritFromTemplate & flag))
+                     return *(T*)(reinterpret_cast<char*>(&form->data) + fieldOffset);
+               }
                return *(T*)(reinterpret_cast<char*>(&def.data) + fieldOffset);
+            }
+            which -= kGetterSource_DefaultCell; // operation failed; get current data
          }
+         if (which == kGetterSource_CurrentEffective || which == kGetterSource_CurrentCell) {
+            if (which == kGetterSource_CurrentEffective)
+               if (cell->lightingTemplate && (data->inheritFromTemplate & flag))
+                  return *(T*)(reinterpret_cast<char*>(&cell->lightingTemplate->data) + fieldOffset);
+            return *(T*)(reinterpret_cast<char*>(data) + fieldOffset);
+         }
+         registry->LogError(ce_errorBadSourceArg, stackId);
          return *(T*)(reinterpret_cast<char*>(data) + fieldOffset);
       };
       #define PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(field, flag) \
-         return _GetLightingField<decltype(RE::TESObjectCELL::InteriorData::field)>(cell, data, offsetof(RE::TESObjectCELL::InteriorData, field), getWhich, flag);
+         return _GetLightingField<decltype(RE::TESObjectCELL::InteriorData::field)>(cell, data, offsetof(RE::TESObjectCELL::InteriorData, field), getWhich, flag, registry, stackId);
       //
       //
       // Papyrus code follows.
@@ -78,8 +102,8 @@ namespace CobbPapyrus {
             CellInteriorDataService::GetInstance().Modify(cell, 0, 0xFFFFFFFF);
       };
       TESForm* GetAcousticSpace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         if (getWhich & kGetterSourceBit_Defaults) {
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
                TESForm* out = LookupFormByID(def.acousticSpace);
@@ -87,34 +111,24 @@ namespace CobbPapyrus {
                   return out;
                return nullptr;
             }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
          }
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
+            return CALL_MEMBER_FN(cell, GetAcousticSpace)();
+         }
+         registry->LogError(ce_errorBadSourceArg, stackId);
          return CALL_MEMBER_FN(cell, GetAcousticSpace)();
       };
       SInt32 GetAmbientColor(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(ambientColor.abgr, RE::TESObjectCELL::kLightingTemplateUsageFlag_Ambient);
-         /*//
-         if (getWhich & kGetterSourceBit_TemplateAlways) {
-            if (cell->lightingTemplate)
-               return cell->lightingTemplate->data.ambientColor.abgr;
-         } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-            if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_Ambient))
-               return cell->lightingTemplate->data.ambientColor.abgr;
-         }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
-               return def.data.ambientColor.abgr;
-         }
-         return data->ambientColor.abgr;
-         //*/
       };
       VMResultArray<SInt32> GetChanges(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          VMResultArray<SInt32> out;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return out;
          }
          out.resize(2);
@@ -126,88 +140,48 @@ namespace CobbPapyrus {
          return out;
       }
       UInt32 GetDirectionalColor(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(directionalColor.abgr, RE::TESObjectCELL::kLightingTemplateUsageFlag_Directional);
-         /*//
-         if (getWhich & kGetterSourceBit_TemplateAlways) {
-            if (cell->lightingTemplate)
-               return cell->lightingTemplate->data.directionalColor.abgr;
-         } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-            if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_Directional))
-               return cell->lightingTemplate->data.directionalColor.abgr;
-         }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
-               return def.data.directionalColor.abgr;
-         }
-         return data->directionalColor.abgr;
-         //*/
       };
       float GetDirectionalFade(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(directionalFade, RE::TESObjectCELL::kLightingTemplateUsageFlag_DirectionalFade);
-         /*//
-         if (getWhich & kGetterSourceBit_TemplateAlways) {
-            if (cell->lightingTemplate)
-               return cell->lightingTemplate->data.directionalFade;
-         } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-            if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_DirectionalFade))
-               return cell->lightingTemplate->data.directionalFade;
-         }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
-               return def.data.directionalFade;
-         }
-         return data->directionalFade;
-         //*/
       };
       VMResultArray<SInt32> GetDirectionalAmbientColors(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<SInt32> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
-            registry->LogError("Cannot retrieve lighting data for a cell that uses sky lighting.", stackId);
+            registry->LogError(ce_errorGetterSkyLighting, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          if (!data) {
-            registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
+            registry->LogError(ce_errorGetterExteriorLighting, stackId);
             return result;
          }
          result.resize(6);
-         if (cell->lightingTemplate) {
-            auto tmpl = cell->lightingTemplate;
-            if (getWhich & kGetterSourceBit_TemplateAlways) {
-               result[0] = tmpl->directionalAmbient.xPos.abgr;
-               result[1] = tmpl->directionalAmbient.xNeg.abgr;
-               result[2] = tmpl->directionalAmbient.yPos.abgr;
-               result[3] = tmpl->directionalAmbient.yNeg.abgr;
-               result[4] = tmpl->directionalAmbient.zPos.abgr;
-               result[5] = tmpl->directionalAmbient.zNeg.abgr;
-               return result;
-            } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-               if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_Ambient)) {
-                  result[0] = tmpl->directionalAmbient.xPos.abgr;
-                  result[1] = tmpl->directionalAmbient.xNeg.abgr;
-                  result[2] = tmpl->directionalAmbient.yPos.abgr;
-                  result[3] = tmpl->directionalAmbient.yNeg.abgr;
-                  result[4] = tmpl->directionalAmbient.zPos.abgr;
-                  result[5] = tmpl->directionalAmbient.zNeg.abgr;
-                  return result;
-               }
-            }
-         }
-         if (getWhich & kGetterSourceBit_Defaults) {
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
+               if (getWhich == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form && (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_Ambient)) {
+                     result[0] = form->directionalAmbient.xPos.abgr;
+                     result[1] = form->directionalAmbient.xNeg.abgr;
+                     result[2] = form->directionalAmbient.yPos.abgr;
+                     result[3] = form->directionalAmbient.yNeg.abgr;
+                     result[4] = form->directionalAmbient.zPos.abgr;
+                     result[5] = form->directionalAmbient.zNeg.abgr;
+                     return result;
+                  }
+               }
                result[0] = def.data.directionalAmbient.xPos.abgr;
                result[1] = def.data.directionalAmbient.xNeg.abgr;
                result[2] = def.data.directionalAmbient.yPos.abgr;
@@ -216,6 +190,7 @@ namespace CobbPapyrus {
                result[5] = def.data.directionalAmbient.zNeg.abgr;
                return result;
             }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
          }
          result[0] = data->directionalAmbient.xPos.abgr;
          result[1] = data->directionalAmbient.xNeg.abgr;
@@ -223,58 +198,79 @@ namespace CobbPapyrus {
          result[3] = data->directionalAmbient.yNeg.abgr;
          result[4] = data->directionalAmbient.zPos.abgr;
          result[5] = data->directionalAmbient.zNeg.abgr;
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
+            auto tmpl = cell->lightingTemplate;
+            if (getWhich == kGetterSource_CurrentEffective)
+               if (tmpl && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_Ambient)) {
+                  result[0] = tmpl->directionalAmbient.xPos.abgr;
+                  result[1] = tmpl->directionalAmbient.xNeg.abgr;
+                  result[2] = tmpl->directionalAmbient.yPos.abgr;
+                  result[3] = tmpl->directionalAmbient.yNeg.abgr;
+                  result[4] = tmpl->directionalAmbient.zPos.abgr;
+                  result[5] = tmpl->directionalAmbient.zNeg.abgr;
+                  return result;
+               }
+            return result;
+         }
+         registry->LogError(ce_errorBadSourceArg, stackId);
          return result;
       };
       VMResultArray<SInt32> GetDirectionalRotation(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<SInt32> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
-            registry->LogError("Cannot retrieve lighting data for a cell that uses sky lighting.", stackId);
+            registry->LogError(ce_errorGetterSkyLighting, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          if (!data) {
-            registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
+            registry->LogError(ce_errorGetterExteriorLighting, stackId);
             return result;
          }
          result.resize(2);
-         if (cell->lightingTemplate) {
-            auto tmpl = cell->lightingTemplate;
-            if (getWhich & kGetterSourceBit_TemplateAlways) {
-               result[0] = tmpl->data.directionalRotXY;
-               result[1] = tmpl->data.directionalRotZ;
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
+            CellInteriorDataService::CellDefaults def;
+            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
+               if (getWhich == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form && (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_DirectionalRotation)) {
+                     result[0] = form->data.directionalRotXY;
+                     result[1] = form->data.directionalRotZ;
+                     return result;
+                  }
+               }
+               result[0] = def.data.directionalRotXY;
+               result[1] = def.data.directionalRotZ;
                return result;
-            } else if (getWhich & kGetterSourceBit_TemplateInUse) {
+            }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
+         }
+         result[0] = data->directionalRotXY;
+         result[1] = data->directionalRotZ;
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
+            auto tmpl = cell->lightingTemplate;
+            if (getWhich == kGetterSource_CurrentEffective)
                if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_DirectionalRotation)) {
                   result[0] = tmpl->data.directionalRotXY;
                   result[1] = tmpl->data.directionalRotZ;
                   return result;
                }
-            }
+            return result;
          }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
-               result[0] = def.data.directionalRotXY;
-               result[1] = def.data.directionalRotZ;
-               return result;
-            }
-         }
-         result[0] = data->directionalRotXY;
-         result[1] = data->directionalRotZ;
+         registry->LogError(ce_errorBadSourceArg, stackId);
          return result;
       };
       BGSEncounterZone* GetEncounterZone(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          return CALL_MEMBER_FN((RE::BaseExtraList*) &cell->extraData, GetExtraEncounterZone)();
       };
       VMResultArray<SInt32> GetExteriorCellCoordinates(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          VMResultArray<SInt32> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetExteriorData)();
@@ -290,7 +286,7 @@ namespace CobbPapyrus {
       VMResultArray<float> GetExteriorUnitCoordinates(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
          VMResultArray<float> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetExteriorData)();
@@ -306,84 +302,95 @@ namespace CobbPapyrus {
       VMResultArray<SInt32> GetFogColors(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<SInt32> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
-            registry->LogError("Cannot retrieve lighting data for a cell that uses sky lighting.", stackId);
+            registry->LogError(ce_errorGetterSkyLighting, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          if (!data) {
-            registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
+            registry->LogError(ce_errorGetterExteriorLighting, stackId);
             return result;
          }
          result.resize(2);
-         if (cell->lightingTemplate) {
-            auto tmpl = cell->lightingTemplate;
-            if (getWhich & kGetterSourceBit_TemplateAlways) {
-               result[0] = tmpl->data.fogColorNear.abgr;
-               result[1] = tmpl->data.fogColorFar.abgr;
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
+            CellInteriorDataService::CellDefaults def;
+            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
+               if (getWhich == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form && (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogColor)) {
+                     result[0] = form->data.fogColorNear.abgr;
+                     result[1] = form->data.fogColorFar.abgr;
+                     return result;
+                  }
+               }
+               result[0] = def.data.fogColorNear.abgr;
+               result[1] = def.data.fogColorFar.abgr;
                return result;
-            } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-               if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogColor)) {
+            } else
+               getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
+         }
+         result[0] = data->fogColorNear.abgr;
+         result[1] = data->fogColorFar.abgr;
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
+            auto tmpl = cell->lightingTemplate;
+            if (getWhich == kGetterSource_CurrentEffective) {
+               if (tmpl && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogColor)) {
                   result[0] = tmpl->data.fogColorNear.abgr;
                   result[1] = tmpl->data.fogColorFar.abgr;
                   return result;
                }
             }
+            return result;
          }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
-               result[0] = def.data.fogColorNear.abgr;
-               result[1] = def.data.fogColorFar.abgr;
-               return result;
-            }
-         }
-         result[0] = data->fogColorNear.abgr;
-         result[1] = data->fogColorFar.abgr;
+         registry->LogError("You specified an invalid aiSource parameter. The current cell-side data will be returned -- but this isn't backward-compatible. Fix your script!", stackId);
          return result;
       };
       VMResultArray<float> GetFogDistances(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<float> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
-            registry->LogError("Cannot retrieve lighting data for a cell that uses sky lighting.", stackId);
+            registry->LogError(ce_errorGetterSkyLighting, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          if (!data) {
-            registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
+            registry->LogError(ce_errorGetterExteriorLighting, stackId);
             return result;
          }
          result.resize(3);
-         if (getWhich & kGetterSourceBit_TemplateAlways) {
-            auto tmpl = cell->lightingTemplate;
-            if (tmpl) {
-               result[0] = tmpl->data.fogPlaneNear;
-               result[1] = tmpl->data.fogPlaneFar;
-               result[2] = tmpl->data.fogClipDistance;
-               return result;
-            }
-         }
-         result[0] = data->fogPlaneNear;
-         result[1] = data->fogPlaneFar;
-         result[2] = data->fogClipDistance;
-         if (getWhich & kGetterSourceBit_Defaults) {
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
                result[0] = def.data.fogPlaneNear;
                result[1] = def.data.fogPlaneFar;
                result[2] = def.data.fogClipDistance;
+               if (getWhich == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form) {
+                     if (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogNearDistance)
+                        result[0] = form->data.fogPlaneNear;
+                     if (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogFarDistance)
+                        result[1] = form->data.fogPlaneFar;
+                     if (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance)
+                        result[2] = form->data.fogClipDistance;
+                  }
+               }
+               return result;
             }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
          }
-         if (getWhich & kGetterSourceBit_TemplateInUse) {
+         result[0] = data->fogPlaneNear;
+         result[1] = data->fogPlaneFar;
+         result[2] = data->fogClipDistance;
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
             auto tmpl = cell->lightingTemplate;
-            if (cell->lightingTemplate) {
+            if (getWhich == kGetterSource_CurrentEffective && tmpl) {
                if (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogNearDistance)
                   result[0] = tmpl->data.fogPlaneNear;
                if (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogFarDistance)
@@ -391,26 +398,28 @@ namespace CobbPapyrus {
                if (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_FogClipDistance)
                   result[2] = tmpl->data.fogClipDistance;
             }
+            return result;
          }
+         registry->LogError(ce_errorBadSourceArg, stackId);
          return result;
       };
       float GetFogMax(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot retrieve lighting data for a cell that uses sky lighting.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, ce_errorGetterSkyLighting, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(fogMax, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogMax);
       };
       float GetFogPow(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, "Cannot retrieve lighting data for a cell that uses sky lighting.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting, ce_errorGetterSkyLighting, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          PAPYRUS_BOILERPLATE_RETURN_CELL_LIGHTING(fogPow, RE::TESObjectCELL::kLightingTemplateUsageFlag_FogPower);
       };
       TESForm* GetImageSpace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot get the imagespace of a None cell.", registry, stackId);
-         if (getWhich & kGetterSourceBit_Defaults) {
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
                TESForm* out = LookupFormByID(def.imageSpace);
@@ -418,6 +427,10 @@ namespace CobbPapyrus {
                   return out;
                return nullptr;
             }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
+         }
+         if (getWhich < 0 || getWhich > 3) {
+            registry->LogError(ce_errorBadSourceArg, stackId);
          }
          auto extra = (RE::ExtraCellImageSpace*) cell->extraData.GetByType(kExtraData_CellImageSpace);
          if (!extra)
@@ -427,7 +440,7 @@ namespace CobbPapyrus {
       VMResultArray<float> GetLightFadeDistances(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
          VMResultArray<float> result;
          if (cell == nullptr) {
-            registry->LogError("Cannot retrieve data from a None cell.", stackId);
+            registry->LogError(ce_errorGetterNoneCell, stackId);
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
@@ -436,76 +449,88 @@ namespace CobbPapyrus {
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
          if (!data) {
-            registry->LogError("Cannot retrieve lighting data for an exterior cell.", stackId);
+            registry->LogError(ce_errorGetterExteriorLighting, stackId);
             return result;
          }
          result.resize(2);
-         if (cell->lightingTemplate) {
-            auto tmpl = cell->lightingTemplate;
-            if (getWhich & kGetterSourceBit_TemplateAlways) {
-               result[0] = tmpl->data.lightFadeBegin;
-               result[1] = tmpl->data.lightFadeEnd;
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
+            CellInteriorDataService::CellDefaults def;
+            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
+               if (getWhich == kGetterSource_DefaultEffective) {
+                  RE::BGSLightingTemplate* form = (RE::BGSLightingTemplate*) DYNAMIC_CAST(LookupFormByID(def.lightingTemplate), TESForm, BGSLightingTemplate);
+                  if (form && (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_LightFadeDistances)) {
+                     result[0] = form->data.lightFadeBegin;
+                     result[1] = form->data.lightFadeEnd;
+                  }
+               }
+               result[0] = def.data.lightFadeBegin;
+               result[1] = def.data.lightFadeEnd;
                return result;
-            } else if (getWhich & kGetterSourceBit_TemplateInUse) {
-               if (cell->lightingTemplate && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_LightFadeDistances)) {
+            }
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
+         }
+         if (getWhich == kGetterSource_CurrentEffective || getWhich == kGetterSource_CurrentCell) {
+            if (getWhich == kGetterSource_CurrentEffective) {
+               auto tmpl = cell->lightingTemplate;
+               if (tmpl && (data->inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_LightFadeDistances)) {
                   result[0] = tmpl->data.lightFadeBegin;
                   result[1] = tmpl->data.lightFadeEnd;
                   return result;
                }
             }
+            result[0] = data->lightFadeBegin;
+            result[1] = data->lightFadeEnd;
+            return result;
          }
-         if (getWhich & kGetterSourceBit_Defaults) {
-            CellInteriorDataService::CellDefaults def;
-            if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def)) {
-               result[0] = def.data.lightFadeBegin;
-               result[1] = def.data.lightFadeEnd;
-               return result;
-            }
-         }
+         registry->LogError(ce_errorBadSourceArg, stackId);
          result[0] = data->lightFadeBegin;
          result[1] = data->lightFadeEnd;
          return result;
       };
       RE::TESForm* GetLightingTemplate(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          return cell->lightingTemplate;
       };
       bool GetLightingTemplateUsageFlag(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          return !!(data->inheritFromTemplate & flag);
       };
       SInt32 GetLightingTemplateUsageFlags(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          return data->inheritFromTemplate;
       };
       bool GetLightingTemplateUsageDefaultFlag(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          CellInteriorDataService::CellDefaults def;
          if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
             return !!(def.data.inheritFromTemplate & flag);
          return !!(data->inheritFromTemplate & flag);
       };
       SInt32 GetLightingTemplateUsageDefaultFlags(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
-         ERROR_AND_RETURN_0_IF(data == nullptr, "Cannot retrieve lighting data for an exterior cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(data == nullptr, ce_errorGetterExteriorLighting, registry, stackId);
          CellInteriorDataService::CellDefaults def;
          if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
             return def.data.inheritFromTemplate;
          return data->inheritFromTemplate;
       };
       BGSMusicType* GetMusicType(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 getWhich) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
-         if (getWhich & kGetterSourceBit_Defaults) {
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
+         if (getWhich == kGetterSource_DefaultEffective || getWhich == kGetterSource_DefaultCell) {
             CellInteriorDataService::CellDefaults def;
             if (CellInteriorDataService::GetInstance().GetDefaults(cell->formID, def))
                return DYNAMIC_CAST(LookupFormByID(def.musicType), TESForm, BGSMusicType);
+            getWhich -= kGetterSource_DefaultCell; // operation failed; get current data
+         }
+         if (getWhich < 0 || getWhich > 3) {
+            registry->LogError(ce_errorBadSourceArg, stackId);
          }
          auto extra = (RE::ExtraCellMusicType*) cell->extraData.GetByType(kExtraData_CellMusicType);
          if (!extra)
@@ -513,32 +538,32 @@ namespace CobbPapyrus {
          return extra->data;
       };
       float GetNorthRotation(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          auto data = (RE::ExtraNorthRotation*) cell->extraData.GetByType(kExtraData_NorthRotation);
          if (!data)
             return 0.0F;
          return data->northRotation;
       };
       RE::TESWorldSpace* GetParentWorldspace(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          return cell->parentWorld;
       };
       bool IsFieldChanged(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          UInt32 changes;
          UInt32 changedFlags;
          CellInteriorDataService::GetInstance().GetModifications(cell->formID, changes, changedFlags);
          return (changes & flag) == flag;
       }
       bool IsLightingTemplateUsageFlagChanged(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, SInt32 flag) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          UInt32 changes;
          UInt32 changedFlags;
          CellInteriorDataService::GetInstance().GetModifications(cell->formID, changes, changedFlags);
          return (changedFlags & flag) == flag;
       }
       bool IsPublic(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          return !!(cell->unk2C & RE::TESObjectCELL::kCellFlag_IsPublic);
       };
       void ResetFields(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell, UInt32 fieldMask) {
@@ -1010,7 +1035,7 @@ namespace CobbPapyrus {
          CellInteriorDataService::GetInstance().ResetTemplateUsageFlags(cell->formID, flagsMask, false);
       };
       bool UsesSkyLighting(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::TESObjectCELL* cell) {
-         ERROR_AND_RETURN_0_IF(cell == nullptr, "Cannot retrieve data from a None cell.", registry, stackId);
+         ERROR_AND_RETURN_0_IF(cell == nullptr, ce_errorGetterNoneCell, registry, stackId);
          if (!(cell->unk2C & RE::TESObjectCELL::kCellFlag_IsInterior))
             return true;
          return !!(cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting);

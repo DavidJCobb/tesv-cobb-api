@@ -2,6 +2,7 @@
 #include "skse/Serialization.h"
 
 #include "ReverseEngineered/ExtraData.h"
+#include "ReverseEngineered/INI.h"
 
 void CellInteriorDataService::RevertCell(RE::TESObjectCELL* cell, const CellDefaults& defaults) {
    auto cellData = CALL_MEMBER_FN(cell, GetInteriorData)();
@@ -42,6 +43,19 @@ void CellInteriorDataService::StoreDefaults(FormID id, RE::TESObjectCELL* cell) 
    if (!intData) return; // don't bother storing exterior cells
    if (intData)
       record.data = *intData;
+   {  // Edge-case: light fade template usage flags
+      //
+      // If the cell has a lighting template, and has 0 as its light fade distances, then 
+      // values are supplied from the INI file during TESObjectCELL::InitItem, which runs 
+      // after our hook. We need to recreate that.
+      //
+      if (record.data.lightFadeBegin == 0) {
+         record.data.lightFadeBegin = RE::INI::Display::fLightLODStartFade->data.f32;
+      }
+      if (record.data.lightFadeEnd == 0) {
+         record.data.lightFadeEnd = RE::INI::Display::fLightLODStartFade->data.f32 + RE::INI::Display::fLightLODRange->data.f32;
+      }
+   }
    //
    auto extra = (RE::BaseExtraList*) &(cell->extraData);
    //
@@ -98,6 +112,7 @@ void CellInteriorDataService::Reset(FormID id) {
          return;
       CellInteriorDataService::RevertCell(cell, data);
    } catch (std::out_of_range) {}
+   this->_changes.erase(id);
 };
 void CellInteriorDataService::ResetFields(FormID id, UInt32 fieldMask, bool alsoModifyCell) {
    std::lock_guard<decltype(this->_lock)> scopedLock(this->_lock);
@@ -145,6 +160,7 @@ void CellInteriorDataService::ResetTemplateUsageFlags(FormID id, UInt32 flagsMas
 void CellInteriorDataService::ResetAll() {
    std::lock_guard<decltype(this->_lock)> scopedLock(this->_lock);
    _MESSAGE("CellInteriorDataService::ResetAll()");
+   this->_changes.clear();
    if (this->_defaults.empty())
       return;
    for (auto it = this->_defaults.begin(); it != this->_defaults.end(); ++it) {

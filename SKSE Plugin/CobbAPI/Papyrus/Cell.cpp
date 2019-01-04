@@ -444,7 +444,7 @@ namespace CobbPapyrus {
             return result;
          }
          if (cell->unk2C & RE::TESObjectCELL::kCellFlag_UseSkyLighting) {
-            registry->LogError("Cannot retrieve light fade distances for a cell that uses sky lighting.", stackId);
+            registry->LogError(ce_errorGetterSkyLighting, stackId);
             return result;
          }
          auto data = CALL_MEMBER_FN(cell, GetInteriorData)();
@@ -461,6 +461,7 @@ namespace CobbPapyrus {
                   if (form && (def.data.inheritFromTemplate & RE::TESObjectCELL::kLightingTemplateUsageFlag_LightFadeDistances)) {
                      result[0] = form->data.lightFadeBegin;
                      result[1] = form->data.lightFadeEnd;
+                     return result;
                   }
                }
                result[0] = def.data.lightFadeBegin;

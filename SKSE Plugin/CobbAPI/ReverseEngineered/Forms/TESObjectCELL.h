@@ -26,7 +26,7 @@ namespace RE {
          };
 
          enum {
-            kLightingTemplateUsageFlag_Ambient = 1,
+            kLightingTemplateUsageFlag_Ambient = 1, // also directional ambient colors
             kLightingTemplateUsageFlag_Directional = 2,
             kLightingTemplateUsageFlag_FogColor = 4,
             kLightingTemplateUsageFlag_FogNearDistance = 8,
@@ -87,9 +87,9 @@ namespace RE {
             Color  fogColorNear; // 08 // 0x00BBGGRR
             float  fogPlaneNear; // 0C
             float  fogPlaneFar;  // 10
-            SInt32 directionalRotXY; // 14 // directional rotation XY?
-            SInt32 directionalRotZ; // 18 // directional rotation Z?
-            float  directionalFade  = 1.0F; // 1C // directional fade?
+            SInt32 directionalRotXY; // 14 // directional rotation XY
+            SInt32 directionalRotZ; // 18 // directional rotation Z
+            float  directionalFade  = 1.0F; // 1C // directional fade
             float  fogClipDistance; // 20
             float  fogPow = 1.0F; // 24 // getter: TESObjectCELL::Subroutine004C0430
             union {
@@ -103,12 +103,12 @@ namespace RE {
                } directionalAmbient;
                Color directionalAmbientColors[6];
             }; // 28
-            Color  specular; // 40 // unused?
-            float  unk44 = 1.0F; // 44 // unused
+            Color  specular; // 40 // unused
+            float  fresnelPower = 1.0F; // 44 // unused; purpose confirmed from CK wiki docs
             Color  fogColorFar; // 48
             float  fogMax = 1.0;  // 4C
-            float  lightFadeBegin; // 50 // light fade begin?
-            float  lightFadeEnd; // 54 // light fade end?
+            float  lightFadeBegin; // 50 // light fade begin
+            float  lightFadeEnd; // 54 // light fade end
             UInt32 inheritFromTemplate = 0x79F; // 58 // bitmask
             UInt32 unk5C = 0; // 5C
          };
@@ -183,6 +183,10 @@ namespace RE {
          DEFINE_MEMBER_FN(SetPublic,       void,  0x004C0260, bool flag); // Sets or modifies flag 0x0020 in unk2C.
          //
          DEFINE_MEMBER_FN(GetDirectionalAmbientColor, InteriorData::Color, 0x004C1930, UInt32 whichColor);
+         DEFINE_MEMBER_FN(GetDirectionalLightAngleXY, SInt32, 0x004C1D70); // honors lighting templates
+         DEFINE_MEMBER_FN(GetDirectionalLightAngleZ,  SInt32, 0x004C1DA0); // honors lighting templates
+         DEFINE_MEMBER_FN(GetLightFadeBeginDistance,  float,  0x004C1DD0); // honors lighting templates
+         DEFINE_MEMBER_FN(GetLightFadeEndDistance,    float,  0x004C1E00); // honors lighting templates
          DEFINE_MEMBER_FN(SetFogColorNear, void,  0x004C03B0, UInt32 color); // Sets the fog color (as 0x00BBGGRR) for interior cells. (Exterior cells don't use that value.)
          DEFINE_MEMBER_FN(SetFogColorFar,  void,  0x004C03D0, UInt32 color); // Sets the fog color (as 0x00BBGGRR) for interior cells. (Exterior cells don't use that value.)
          DEFINE_MEMBER_FN(SetFogPlaneNear, void,  0x004C03F0, float); // Sets the near fog plane for interior cells. (Exterior cells don't use that value.)

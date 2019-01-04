@@ -48,7 +48,7 @@ class TESActorBaseData : public BaseFormComponent { // sizeof == 0x38
       UInt16				unk1A;	// 1A - init'd to 0
       UInt32				unk1C;	// 1C
       BGSVoiceType* voiceType;	// 20
-      UInt32				unk24;	// 24
+      TESForm*				unk24;	// 24 // can be a LeveledCharacter
       UInt32				unk28;	// 28 - init'd to 0
 
       struct FactionInfo {

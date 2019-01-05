@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<class name="CobbAPIMath">
+   <blurb>
+      Basic mathematical functions.
+   </blurb>
+   <templated-content>
+      <template name="color-formats-table">
+         <table class="narrow">
+            <thead>
+               <tr>
+                  <th>Value</th>
+                  <th>Format</th>
+                  <th>Details</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td>0</td>
+                  <td>0x<i>AABBGGRR</i></td>
+                  <td>Used internally by the game</td>
+               </tr>
+               <tr>
+                  <td>1</td>
+                  <td>0x00<i>RRGGBB</i></td>
+                  <td>Used by HTML, and consequently, SkyUI</td>
+               </tr>
+            </tbody>
+         </table>
+      </template>
+   </templated-content>
+   <methods>
+      <method name="Atan2" returns="Float">
+         <args>
+            <arg type="Float" name="y" />
+            <arg type="Float" name="x" />
+         </args>
+         <blurb>
+            Performs an atan2 operation and returns a result in degrees.
+         </blurb>
+      </method>
+      <method name="BSwap" returns="Int">
+         <args>
+            <arg type="Int" name="aiValue" />
+         </args>
+         <blurb>
+            Swaps the order of bytes in a four-byte integer.
+         </blurb>
+      </method>
+      <method name="ConvertColorFormat" returns="Int">
+         <args>
+            <arg type="Int" name="aiColor" />
+            <arg type="Int" name="aiInputFormat" />
+            <arg type="Int" name="aiOutputFormat" />
+         </args>
+         <blurb>
+            Converts a color code, represented as a four-byte integer, between formats.
+         </blurb>
+         <description>
+            <p>
+               This function takes an integer representing a color code, and converts that 
+               code between formats. The supported formats are:
+            </p>
+            <t-f f="templated:color-formats-table" type="html"></t-f>
+            <p>
+               If either the input format or the output format aren't recognized values, 
+               then this function fails with an error and returns zero.
+            </p>
+         </description>
+      </method>
+      <method name="GetByte" returns="Int">
+         <args>
+            <arg type="Int" name="aiValue" />
+            <arg type="Int" name="aiWhichByte">
+               Which byte to return. This must be 0, 1, 2, or 3, with the bytes numbered 
+               in order from least-significant to most significant (i.e. 0x33221100).
+            </arg>
+         </args>
+         <blurb>
+            Retrieves and returns one byte from within a four-byte integer.
+         </blurb>
+         <description>
+            <p>
+               Modifies a single byte within a value, and returns the result. If the 
+               <var>aiWhichByte</var> argument does not have a valid value, then this 
+               function fails with an error and returns zero.
+            </p>
+         </description>
+      </method>
+      <method name="JoinColor" returns="Int">
+         <args>
+            <arg type="Int" name="aiFormat">
+               The color format:
+               <t-f f="templated:color-formats-table" type="html"></t-f>
+            </arg>
+            <arg type="Int[]" name="aiColor">
+               An array of the following color components: red, green, blue, and optionally 
+               alpha.
+            </arg>
+         </args>
+         <blurb>
+            Takes an array of color components, and joins them into a color code in the 
+            desired format.
+         </blurb>
+      </method>
+      <method name="JoinColorComponents" returns="Int">
+         <args>
+            <arg type="Int" name="aiFormat">
+               The color format:
+               <t-f f="templated:color-formats-table" type="html"></t-f>
+            </arg>
+            <arg type="Int" name="aiRed" />
+            <arg type="Int" name="aiGreen" />
+            <arg type="Int" name="aiBlue" />
+            <arg type="Int" name="aiAlpha" default="255" />
+         </args>
+         <blurb>
+            Takes color components and joins them into a color code in the desired format.
+         </blurb>
+      </method>
+      <method name="SetByte" returns="Int">
+         <args>
+            <arg type="Int" name="aiValue" />
+            <arg type="Int" name="aiWhichByte">
+               Which byte to modify. This must be 0, 1, 2, or 3, with the bytes numbered 
+               in order from least-significant to most significant (i.e. 0x33221100).
+            </arg>
+            <arg type="Int" name="aiSetTo" />
+         </args>
+         <blurb>
+            Modifies a single byte within a value, and returns the result.
+         </blurb>
+         <description>
+            <p>
+               Modifies a single byte within a value, and returns the result. If the 
+               <var>aiWhichByte</var> argument does not have a valid value, then this 
+               function fails with an error and returns the original <var>aiValue</var>.
+            </p>
+         </description>
+      </method>
+      <method name="SplitColor" returns="Int[]">
+         <args>
+            <arg type="Int" name="aiFormat">
+               The color format:
+               <t-f f="templated:color-formats-table" type="html"></t-f>
+            </arg>
+            <arg type="Int" name="aiColor" />
+         </args>
+         <blurb>
+            Takes a color code, and splits it into an array containing the red, green, 
+            blue, and alpha components, in that order.
+         </blurb>
+         <description>
+            This function takes a color code, and splits it into an array containing the 
+            red, green, blue, and alpha components, in that order. If the color format 
+            doesn't use alpha (e.g. the HTML format), then the alpha value is set to 0xFF.
+         </description>
+      </method>
+   </methods>
+</class>

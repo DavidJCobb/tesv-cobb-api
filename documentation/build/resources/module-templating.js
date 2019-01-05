@@ -151,6 +151,13 @@ class TemplateWalker {
    constructor(node, obj, _outerWalker) {
       this._root = node;
       this._nodes = Array.from(node.querySelectorAll("t-attr, t-f, t-if, t-set, [t-if]"));
+      //
+      // We can't optimize (_nodes) by splitting the call into getElementsByTagName, 
+      // because we need the results in document order, and querying them separately 
+      // won't accomplish that.
+      //
+      // Perf tests: https://jsperf.com/queryselectorall-versus-concatenated-getters
+      //
       this._current = this._nodes.shift();
       this.scope  = new _Scope();
       this.scope.push("", obj);
@@ -216,7 +223,7 @@ export function execute(node, obj, _outerWalker) {
                } break;
                case "html": {
                   let root = dom.parseAndSanitize(data, null, ["t-f"]);
-                  if (root.querySelector("t-f")) {
+                  if (root.getElementsByTagName("t-f").length) {
                      execute(root, obj, walker);
                   }
                   if (data && wrap && dom.hasBareText(root)) { // text content as a bare text node

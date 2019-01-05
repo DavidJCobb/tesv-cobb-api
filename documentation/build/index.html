@@ -5,7 +5,7 @@
       <link rel="stylesheet" href="resources/main.css" />
    </head>
    <body>
-      <nav id="sidebar" t-context="index">
+      <nav id="sidebar">
          <h1>Navigation</h1>
          <a href="index.html">Index</a>
          <h2>Classes</h2>
@@ -207,7 +207,7 @@
          import {Deferred}      from "./resources/module-pending-promise.js";
          
          index.promise.then(function (/*XMLDocument*/ doc) {
-            templating.execute(document.querySelector("#sidebar"), index.data, "");
+            templating.execute(document.getElementById("sidebar"), index.data, "");
          });
          
          /*[stem, path]*/ function bakePath(/*URLSearchParams*/ query) {
@@ -233,6 +233,13 @@
             let query = (new URL(window.location.href)).searchParams;
             if (!query.has("bake"))
                return;
+            dom.stripCommentsAndWhitespace(document.body);
+            document.getElementById("sidebar").querySelectorAll("[data-class-name],[data-class-file]").forEach(
+               function(n) {
+                  n.removeAttribute("data-class-name");
+                  n.removeAttribute("data-class-file");
+               }
+            );
             Array.from(document.getElementsByTagName("script")).forEach(node => node.parentNode.removeChild(node));
             Array.from(document.getElementsByTagName("template")).forEach(node => node.parentNode.removeChild(node));
             //
@@ -240,6 +247,8 @@
             let path = "";
             [stem, path] = bakePath(query);
             document.querySelectorAll("a[href]").forEach(function(node) {
+               if (node.getAttribute("href").indexOf("http") == 0)
+                  return;
                let query = (new URL(node.href)).searchParams;
                let thisStem = "";
                let thisPath = "";
@@ -261,7 +270,7 @@
             console.log("Parse failed.\n", parsererror);
             let templated = document.getElementById("template-parse-error");
             let frag = templated.content.cloneNode(true);
-            let main = document.querySelector("main");
+            let main = document.getElementsByTagName("main")[0];
             dom.clear(main);
             main.appendChild(frag);
          }
@@ -271,7 +280,7 @@
          let className = query.get("class")
          if (className) {
             index.getClassOrMethod(className, query.get("method")).then(function(p_obj) {
-               let main = document.querySelector("main");
+               let main = document.getElementsByTagName("main")[0];
                dom.clear(main);
                //
                let p_class  = (p_obj instanceof PapyrusMethod) ? p_obj.classObj : p_obj;
@@ -298,7 +307,7 @@
                         let method = sidebar_item_class.querySelector(`li[data-method-name="${p_method.name}"]`);
                         if (method) {
                            method.classList.add("selected");
-                           let link = method.querySelector("a");
+                           let link = method.getElementsByTagName("a")[0];
                            if (link) {
                               let span = document.createElement("span");
                               span.textContent = link.textContent;
@@ -315,7 +324,7 @@
                   main.appendChild(frag);
                   {  // Special rendering for "selected" class in sidebar
                      if (sidebar_item_class) {
-                        let link = sidebar_item_class.querySelector("a");
+                        let link = sidebar_item_class.getElementsByTagName("a")[0];
                         if (link) {
                            let span = document.createElement("span");
                            span.textContent = link.textContent;
@@ -335,7 +344,7 @@
                      let html = doc.documentElement.innerHTML;
                      let data = { name: conceptName, content: html };
                      //
-                     let main = document.querySelector("main");
+                     let main = document.getElementsByTagName("main")[0];
                      dom.clear(main);
                      let frag = document.getElementById("template-concept").content.cloneNode(true);
                      templating.execute(frag, data, "");
@@ -346,7 +355,7 @@
                document.title = conceptName + " - CobbAPI Documentation";
             } else {
                index.class_promise.then(function(docs) {
-                  let main = document.querySelector("main");
+                  let main = document.getElementsByTagName("main")[0];
                   dom.clear(main);
                   let frag = document.getElementById("template-index").content.cloneNode(true);
                   templating.execute(frag, index.data, "");
@@ -359,7 +368,7 @@
          }
       </script>
       <script type="application/javascript">
-         document.querySelectorAll("script").forEach(s => s.parentNode.removeChild(s));
+         Array.from(document.getElementsByTagName("script")).forEach(s => s.parentNode.removeChild(s));
       </script>
    </body>
 </html>

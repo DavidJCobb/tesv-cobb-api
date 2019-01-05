@@ -11,10 +11,10 @@
       </p>
       <h2>An overview of how computers store text</h2>
       <p>
-         In order to avoid ambiguity, I would prefer to document things using the most precise 
-         terminology possible, but much of this terminology isn't known to people who don't 
-         explicitly do "serious" text programming. I had to do some learning myself in order to 
-         offer as much functionality as I wanted to. As such, here's a "brief" primer on how 
+         In order to avoid ambiguity, I'd like to document things using the most precise 
+         terminology possible, but this terminology may not be known to people who don't do 
+         a lot of text programming. I had to do some learning myself in order to offer as 
+         much functionality as I wanted to. As such, here's a "brief" primer on how 
          computers store text.
       </p>
       <p>
@@ -28,7 +28,7 @@
       </p>
       <p>
          As such, non-English text could only be represented in alternate encodings. Because 
-         virtually all programming is done in English, these encodings are typically supersets 
+         virtually all programming languages use English, these encodings are typically supersets 
          of ASCII. For languages that have large numbers of glyphs, such as Chinese, Japanese, 
          Korean, and Vietnamese, these encodings often have to use multiple bytes for some or 
          all glyphs.
@@ -41,11 +41,11 @@
          (given that markup and program code, invisible to a user, will be in ASCII).
       </p>
       <p>
-         Unicode has nuances that are largely invisible to native English-speaking programmers, 
+         Unicode has nuances that are largely invisible to many English-speaking programmers, 
          who won't encounter or have to work with foreign-language text unless they put 
-         themselves in situations where they may encounter it. Native English-speaking 
-         programmers are used to the assumptions that one glyph will be represented one way 
-         using one byte, and all of those assumptions fall apart when using Unicode and UTF-8.
+         themselves in situations where they may encounter it. Many programmers are used 
+         to the assumptions that one glyph will be represented one way using one byte, and all 
+         of those assumptions fall apart when using Unicode and UTF-8.
       </p>
       <p>
          A single glyph can be represented using multiple code point sequences: Unicode offers 
@@ -149,11 +149,8 @@
       </p>
       <p>
          If you specify two different strings that are identical save for case, the game will 
-         use the first variant to load. The catch is that this applies across most or all of the 
-         game engine, not just within Papyrus. In an English game, it is impossible to set a 
-         Papyrus string variable to "dog" because there is already an in-game Race form named 
-         "Dog", and so "Dog" was the first variant of the string to load. Similarly, trying to 
-         set a string to "oBjEcTreferenCE" will always yield "ObjectReference" instead.
+         use the first variant to load. Trying to set a string to "oBjEcTreferenCE" will always 
+         yield "ObjectReference" instead.
       </p>
    </description>
    <methods>

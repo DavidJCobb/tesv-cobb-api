@@ -99,6 +99,34 @@ export /*void*/ function replaceWithChildrenOf(/*Node*/ target, /*Node*/ source)
       last = next;
    }
 }
+export /*void*/ function stripCommentsAndWhitespace(/*Node*/ root) {
+   root.normalize();
+   //
+   let filter = {
+      acceptNode(n) {
+         if (n instanceof Element) {
+            if (n.nodeName.toLowerCase() == "pre")
+               return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_SKIP;
+         }
+         if (n instanceof Comment)
+            return NodeFilter.FILTER_ACCEPT;
+         if ((/\S/).test(n.data)) {
+            n.data = n.data.replace(/\s+/g, " ");
+            return NodeFilter.FILTER_REJECT;
+         }
+         return NodeFilter.FILTER_ACCEPT;
+      }
+   };
+   let texts = [];
+   let walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT | NodeFilter.SHOW_COMMENT, filter, false);
+   let n;
+   let a = [];
+   while (n = walker.nextNode())
+      a.push(n);
+   for(n of a)
+      n.parentNode.removeChild(n);
+}
 export /*void*/ function unwrap(/*Node*/ target) {
    target.replaceWith(...target.childNodes);
 }

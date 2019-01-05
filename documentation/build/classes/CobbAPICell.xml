@@ -34,6 +34,10 @@
          values manually, you will be baking those values into the save; if a mod changes that 
          cell's values, the values you set will take precedence. The "reset" functions avoid this.
       </p>
+      <p>
+         Cell color values are represented as integers with the format 0xAABBGGRR. The alpha 
+         component is generally unused.
+      </p>
       <h2>Lighting template usage flag list</h2>
       <p>
          The lighting template usage flags that cells can have are as follows:
@@ -48,7 +52,7 @@
          <tbody>
             <tr>
                <td>1</td>
-               <td>Ambient color</td>
+               <td>Ambient color (or directional ambient colors)</td>
             </tr>
             <tr>
                <td>2</td>
@@ -94,36 +98,78 @@
       </table>
    </description>
    <templated-content>
-      <template name="aiSource-description">
-         This parameter determines where we retrieve each property from. If the 
-         parameter is zero, a method will always return a cell's current local 
-         data; otherwise, the parameter serves as a bitmask, indicating which 
-         data to check for first (in order of highest to lowest bits). The default 
-         value for this argument, 2, will make these methods return whatever value 
-         the cell is actually using.
+      <template name="changes-mask-table">
          <table class="narrow">
             <thead>
                <tr>
                   <th>Flag</th>
+                  <th>Property</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr> <td>0x00000001</td> <td>Ambient color</td> </tr>
+               <tr> <td>0x00000002</td> <td>Directional color</td> </tr>
+               <tr> <td>0x00000004</td> <td>Fog color, near</td> </tr>
+               <tr> <td>0x00000008</td> <td>Fog color, far</td> </tr>
+               <tr> <td>0x00000010</td> <td>Fog distance, near</td> </tr>
+               <tr> <td>0x00000020</td> <td>Fog distance, far</td> </tr>
+               <tr> <td>0x00000040</td> <td>Fog distance, clip</td> </tr>
+               <tr> <td>0x00000080</td> <td>Fog power</td> </tr>
+               <tr> <td>0x00000100</td> <td>Fog max</td> </tr>
+               <tr> <td>0x00000200</td> <td>Directional rotation, XY</td> </tr>
+               <tr> <td>0x00000400</td> <td>Directional rotation, Z</td> </tr>
+               <tr> <td>0x00000800</td> <td>Directional fade</td> </tr>
+               <tr> <td>0x00001000</td> <td>Directional ambient color, X+</td> </tr>
+               <tr> <td>0x00002000</td> <td>Directional ambient color, X-</td> </tr>
+               <tr> <td>0x00004000</td> <td>Directional ambient color, Y+</td> </tr>
+               <tr> <td>0x00008000</td> <td>Directional ambient color, Y-</td> </tr>
+               <tr> <td>0x00010000</td> <td>Directional ambient color, Z+</td> </tr>
+               <tr> <td>0x00020000</td> <td>Directional ambient color, Z-</td> </tr>
+               <tr> <td>0x00040000</td> <td>Light fade, begin</td> </tr>
+               <tr> <td>0x00080000</td> <td>Light fade, end</td> </tr>
+               <tr> <td>0x10000000</td> <td>Lighting template</td> </tr>
+               <tr> <td>0x20000000</td> <td>AcousticSpace</td> </tr>
+               <tr> <td>0x40000000</td> <td>ImageSpace</td> </tr>
+               <tr> <td>0x80000000</td> <td>MusicType</td> </tr>
+            </tbody>
+         </table>
+      </template>
+      <template name="aiSource-description">
+         This parameter determines where we retrieve each property from. The default 
+         value for this argument, 1, will make these methods return whatever value 
+         the cell is actually using.
+         <table class="narrow">
+            <thead>
+               <tr>
+                  <th>Value</th>
                   <th>Meaning</th>
                </tr>
             </thead>
             <tbody>
                <tr>
                   <td>0</td>
-                  <td>Get cell's current data</td>
+                  <td>Get the current value from the cell</td>
                </tr>
                <tr>
                   <td>1</td>
-                  <td>Prefer cell's default data (if changes were made)</td>
+                  <td>
+                     Get the current effective data; that is: get the value from the 
+                     lighting template if the cell's relevant template usage flag is 
+                     set, or the cell's value otherwise.
+                  </td>
                </tr>
                <tr>
                   <td>2</td>
-                  <td>Prefer lighting template (if used for this property)</td>
+                  <td>Get the default value from the cell</td>
                </tr>
                <tr>
-                  <td>4</td>
-                  <td>Prefer lighting template (always, unless no template is used)</td>
+                  <td>3</td>
+                  <td>
+                     Get the default effective data; that is: get the value that the 
+                     cell would pull from its default lighting template, if the 
+                     relevant template usage flag is set by default, or the cell's 
+                     default value otherwise.
+                  </td>
                </tr>
             </tbody>
          </table>
@@ -155,18 +201,6 @@
          <related type="method" name="ResetTemplateUsageFlags" />
          <related type="method" name="SetLightingTemplateUsageFlags" />
          <related type="method" name="StopPersistingChangedTemplateUsageFlags" />
-      </method>
-      <method name="FromColorCode" returns="Int[]">
-         <args>
-            <arg type="Int" name="aiCode">
-               A single integer representing an RGBA color as 0xAABBGGRR.
-            </arg>
-         </args>
-         <blurb>
-            Converts a color encoded as a single integer into an array of integers, one each for 
-            the red, green, and blue components. Alpha is not retained.
-         </blurb>
-         <related type="method" name="ToColorCode" />
       </method>
       <method name="GetAcousticSpace" returns="Form">
          <args>
@@ -204,6 +238,32 @@
             </call>
          </example-data>
       </method>
+      <method name="GetChanges" returns="Int[]">
+         <args>
+            <arg type="Cell" name="akSubject" />
+         </args>
+         <blurb>
+            Returns bitmasks representing the changes that have been made to a cell using 
+            CobbAPI. This will detect changes that are set to persist, but not changes that 
+            aren't.
+         </blurb>
+         <description>
+            <p>
+               This function can be used to check for persistent changes made to an interior 
+               cell's lighting using CobbAPI. It returns an array of two bitmasks. The 
+               first is a mask of all changed properties on the cell. The second is a mask 
+               of all changed lighting template usage flags on the cell.
+            </p>
+            <p>
+               The properties mask uses these bits:
+            </p>
+            <t-f f="templated:changes-mask-table" type="html"></t-f>
+         </description>
+         <related type="method" name="IsFieldChanged" />
+         <related type="method" name="IsLightingTemplateUsageFlagChanged" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
       <method name="GetDirectionalAmbientColors" returns="Int[]">
          <args>
             <arg type="Cell" name="akSubject" />
@@ -215,11 +275,10 @@
             Returns a cell's directional ambient colors.
          </blurb>
          <description>
-            <p>
-               This function returns an interior cell's directional ambient colors as an array of 
-               six integers, representing the colors in this order: +X, -X, +Y, -Y, +Z, and -Z. 
-               Fails if called on an exterior cell.
-            </p>
+            If called on an interior cell that does not use sky lighting, this function returns an 
+            array of six integers representing the cell's directional ambient colors in this order: 
+            +X, -X, +Y, -Y, +Z, -Z. If called on an invalid cell, this function fails, logging a 
+            Papyrus error and returning a zero-length array.
          </description>
          <example-data>
             <call return-var="iDirAmbients">
@@ -239,6 +298,11 @@
             Returns an interior cell's directional light color as a single integer. Fails if 
             called on an exterior cell.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns the 
+            cell's directional light color. If called on an invalid cell, this function fails, 
+            logging a Papyrus error and returning zero.
+         </description>
          <example-data>
             <call return-var="iDirectional">
                <arg value="kCell" />
@@ -257,6 +321,11 @@
             Returns an interior cell's directional light fade. Fails if called on an exterior 
             cell.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns the 
+            cell's directional light fade. If called on an invalid cell, this function fails, logging 
+            a Papyrus error and returning zero.
+         </description>
          <example-data>
             <call return-var="fDirFade">
                <arg value="kCell" />
@@ -276,6 +345,13 @@
             rotation in degrees, and the Z rotation in degrees. Fails if called on an exterior 
             cell.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns an 
+            array of two integers representing the cell's directional lighting angle: the first 
+            integer is the XY rotation in degrees, and the second is the Z rotation in degrees. If 
+            called on an invalid cell, this function fails, logging a Papyrus error and returning 
+            a zero-length array.
+         </description>
          <example-data>
             <call return-var="iDirRot">
                <arg value="kCell" />
@@ -303,7 +379,7 @@
                If this function is given an exterior cell, it returns that cell's grid 
                coordinates as an array of two integers, one for the X-coordinate and one for 
                the Y-coordinate. If this function is given an interior cell, it logs a Papyrus 
-               error and returns an empty array.
+               error and returns a zero-length array.
             </p>
          </description>
       </method>
@@ -319,27 +395,9 @@
                If this function is given an exterior cell, it returns that cell's world 
                coordinates as an array of two floats, one for the X-coordinate and one for 
                the Y-coordinate. If this function is given an interior cell, it logs a Papyrus 
-               error and returns an empty array.
+               error and returns a zero-length array.
             </p>
          </description>
-      </method>
-      <method name="GetFogClipDistance" returns="Float">
-         <args>
-            <arg type="Cell" name="akSubject" />
-            <arg type="Int" name="aiSource" default="2">
-               <t-f f="templated:aiSource-description" type="html"></t-f>
-            </arg>
-         </args>
-         <blurb>
-            Returns an interior cell's fog clip distance. Fails if called on an exterior cell, or 
-            on an interior cell that uses sky lighting.
-         </blurb>
-         <example-data>
-            <call return-var="fClip">
-               <arg value="kCell" />
-               <arg exclude="true" />
-            </call>
-         </example-data>
       </method>
       <method name="GetFogColors" returns="Int[]">
          <args>
@@ -352,6 +410,12 @@
             Returns an array of an interior cell's near and far fog colors. Fails if called on an 
             exterior cell, or on an interior cell that uses sky lighting.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns an 
+            array of two integers representing the cell's near and far fog colors. If called on an 
+            invalid cell, this function fails, logging a Papyrus error and returning a zero-length 
+            array.
+         </description>
          <example-data>
             <call return-var="iFogColors">
                <arg value="kCell" />
@@ -367,9 +431,15 @@
             </arg>
          </args>
          <blurb>
-            Returns an array of an interior cell's near and far fog planes. Fails if called on an 
-            exterior cell, or on an interior cell that uses sky lighting.
+            Returns an array of an interior cell's fog near, fog far, and fog clip distances. Fails 
+            if called on an exterior cell, or on an interior cell that uses sky lighting.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns an 
+            array of three floats representing the cell's fog near, fog far, and fog clip distances. 
+            If called on an invalid cell, this function fails, logging a Papyrus error and returning 
+            a zero-length array.
+         </description>
          <example-data>
             <call return-var="fFogDistances">
                <arg value="kCell" />
@@ -388,6 +458,11 @@
             Returns an interior cell's fog max. Fails if called on an exterior cell, or on an 
             interior cell that uses sky lighting.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns the  
+            fog max value. If called on an invalid cell, this function fails, logging a Papyrus error 
+            and returning zero.
+         </description>
          <example-data>
             <call return-var="fMax">
                <arg value="kCell" />
@@ -406,6 +481,11 @@
             Returns an interior cell's fog power. Fails if called on an exterior cell, or on an 
             interior cell that uses sky lighting.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns the  
+            fog power value. If called on an invalid cell, this function fails, logging a Papyrus error 
+            and returning zero.
+         </description>
          <example-data>
             <call return-var="fPower">
                <arg value="kCell" />
@@ -442,6 +522,12 @@
             Returns an array of an interior cell's "begin" and "end" light fade distances. Fails 
             if called on an exterior cell.
          </blurb>
+         <description>
+            If called on an interior cell that does not use sky lighting, this function returns an 
+            array of two floats representing the cell's "begin" and "end" light fade distances. 
+            If called on an invalid cell, this function fails, logging a Papyrus error and returning 
+            a zero-length array.
+         </description>
          <example-data>
             <call return-var="fLightDistances">
                <arg value="kCell" />
@@ -579,6 +665,44 @@
             Returns a cell's parent Worldspace. For interior cells, this is always None.
          </blurb>
       </method>
+      <method name="IsFieldChanged" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiMask">
+               A bitmask of properties to check. If multiple properties are specified, then 
+               they must all be changed in order for this function to return True.
+               <t-f f="templated:changes-mask-table" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Checks whether one or more cell lighting properties are flagged as "changed" 
+            within CobbAPI. This will detect changes that are set to persist, but not 
+            changes that aren't.
+         </blurb>
+         <related type="method" name="GetChanges" />
+         <related type="method" name="IsLightingTemplateUsageFlagChanged" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
+      <method name="IsLightingTemplateUsageFlagChanged" returns="Bool">
+         <args>
+            <arg type="Cell" name="akSubject" />
+            <arg type="Int" name="aiMask">
+               A bitmask of template usage flags to check. If multiple flags are specified, 
+               then they must all be changed in order for this function to return True.
+               <t-f f="templated:changes-mask-table" type="html"></t-f>
+            </arg>
+         </args>
+         <blurb>
+            Checks whether one or more of a cell's lighting template usage flags are 
+            flagged as "changed" within CobbAPI. This will detect changes that are set to 
+            persist, but not changes that aren't.
+         </blurb>
+         <related type="method" name="GetChanges" />
+         <related type="method" name="IsFieldChanged" />
+         <related type="method" name="ResetFields" />
+         <related type="method" name="StopPersistingChangesTo" />
+      </method>
       <method name="IsPublic" returns="Bool">
          <args>
             <arg type="Cell" name="akSubject" />
@@ -592,40 +716,7 @@
             <arg type="Cell" name="akSubject" />
             <arg type="Int" name="aiProperties">
                A bitmask of properties to revert changes to.
-               <table class="narrow">
-                  <thead>
-                     <tr>
-                        <th>Flag</th>
-                        <th>Property</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr> <td>0x00000001</td> <td>Ambient color</td> </tr>
-                     <tr> <td>0x00000002</td> <td>Directional color</td> </tr>
-                     <tr> <td>0x00000004</td> <td>Fog color, near</td> </tr>
-                     <tr> <td>0x00000008</td> <td>Fog color, far</td> </tr>
-                     <tr> <td>0x00000010</td> <td>Fog distance, near</td> </tr>
-                     <tr> <td>0x00000020</td> <td>Fog distance, far</td> </tr>
-                     <tr> <td>0x00000040</td> <td>Fog distance, clip</td> </tr>
-                     <tr> <td>0x00000080</td> <td>Fog power</td> </tr>
-                     <tr> <td>0x00000100</td> <td>Fog max</td> </tr>
-                     <tr> <td>0x00000200</td> <td>Directional rotation, XY</td> </tr>
-                     <tr> <td>0x00000400</td> <td>Directional rotation, Z</td> </tr>
-                     <tr> <td>0x00000800</td> <td>Directional fade</td> </tr>
-                     <tr> <td>0x00001000</td> <td>Directional ambient color, X+</td> </tr>
-                     <tr> <td>0x00002000</td> <td>Directional ambient color, X-</td> </tr>
-                     <tr> <td>0x00004000</td> <td>Directional ambient color, Y+</td> </tr>
-                     <tr> <td>0x00008000</td> <td>Directional ambient color, Y-</td> </tr>
-                     <tr> <td>0x00010000</td> <td>Directional ambient color, Z+</td> </tr>
-                     <tr> <td>0x00020000</td> <td>Directional ambient color, Z-</td> </tr>
-                     <tr> <td>0x00040000</td> <td>Light fade, begin</td> </tr>
-                     <tr> <td>0x00080000</td> <td>Light fade, end</td> </tr>
-                     <tr> <td>0x10000000</td> <td>Lighting template</td> </tr>
-                     <tr> <td>0x20000000</td> <td>AcousticSpace</td> </tr>
-                     <tr> <td>0x40000000</td> <td>ImageSpace</td> </tr>
-                     <tr> <td>0x80000000</td> <td>MusicType</td> </tr>
-                  </tbody>
-               </table>
+               <t-f f="templated:changes-mask-table" type="html"></t-f>
             </arg>
          </args>
          <blurb>
@@ -745,6 +836,13 @@
          <blurb>
             Modifies a cell's ambient lighting color.
          </blurb>
+         <description>
+            <p>
+               This function modifies an interior cell's ambient lighting color. The ambient color 
+               isn't actually used at run-time; it is used in the Creation Kit to auto-generate the 
+               six directional ambient colors.
+            </p>
+         </description>
          <example-data>
             <call>
                <arg value="kCell" />
@@ -1022,7 +1120,6 @@
                <arg exclude="true" />
             </call>
          </example-data>
-         <related type="method" name="GetFogClipDistance" />
          <related type="method" name="GetFogColors" />
          <related type="method" name="GetFogDistances" />
          <related type="method" name="GetFogMax" />
@@ -1124,7 +1221,6 @@
                <arg exclude="true" />
             </call>
          </example-data>
-         <related type="method" name="GetFogClipDistance" />
          <related type="method" name="ResetFields" />
          <related type="method" name="SetAcousticSpace" />
          <related type="method" name="SetAmbientColor" />
@@ -1272,7 +1368,6 @@
                <arg exclude="true" />
             </call>
          </example-data>
-         <related type="method" name="GetFogClipDistance" />
          <related type="method" name="GetFogDistances" />
          <related type="method" name="ResetFields" />
          <related type="method" name="SetAcousticSpace" />
@@ -1692,40 +1787,7 @@
             <arg type="Cell" name="akSubject" />
             <arg type="Int" name="aiProperties">
                A bitmask of properties to stop persisting changes to.
-               <table class="narrow">
-                  <thead>
-                     <tr>
-                        <th>Flag</th>
-                        <th>Property</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <tr> <td>0x00000001</td> <td>Ambient color</td> </tr>
-                     <tr> <td>0x00000002</td> <td>Directional color</td> </tr>
-                     <tr> <td>0x00000004</td> <td>Fog color, near</td> </tr>
-                     <tr> <td>0x00000008</td> <td>Fog color, far</td> </tr>
-                     <tr> <td>0x00000010</td> <td>Fog distance, near</td> </tr>
-                     <tr> <td>0x00000020</td> <td>Fog distance, far</td> </tr>
-                     <tr> <td>0x00000040</td> <td>Fog distance, clip</td> </tr>
-                     <tr> <td>0x00000080</td> <td>Fog power</td> </tr>
-                     <tr> <td>0x00000100</td> <td>Fog max</td> </tr>
-                     <tr> <td>0x00000200</td> <td>Directional rotation, XY</td> </tr>
-                     <tr> <td>0x00000400</td> <td>Directional rotation, Z</td> </tr>
-                     <tr> <td>0x00000800</td> <td>Directional fade</td> </tr>
-                     <tr> <td>0x00001000</td> <td>Directional ambient color, X+</td> </tr>
-                     <tr> <td>0x00002000</td> <td>Directional ambient color, X-</td> </tr>
-                     <tr> <td>0x00004000</td> <td>Directional ambient color, Y+</td> </tr>
-                     <tr> <td>0x00008000</td> <td>Directional ambient color, Y-</td> </tr>
-                     <tr> <td>0x00010000</td> <td>Directional ambient color, Z+</td> </tr>
-                     <tr> <td>0x00020000</td> <td>Directional ambient color, Z-</td> </tr>
-                     <tr> <td>0x00040000</td> <td>Light fade, begin</td> </tr>
-                     <tr> <td>0x00080000</td> <td>Light fade, end</td> </tr>
-                     <tr> <td>0x10000000</td> <td>Lighting template</td> </tr>
-                     <tr> <td>0x20000000</td> <td>AcousticSpace</td> </tr>
-                     <tr> <td>0x40000000</td> <td>ImageSpace</td> </tr>
-                     <tr> <td>0x80000000</td> <td>MusicType</td> </tr>
-                  </tbody>
-               </table>
+               <t-f f="templated:changes-mask-table" type="html"></t-f>
             </arg>
          </args>
          <blurb>
@@ -1763,18 +1825,6 @@
          <related type="method" name="SetLightFadeDistances" />
          <related type="method" name="SetLightingTemplate" />
          <related type="method" name="SetMusicType" />
-      </method>
-      <method name="ToColorCode" returns="Int">
-         <args>
-            <arg type="Int" name="aiRed" />
-            <arg type="Int" name="aiGreen" />
-            <arg type="Int" name="aiBlue" />
-         </args>
-         <blurb>
-            Takes three color components as separate values, and encodes them as a single 
-            integer of the format 0xAABBGGRR, with a zero alpha.
-         </blurb>
-         <related type="method" name="FromColorCode" />
       </method>
       <method name="UsesSkyLighting" returns="Bool">
          <args>

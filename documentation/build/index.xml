@@ -21,7 +21,6 @@
       </type>
    </abstract-types>
    <classes>
-      <class name="CobbAPI" file="CobbAPI.xml" />
       <class name="CobbAPIAcousticSpace" file="AcousticSpace.xml" />
       <class name="CobbAPIActor" file="Actor.xml" />
       <class name="CobbAPIArray" file="Array.xml" />
@@ -40,6 +39,7 @@
       <class name="CobbAPIImageSpace" file="ImageSpace.xml" />
       <class name="CobbAPILight" file="Light.xml" />
       <class name="CobbAPILightingTemplate" file="LightingTemplate.xml" />
+      <class name="CobbAPIMath" file="CobbAPIMath.xml" />
       <class name="CobbAPIMessage" file="Message.xml" />
       <class name="CobbAPIObjectReference" file="ObjectReference.xml" />
       <class name="CobbAPIRevealService" file="RevealService.xml" />

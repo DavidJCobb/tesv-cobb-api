@@ -1,6 +1,4 @@
 # tesv-cobb-api
 CobbAPI: A script-extending resource for Skyrim Classic mod authors.
 
-As of December 31th, it's more-or-less release-ready, but I need to make a demo (my MCM-based test suite will work). I'm also working on a Cobb Positioner feature that uses CobbAPI, and this has been an invaluable way to test things even further.
-
-Soon, though! Soon.
+I place no limitations on using anything from the "ReverseEngineered" folder; that folder's contents describe classes and data reverse-engineered from the 2011 release of The Elder Scrolls V: Skyrim. I can't reasonably claim overship over that content, and don't wish to prevent anyone from making use of my discoveries in any case.

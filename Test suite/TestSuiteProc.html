@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+   <head>
+      <title>CobbAPI test suite executor processor</title>
+      <style>
+         #in,
+         #out{white-space:pre-nowrap;min-width:600px;min-height:300px}
+         #in{background:#FFF0F0}
+         #out{background:#F0F8F8}
+      </style>
+   </head>
+   <body>
+      <p>quick and very, very dirty solution for converitng scripts for the test suite</p>
+
+      <textarea id="in"></textarea><br/>
+      <textarea id="out"></textarea><br/>
+      CobbAPITestSuiteExecutor<input id="namefrag" type="text" /><br/>
+      Pretty name: <input id="namedisplay" type="text" /></br>
+      <input id="sort" type="checkbox" /> <label for="sort">Sort functions</label><br/>
+      <input id="run"  type="button" value="Convert" />
+
+<script>
+document.getElementById("namedisplay").value = "";
+document.getElementById("run").onclick =
+   function() {
+      let namefrag = document.getElementById("namefrag").value;
+      let sort = document.getElementById("sort").checked;
+      document.getElementById("out").value =
+         Convert(
+            Parse(document.getElementById("in").value),
+            namefrag,
+            document.getElementById("namedisplay").value || namefrag,
+            sort
+         );
+      alert("done");
+   };
+
+let formTypes = ["Form", "Action", "Activator", "Actor", "ActorBase", "ActorValueInfo", "Ammo", "Apparatus", "Armor", "Art", "AssociationType", "Book", "Cell", "Class", "ColorForm", "CombatStyle", "ConstructibleObject", "Container", "DefaultObjectManager", "Door", "EffectShader", "Enchantment", "EncounterZone", "EquipSlot", "Explosion", "Faction", "FormList", "Furniture", "GlobalVariable", "Hazard", "HeadPart", "Idle", "ImageSpaceModifier", "ImpactDataSet", "Ingredient", "Key", "Keyword", "LeveledActor", "LeveledItem", "LeveledSpell", "Light", "Location", "LocationRefType", "MagicEffect", "Message", "MiscObject", "MusicType", "ObjectReference", "Outfit", "Package", "Perk", "Potion", "Projectile", "Quest", "Race", "Scene", "Scroll", "Shout", "SoulGem", "Sound", "SoundCategory", "SoundDescriptor", "Spell", "Static", "TextureSet", "Topic", "TopicInfo", "TreeObject", "VisualEffect", "VoiceType", "Weapon", "Weather", "WordOfPower", "WorldSpace"];
+let primitiveTypes = ["Bool", "Float", "Int", "String"];
+/*string*/ function normalizeType(/*string*/ asType) {
+   let arrayMod = "";
+   if (asType.endsWith("[]")) {
+      asType = asType.substring(0, asType.length - 2);
+      arrayMod = "[]";
+   }
+   for(let i=0;i<primitiveTypes.length;i++) {
+      if (asType.toLowerCase() == primitiveTypes[i].toLowerCase())
+         return primitiveTypes[i] + arrayMod;
+   }
+   for(let i=0;i<formTypes.length;i++) {
+      if (asType.toLowerCase() == formTypes[i].toLowerCase())
+         return formTypes[i] + arrayMod;
+   }
+   return asType + arrayMod;
+}
+
+/*bool*/ function StringIsFormType(/*string*/ asType) {
+   return formTypes.indexOf(asType) >= 0;
+}
+/*bool*/ function StringIsFormArrayType(/*string*/ asType) {
+   if (asType.endsWith("[]"))
+      return StringIsFormType(asType.substring(0, asType.length - 2));
+   return false;
+}
+/*char*/ function notationLetterForType(/*string*/ asType) {
+   if (StringIsFormType(asType))
+      return "k";
+   switch (asType) {
+      case "Alias":
+      case "LocationAlias":
+      case "ReferenceAlias":
+         return "a";
+      case "ActiveMagicEffect":
+         return "e";
+      case "Bool":   return "b";
+      case "Float":  return "f";
+      case "Int":    return "i";
+      case "String": return "s";
+   }
+   console.log(asType);
+   return null;
+};
+
+function Parse(/*string*/ script) {
+   let lines = script.split("\n");
+   let funcs = [];
+   let scriptname = "";
+   for(let i=0;i<lines.length;i++) {
+      let line = lines[i];
+      line = line.replace(/;\/.+\/;/g, ""); // in some files, we use block comments to denote pass-by-reference, e.g. Int[];/&/;, but for now this processor has no support for that
+      if (line.indexOf(";") >= 0) // if we add support for the above, we'll need to change this to a regex that detects only line comments
+         line = line.substring(0, line.indexOf(";"));
+      if (line.match(/^\s*Scriptname ([\w\d]+) /i)) {
+         scriptname = line.match(/^\s*Scriptname ([\w\d]+) /i)[1];
+         continue;
+      }
+      let signature = (" " + line).split(" Function ");
+      if (signature.length != 2)
+         continue;
+      let returnType = signature[0].trim();
+      signature = (signature[1]).split("(");
+      let functionName = signature[0].trim();
+      signature = signature[1].split(")");
+      let functionArgs  = signature[0];
+      let functionFlags = signature[1];
+      //
+      let func = {};
+      func.name = functionName;
+      func.type = normalizeType(returnType);
+      func.flags = functionFlags.trim().split(" ");
+      func.args = functionArgs.trim().split(",");
+      if (func.args.length == 1 && !func.args[0].trim())
+         func.args = [];
+      func.hasArrayArgs = 0;
+      func.argArrayCount = 0;
+      func.hasDefaultValues = false;
+      func.isWritable = true;
+      { // parse args
+         let parsed = [];
+         for(let i=0;i<func.args.length;i++) {
+            let a = func.args[i].trim().split(/\s+/);
+            let arg = {};
+            arg.type = normalizeType(a[0]);
+            arg.name = a[1];
+            if (a.length > 2) {
+               if (a[2] == "=") {
+                  arg.defaultValue = a[3];
+                  let ignore = (arg.type == "Bool" && arg.defaultValue == "False")
+                            || (arg.type == "Int"  && arg.defaultValue == "0")
+                  if (!ignore)
+                     func.hasDefaultValues = true;
+               }
+            }
+            parsed.push(arg);
+            if (arg.type.endsWith("[]")) {
+               let itemCount = +window.prompt(
+                  "Number of args for?\n"
+                + scriptname + "::" + func.name + " argument " + i + ": " + arg.type + " " + arg.name
+               );
+               if (isNaN(itemCount)) {
+                  alert("canceling");
+                  throw 1;
+               }
+               arg.arrayArgCount = itemCount;
+               arg.arrayOffset = i - func.hasArrayArgs + func.argArrayCount;
+               func.hasArrayArgs++;
+               func.argArrayCount += itemCount;
+            }
+            if (arg.type == "ActiveMagicEffect") // ActiveMagicEffect arrays don't compile, and we store args in arrays
+               func.isWritable = false;
+         }
+         func.args = parsed;
+      }
+      //
+      if (func && func.isWritable)
+         funcs.push(func);
+   }
+   let scr =
+      {
+         name: scriptname,
+         functions: funcs,
+      };
+console.log(scr);
+   return scr;
+}
+function Convert(/*scr*/ script, /*string*/ execName, /*string*/ displayName, /*bool*/ sort = false) {
+   let output = "Scriptname CobbAPITestSuiteExecutor" + execName + " extends CobbAPITestSuiteIExecutor Hidden\n";
+   output +=
+`
+;/Block/; ; Because subclassing is a little weird and I need to reproduce the functions here, apparently
+   CobbAPITestSuiteExecutorState Function GetExecutorState()
+      Return Quest.GetQuest("CobbAPITestSuiteExecutorState") as CobbAPITestSuiteExecutorState
+   EndFunction
+   Bool Function MethodIsMemberFunction()
+      Return False
+   EndFunction
+   String Function GetMethodReturnType()
+      Return ""
+   EndFunction
+   Int Function GetMethodParameterCount()
+      Return 0
+   EndFunction
+   String[] Function GetMethodParameterNames()
+      Return new String[1]
+   EndFunction
+   String[] Function GetMethodParameterTypes()
+      Return new String[1]
+   EndFunction
+   Function SetMethodDefaultParameters()
+   EndFunction
+   Function CallMethod()
+   EndFunction
+;/EndBlock/;
+
+String Function GetClassName()
+   Return "${displayName}"
+EndFunction
+String[] Function GetClassMethods()
+   String[] sResult = new String[`;
+   output += script.functions.length + "]";
+   if (sort)
+      script.functions = script.functions.sort(
+         function(a, b) {
+            let f = [a.name, b.name];
+            f = f.sort();
+            if (f[0] == b.name)
+               return 1;
+            return -1;
+         }
+      );
+   for(let i=0;i<script.functions.length;i++) {
+      output += "\n   sResult[" + i + "] = \"";
+      output += script.functions[i].name + '"';
+   }
+   output += "\n   Return sResult\n"
+           + "EndFunction\n\n";
+   for(let i=0;i<script.functions.length;i++) {
+      let f = script.functions[i];
+      output += "State Method_" + f.name + "\n";
+      if (f.type)
+         output += "   String Function GetMethodReturnType()\n"
+                 + "      Return \"" + f.type + '\"\n'
+                 + "   EndFunction\n";
+      let aCount = 0;
+      let aWriteCount = 0;
+      if (aCount = f.args.length) {
+         aWriteCount = aCount - f.hasArrayArgs + f.argArrayCount;
+         output += "   Int Function GetMethodParameterCount()\n"
+                 + "      Return " + aWriteCount + "\n"
+                 + "   EndFunction\n"
+                 + "   String[] Function GetMethodParameterNames()\n"
+                 + "      String[] sNames = new String[" + aWriteCount + "]\n";
+         for(let j=0,k=0;j<aCount;j++) {
+            let arg = f.args[j];
+            if (arg.type.endsWith("[]")) {
+               for(let l = 0; l < arg.arrayArgCount; l++) {
+                  output += `      sNames[${k}] = "${f.args[j].name}[${l}]"` + "\n";
+                  k++;
+               }
+            } else {
+               output += "      sNames[" + k + "] = \"" + f.args[j].name + "\"\n";
+               k++;
+            }
+         }
+         output += "      Return sNames\n"
+                 + "   EndFunction\n"
+                 + "   String[] Function GetMethodParameterTypes()\n"
+                 + "      String[] sTypes = new String[" + aWriteCount + "]\n";
+         /*for(let j=0;j<aCount;j++)
+            output += "      sNames[" + j + "] = \"" + f.args[j].type + "\"\n";*/
+         for(let j=0,k=0;j<aCount;j++) {
+            let arg = f.args[j];
+            if (arg.type.endsWith("[]")) {
+               let writeType = f.args[j].type.replace(/\[\]$/,"");
+               for(let l = 0; l < arg.arrayArgCount; l++) {
+                  output += `      sTypes[${k}] = "${writeType}"` + "\n";
+                  k++;
+               }
+            } else {
+               output += "      sTypes[" + k + "] = \"" + f.args[j].type + "\"\n";
+               k++;
+            }
+         }
+         output += "      Return sTypes\n"
+                 + "   EndFunction\n";
+      }
+      output += "   Function CallMethod()\n";
+      {  // CallMethod
+         /*string*/ function ConstructCall() {
+            let output = "";
+            if (f.flags.indexOf("Global") >= 0) {
+               output += script.name;
+            } else {
+               if (scriptname != "Form")
+                  output += "(";
+               output += "s.pkContext";
+               if (scriptname != "Form")
+                  output += " as Form)";
+            }
+            output += "." + f.name + "(";
+            for (let j=0,jWrite=0;j<f.args.length;j++) {
+               let a = f.args[j];
+               let aType = a.type;
+               if (aType.endsWith("[]")) {
+                  output += a.name;
+                  if (j + 1 < f.args.length)
+                     output += ", ";
+                  jWrite += a.arrayArgCount;
+                  continue;
+               }
+               let aTypeIsForm = StringIsFormType(aType);
+               output += "s.p" + notationLetterForType(aType) + "Parameters[" + jWrite + "]";
+               if (aType != "Form" && aTypeIsForm)
+                  output += " as " + aType;
+               if (j + 1 < f.args.length)
+                  output += ", ";
+               jWrite++;
+            }
+            output += ")";
+            return output;
+         }
+         if (f.type || f.args.length) {
+            output += "      CobbAPITestSuiteExecutorState s = GetExecutorState()\n";
+            if (f.hasArrayArgs) {
+               for(let j=0;j<f.args.length;j++) {
+                  let a = f.args[j];
+                  if (!a.type.endsWith("[]"))
+                     continue;
+                  let bareType = a.type.replace(/\[\]$/, "");
+                  let bareTypeIsForm = StringIsFormType(bareType);
+                  output += `      ${a.type} ${a.name} = new ${bareType}[${a.arrayArgCount}]` + "\n";
+                  for(let k=0;k<a.arrayArgCount;k++) {
+                     output += "      " + a.name + "[" + k + "] = s.p";
+                     output += notationLetterForType(bareType);
+                     output += "Parameters[";
+                     output += a.arrayOffset + k + "]";
+                     if (bareTypeIsForm && bareType != "form")
+                        output += " as " + bareType;
+                     output += "\n";
+                  }
+               }
+            }
+         }
+         if (f.type && f.type != "Form[]" && StringIsFormArrayType(f.type)) {
+            output += "      " + f.type + " kResult = ";
+            output += ConstructCall() + "\n";
+            output += "      Int iLength   = kResult.Length\n"
+                    + "      Form[] _kReturnArray = Utility.CreateFormArray(iLength)\n"
+                    + "      Int iIterator = 0\n"
+                    + "      While iIterator < iLength\n"
+                    + "         _kReturnArray[iIterator] = kResult[iIterator]\n"
+                    + "         iIterator += 1\n"
+                    + "      EndWhile\n"
+                    + "      s.pkReturnArray = _kReturnArray\n";
+         } else {
+            output += "      ";
+            if (f.type) {
+               let base = f.type.replace(/\[\]$/, "");
+               output += "s.p" + notationLetterForType(base) + "Return";
+               if (f.type.endsWith("[]"))
+                  output += "Array";
+               else
+                  output += "Value";
+               output += " = ";
+            }
+            output += ConstructCall() + "\n";
+         }
+      }
+      output += "   EndFunction\n";
+      if (f.hasDefaultValues) {
+         output += "   Function SetMethodDefaultParameters()\n"
+                 + "      CobbAPITestSuiteExecutorState s = GetExecutorState()\n";
+         for(let j=0,jWrite=0;j<f.args.length;j++) {
+            let a = f.args[j];
+            if (a.defaultValue == void 0
+            || (a.type == "Bool" && a.defaultValue == "False")
+            || (a.type == "Int"  && a.defaultValue == "0")
+            ) {
+               if (a.type.endsWith("[]"))
+                  jWrite += a.arrayArgCount;
+               else
+                  jWrite++;
+               continue;
+            }
+            output += "      s.pbParameters[" + jWrite + "] = " + a.defaultValue + "\n";
+         }
+         output += "   EndFunction\n";
+      }
+      output += "EndState\n";
+   }
+   return output;
+};
+</script>
+   </body>
+</html>

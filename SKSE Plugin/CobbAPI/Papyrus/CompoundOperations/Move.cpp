@@ -109,7 +109,8 @@ namespace CobbPapyrus {
                bool success = ((RE::TESObjectREFR*)subject)->MoveToMyEditorLocation(false);
                if (!success) {
                   if (this->alsoMoveTeleportMarkers) {
-                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     RE::refr_ptr destination;
+                     subject->GetDestinationDoor(destination);
                      if (destination)
                         TeleportMarkerService::GetInstance().ResetMarker(destination.get_base());
                   }
@@ -145,7 +146,8 @@ namespace CobbPapyrus {
                      subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &e.rot);
                   //
                   if (this->alsoMoveTeleportMarkers) {
-                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     RE::refr_ptr destination;
+                     subject->GetDestinationDoor(destination);
                      if (destination) {
                         if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes) {
                            TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, e.rot);

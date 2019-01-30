@@ -125,7 +125,8 @@ namespace CobbPapyrus {
                root->MoveTo(&nullHandle, parentCell, worldspace, &(this->_destinationPos), &destinationRotAsRadians);
                //
                if (this->alsoMoveTeleportMarkers) {
-                  RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(root->GetDestinationDoor());
+                  RE::refr_ptr destination;
+                  root->GetDestinationDoor(destination);
                   if (destination)
                      TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalRootPos, originalRootRot, this->_destinationPos, destinationRotAsRadians);
                }
@@ -177,7 +178,8 @@ namespace CobbPapyrus {
             //MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &finalRot);
             subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
             if (this->alsoMoveTeleportMarkers) {
-               RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+               RE::refr_ptr destination;
+               subject->GetDestinationDoor(destination);
                if (destination)
                   TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, finalRot);
             }

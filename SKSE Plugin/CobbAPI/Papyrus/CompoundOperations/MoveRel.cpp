@@ -114,7 +114,8 @@ namespace CobbPapyrus {
                   continue;
                }
                if (this->alsoMoveTeleportMarkers) {
-                  RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                  RE::refr_ptr destination;
+                  subject->GetDestinationDoor(destination);
                   if (destination)
                      TeleportMarkerService::GetInstance().ResetMarker(destination.get_base());
                }
@@ -197,7 +198,8 @@ namespace CobbPapyrus {
                   break;
                case kOpType_TeleportMarkerToEditorOffset:
                   {
-                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     RE::refr_ptr destination;
+                     subject->GetDestinationDoor(destination);
                      if (!TeleportMarkerService::GetInstance().MoveMarkerToRelativeEditorLocOffset(destination.get_base(), subject.get_base())) {
                         DEBUG_ONLY_MESSAGE("MoveRel functor failed to move a teleport marker to its editor offset.");
                      }
@@ -209,7 +211,8 @@ namespace CobbPapyrus {
                      subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &finalRot);
                   //
                   if (this->alsoMoveTeleportMarkers) {
-                     RE::refr_ptr destination = RE::refr_ptr::make_from_already_incremented(subject->GetDestinationDoor());
+                     RE::refr_ptr destination;
+                     subject->GetDestinationDoor(destination);
                      if (destination) {
                         if (this->alsoMoveTeleportMarkers == kMoveTeleport_Yes)
                            TeleportMarkerService::GetInstance().MoveMarkerRelativeTo(destination.get_base(), originalPos, originalRot, finalPos, finalRot);

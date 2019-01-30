@@ -397,7 +397,7 @@ namespace RE {
          //
          virtual bool	Unk_9C(void* arg1, UInt32 arg2, UInt32 arg3);  // 9C // new function?
          virtual bool	Unk_9D(UInt32 arg1, UInt32 arg2, UInt32 arg3); // 9D // new function? // no-op (returns false) for TESObjectREFR
-         virtual void*  Unk_9E(); // 9E // new function? // no-op for TESObjectREFR // return type is TESAmmo*? pulls from the actor's process manager
+         virtual TESAmmo* Unk_9E(); // 9E // new function? // no-op for TESObjectREFR // pulls from the actor's process manager
          virtual void*	Unk_9F(); // 9F // new function? // getter related to "DecalGroup" extra data
          virtual void	Unk_A0(void*, void*, void*, NiPoint3*); // A0 // new function? // return value unknown; could be void // related to firing an arrow? see Actor
          virtual void	Unk_A1(UInt32 arg1, UInt32 arg2, UInt32 arg3, UInt32 arg4); // A1 // new function? // no-op for TESObjectREFR
@@ -437,7 +437,7 @@ namespace RE {
          std::vector<::TESObjectREFR*> GetActivateParents(::TESForm* baseFormFilter = NULL);
          UInt32 GetChangeFlags();
          SInt32 GetCurrentDestructionStage();
-         TESObjectREFR* GetDestinationDoor(); // if the current reference is a load door
+         TESObjectREFR* GetDestinationDoor(); // if the current reference is a load door // the returned reference will have its refcount incremented
          void           GetDestinationDoor(refr_ptr& out);
          bool   GetEditorCoordinateData(NiPoint3* pos, NiPoint3* rot, ::TESWorldSpace** worldspace, ::TESObjectCELL** cell);
          void   GetEditorCoordinateDataAlways(NiPoint3* pos, NiPoint3* rot, ::TESWorldSpace** worldspace, ::TESObjectCELL** cell); // Return editor coordinates if any, or current coordinates otherwise
@@ -536,23 +536,17 @@ namespace RE {
             this->set_from_handle(refHandle);
          }
          //
-         inline static refr_ptr make_from_already_incremented(TESObjectREFR* a) {
-            refr_ptr out;
-            out.set_from_already_incremented(a);
-            return out;
-         };
-         //
          RE::TESObjectREFR* operator->(); // implies comparison operators with pointers, because it allows for an implicit cast
          operator bool() const;
          operator RE::TESObjectREFR*() const;
          refr_ptr operator=(RE::TESObjectREFR* rhs);
          refr_ptr operator=(const refr_ptr& rhs);
          //
-         refr_ptr operator==(const refr_ptr& rhs) { return this->ref == rhs.ref; }
-         refr_ptr operator==(const std::nullptr_t&) { return this->ref == nullptr; }
-         refr_ptr operator==(const RE::TESObjectREFR* rhs) { return this->ref == rhs; }
-         refr_ptr operator==(const ::TESObjectREFR* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
-         refr_ptr operator==(const void* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
+         inline bool operator==(const refr_ptr& rhs) { return this->ref == rhs.ref; }
+         inline bool operator==(const std::nullptr_t&) { return this->ref == nullptr; }
+         inline bool operator==(const RE::TESObjectREFR* rhs) { return this->ref == rhs; }
+         inline bool operator==(const ::TESObjectREFR* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
+         inline bool operator==(const void* rhs) { return this->ref == (RE::TESObjectREFR*) rhs; }
          //
          bool operator!();
          //

@@ -182,6 +182,10 @@ namespace RE {
          *refHandlePtr = ecx;
          //
          {  // This is actually handled by a smart pointer method, but I'm too lazy to define the smart pointer struct given that it's literally only used here
+            //
+            // TODO: The x86 code checks whether either edx or edx->refObject is a valid pointer; 
+            // should take another look at it at some point and replicate things more exactly here.
+            //
             BSHandleRefObject* p = &ref->handleRefObject;
             edx->refObject->DecRefHandle();
             p->IncRef();
@@ -413,7 +417,7 @@ namespace RE {
    TESObjectREFR* TESObjectREFR::GetDestinationDoor() {
       RE::refr_ptr otherDoor;
       this->GetDestinationDoor(otherDoor);
-      return (TESObjectREFR*) otherDoor.get_base();
+      return (TESObjectREFR*) otherDoor.abandon();
    };
    void TESObjectREFR::GetDestinationDoor(refr_ptr& out) {
       out = nullptr;

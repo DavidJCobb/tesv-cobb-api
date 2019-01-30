@@ -117,7 +117,7 @@ bool TeleportMarkerService::MoveMarkerRelativeTo(TESObjectREFR* door, const NiPo
    desired.rot.ConvertToRadians();
    return this->MoveMarker(door, desired.pos, (NiPoint3)desired.rot);
 };
-bool TeleportMarkerService::MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* door, TESObjectREFR* destination) {
+bool TeleportMarkerService::MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* door, TESObjectREFR* aDest) {
    if (!door)
       return false;
    if (door->formID >> 0x18 == 0xFF) {
@@ -129,9 +129,9 @@ bool TeleportMarkerService::MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* d
       DEBUG_ONLY_MESSAGE("%s was unable to get the teleport data for a door.", __FUNCTION__);
       return false;
    }
+   RE::refr_ptr destination = (RE::TESObjectREFR*) aDest;
    if (!destination) { // Get the destination door. (Callers that already have it can optimize by passing it in.)
-      UInt32 handle = data->refHandle; // copy, to ensure that the original handle isn't changed by the next call
-      LookupREFRByHandle(&handle, &destination);
+      destination.set_from_handle(data->refHandle);
       if (!destination) {
          DEBUG_ONLY_MESSAGE("%s was unable to get the destination for a door.", __FUNCTION__);
          return false;

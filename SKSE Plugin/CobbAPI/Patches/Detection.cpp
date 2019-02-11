@@ -12,6 +12,7 @@ namespace CobbPatches {
       };
       __declspec(naked) void Outer() {
          _asm {
+            push eax; // protect (the game loaded a GMST here)
             mov  edx, dword ptr [ebp + 0x8]; // edx = Arg1;
             mov  eax, dword ptr [ebp + 0xC]; // eax = Arg2;
             push eax;
@@ -19,6 +20,7 @@ namespace CobbPatches {
             call Inner;
             add  esp, 8;
             test al, al;
+            pop  eax; // restore
             jnz  lAbort;
             mov  edx, dword ptr [ebp + 0x8]; // reproduce patched-over instruction
             push ebx;      // reproduce patched-over instruction

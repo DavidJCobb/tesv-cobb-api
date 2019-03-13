@@ -1,5 +1,82 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project InitialTargets="Fix" DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   
+   <!-- ================ UNDUPOBJ ================ -->
+      <!-- relevant topics -->
+      <!-- https://stackoverflow.com/questions/3729515/visual-studio-2010-2008-cant-handle-source-files-with-identical-names-in-diff/26935613 -->
+      <!-- https://stackoverflow.com/questions/7033855/msvc10-mp-builds-not-multicore-across-folders-in-a-project -->
+      <!-- https://stackoverflow.com/questions/18304911/how-can-one-modify-an-itemdefinitiongroup-from-an-msbuild-target -->
+      <!-- other maybe related info -->
+      <!-- https://stackoverflow.com/questions/841913/modify-msbuild-itemgroup-metadata -->
+   <UsingTask TaskName="UNDUPOBJ_TASK" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+      <ParameterGroup>
+         <OutputDir ParameterType="System.String" Required="true" />
+         <ItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+         <OutputItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+      </ParameterGroup>
+      <Task>
+         <Code><![CDATA[
+//
+// Normally, two CPP files in a project can't have the same filename even if 
+// they're in different folders, because the default settings for MSVC's linker 
+// throw all of the resulting OBJ files into the same folder. The usual way to 
+// address this is to set the output file path to "$(IntDir)/%(RelativeDir)/". 
+// However, the RelativeDir item metadata is broken when using shared items 
+// projects.
+//
+// One workaround for that is to use "$(IntDir)/%(Directory)/" instead. However, 
+// that can break the build: CL.EXE will choke on file paths that are longer 
+// than 260 characters.
+//
+// I've decided to employ a modified version of the approach provided at this 
+// link: https://stackoverflow.com/a/26935613
+//
+// If you need to copy this into another project, DO NOT FORGET to amend the 
+// Project tag: you need to specify the target name in the InitialTargets 
+// attribute.
+//
+// That link will produce OBJ paths that vary depending on the order in which 
+// files are traversed and the number of files sharing the same name -- things 
+// that I can't predict, since MSBuild's documentation is the absolute worst I 
+// have ever seen. Therefore, I've chosen a more consistent scheme: we nest 
+// every single OBJ file under a single new folder, named for the OBJ file's 
+// "date created" timestamp. As long as two OBJ files don't have the same date 
+// created AND the same name, this should be fine.
+//
+// Yes, I know that's hideous, but it's hideous because it's a solution to 
+// something that shouldn't even be a problem.
+//
+foreach(var item in ItemList) {
+   var filename = item.GetMetadata("Filename");
+   var created  = item.GetMetadata("CreatedTime");
+   var date     = DateTime.Parse(created);
+   var stamp    = date.ToString("MMddyyHHmmssfffffff");
+   //
+   var output = Path.Combine(OutputDir, stamp) + "/";
+   System.IO.Directory.CreateDirectory(output);
+   //
+   item.SetMetadata("ObjectFileName", output);
+   //Log.LogMessage(MessageImportance.High, "Modified item: " + filename + " -> " + item.GetMetadata("ObjectFileName"));
+}
+OutputItemList = ItemList;
+ItemList = new Microsoft.Build.Framework.ITaskItem[0];
+      ]]></Code>
+      </Task>
+   </UsingTask>
+   <Target Name="Fix">
+      <Message Text="This is the BeforeBuild target" Importance="normal"/>
+      <!-- see stackoverflow topics for discussion on why we need to do some loopy copying stuff here -->
+      <ItemGroup>
+         <ClCompileCopy Include="@(ClCompile)"/>
+         <ClCompile Remove="@(ClCompile)"/>
+      </ItemGroup>
+      <UNDUPOBJ_TASK OutputDir="$(IntDir)" ItemList="@(ClCompileCopy)" OutputItemList="@(ClCompile)">
+         <Output ItemName="ClCompile" TaskParameter="OutputItemList"/>
+      </UNDUPOBJ_TASK>
+      <Message Text="This is the BeforeBuild target" Importance="normal"/>
+   </Target>
+   <!-- ================ UNDUPOBJ ================ -->
+   
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -38,6 +115,9 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+    <Import Project="..\..\..\..\..\..\..\..\..\..\CobbVS\SkyrimRE\CobbSkyrimRE.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -98,7 +178,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ForcedIncludeFiles>common/IPrefix.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+      <ObjectFileName>$(IntDir)/%(Directory)/</ObjectFileName>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
@@ -153,20 +233,6 @@
     <ClCompile Include="Patches\LoadMoreEditorIDs.cpp" />
     <ClCompile Include="Patches\OnLeveledActorRegenerated.cpp" />
     <ClCompile Include="Patches\PlaceableCollisionPrimitives.cpp" />
-    <ClCompile Include="ReverseEngineered\ExtraData.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\Actor.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\ActorValueInfo.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\HardcodedForms.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\TESForm.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\TESObjectREFR.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\TESPackage.cpp" />
-    <ClCompile Include="ReverseEngineered\Forms\TESWorldSpace.cpp" />
-    <ClCompile Include="ReverseEngineered\Miscellaneous.cpp" />
-    <ClCompile Include="ReverseEngineered\Objects\BGSPrimitive.cpp" />
-    <ClCompile Include="ReverseEngineered\Systems\DefaultObjects.cpp" />
-    <ClCompile Include="ReverseEngineered\Systems\GameData.cpp" />
-    <ClCompile Include="ReverseEngineered\Systems\Sound.cpp" />
-    <ClCompile Include="ReverseEngineered\Systems\Timing.cpp" />
     <ClCompile Include="Services\CellInteriorDataService.cpp" />
     <ClCompile Include="Services\DetectionIntercept.cpp" />
     <ClCompile Include="Services\ExtendedEditorIDService.cpp" />
@@ -210,48 +276,6 @@
     <ClInclude Include="Patches\MessageQuitGame.h" />
     <ClInclude Include="Patches\OnLeveledActorRegenerated.h" />
     <ClInclude Include="Patches\PlaceableCollisionPrimitives.h" />
-    <ClInclude Include="ReverseEngineered\Forms\Actor.h" />
-    <ClInclude Include="ReverseEngineered\Forms\ActorValueInfo.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BGSAcousticSpace.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BGSEncounterZone.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BGSLightingTemplate.h" />
-    <ClInclude Include="ReverseEngineered\Forms\HardcodedForms.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESEffectShader.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESFaction.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESGlobal.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESImageSpace.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESObjectLAND.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESPackage.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESRace.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESWeather.h" />
-    <ClInclude Include="ReverseEngineered\Objects\ActiveEffect.h" />
-    <ClInclude Include="ReverseEngineered\Objects\Alias.h" />
-    <ClInclude Include="ReverseEngineered\Objects\BGSPrimitive.h" />
-    <ClInclude Include="ReverseEngineered\Objects\Navmesh.h" />
-    <ClInclude Include="ReverseEngineered\Objects\Sky.h" />
-    <ClInclude Include="ReverseEngineered\Player\PlayerCharacter.h" />
-    <ClInclude Include="ReverseEngineered\Player\PlayerSkills.h" />
-    <ClInclude Include="ReverseEngineered\Systems\012E32E8.h" />
-    <ClInclude Include="ReverseEngineered\Systems\012E59D4.h" />
-    <ClInclude Include="ReverseEngineered\Systems\01B115D8.h" />
-    <ClInclude Include="ReverseEngineered\Systems\BSTaskPool.h" />
-    <ClInclude Include="ReverseEngineered\Systems\EquipManager.h" />
-    <ClInclude Include="ReverseEngineered\Systems\ExteriorCellLoaderTask.h" />
-    <ClInclude Include="ReverseEngineered\Systems\GameInput.h" />
-    <ClInclude Include="ReverseEngineered\Systems\ReferenceEffects.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSLoadGameBuffer.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSSaveFormBuffer.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Savedata\BGSSaveLoadManager.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Sound.h" />
-    <ClInclude Include="ReverseEngineered\Systems\TESCamera.h" />
-    <ClInclude Include="ReverseEngineered\Systems\01B2E724.h" />
-    <ClInclude Include="ReverseEngineered\Systems\01B9ED08.h" />
-    <ClInclude Include="ReverseEngineered\Systems\ActorAI\base.h" />
-    <ClInclude Include="ReverseEngineered\Systems\DefaultObjects.h" />
-    <ClInclude Include="ReverseEngineered\Systems\TESFile.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Timing.h" />
-    <ClInclude Include="ReverseEngineered\Types.h" />
-    <ClInclude Include="ReverseEngineered\UI\MessageBoxCallbacks.h" />
     <ClInclude Include="Services\CellInteriorDataService.h" />
     <ClInclude Include="Services\DetectionIntercept.h" />
     <ClInclude Include="Services\ExtendedEditorIDService.h" />
@@ -277,24 +301,6 @@
     <ClInclude Include="Papyrus\SimpleSearches.h" />
     <ClInclude Include="Papyrus\_Prefixes.h" />
     <ClInclude Include="Patches\SetMotionType.h" />
-    <ClInclude Include="ReverseEngineered\ExtraData.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BaseForms\base.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BaseForms\TESObjectACTI.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BaseForms\TESObjectLIGH.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESForm.h" />
-    <ClInclude Include="ReverseEngineered\Forms\BaseForms\TESFurniture.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESObjectCELL.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESObjectREFR.h" />
-    <ClInclude Include="ReverseEngineered\Forms\TESWorldSpace.h" />
-    <ClInclude Include="ReverseEngineered\Miscellaneous.h" />
-    <ClInclude Include="ReverseEngineered\NetImmerse\havok.h" />
-    <ClInclude Include="ReverseEngineered\NetImmerse\controllers.h" />
-    <ClInclude Include="ReverseEngineered\NetImmerse\NiExtraData.h" />
-    <ClInclude Include="ReverseEngineered\NetImmerse\objects.h" />
-    <ClInclude Include="ReverseEngineered\Systems\ChangeForms.h" />
-    <ClInclude Include="ReverseEngineered\Systems\GameData.h" />
-    <ClInclude Include="ReverseEngineered\Systems\Navmesh.h" />
-    <ClInclude Include="ReverseEngineered\Systems\ThreadLocalStorage.h" />
     <ClInclude Include="Shared.h" />
     <ClInclude Include="Utilities\Dumps\ActorValueList.h" />
     <ClInclude Include="Utilities\Dumps\ASM.h" />
@@ -337,9 +343,6 @@
     <None Include="scripts\CobbAPIUtility.psc" />
     <None Include="scripts\CobbAPIWeakReference.psc" />
     <None Include="scripts\CobbAPIWorldspace.psc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReverseEngineered\Notes.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\skse\skse.vcxproj">

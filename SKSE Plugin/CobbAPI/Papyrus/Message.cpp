@@ -5,6 +5,7 @@
 #include "skse/PapyrusVM.h"
 
 #include "skse/GameForms.h"
+#include "skse/GameRTTI.h"
 #include "skse/Utilities.h"
 #include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Forms/TESForm.h"

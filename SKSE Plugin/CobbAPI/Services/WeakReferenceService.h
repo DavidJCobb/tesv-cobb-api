@@ -11,6 +11,7 @@
 
 #include "Papyrus/_Prefixes.h"
 #include "Utilities/ReferenceExists.h"
+#include "Shared.h"
 
 /*
 

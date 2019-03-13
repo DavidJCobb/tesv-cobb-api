@@ -1,5 +1,6 @@
 #include "TeleportMarkerService.h"
 #include "ReverseEngineered/Forms/TESObjectREFR.h"
+#include "shared.h"
 
 RE::ExtraTeleport::TeleportData* _GetTeleportData(TESObjectREFR* door) {
    if (!door)

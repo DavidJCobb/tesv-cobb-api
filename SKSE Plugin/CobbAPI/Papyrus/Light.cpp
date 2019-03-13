@@ -3,6 +3,7 @@
 
 #include "Papyrus/_Prefixes.h"
 
+#include "skse/GameRTTI.h"
 #include "skse/PapyrusNativeFunctions.h"
 #include "skse/PapyrusObjects.h"
 #include "skse/PapyrusVM.h"

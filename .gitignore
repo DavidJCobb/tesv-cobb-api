@@ -1,0 +1,12 @@
+$
+$ Don't upload OBJ files, build stuff, etc.:
+$
+/SKSE Plugin/CobbAPI/Debug/**
+/SKSE Plugin/CobbAPI/Release/**
+$
+$ Don't upload SKSE source:
+$
+/SKSE Plugin/common/*.cpp
+/SKSE Plugin/common/*.h
+/SKSE Plugin/skse/*.cpp
+/SKSE Plugin/skse/*.h

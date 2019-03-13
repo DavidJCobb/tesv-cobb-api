@@ -13,10 +13,7 @@ namespace CobbPapyrus {
          float GetActorValueModifier(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* subject, SInt32 avIndex, SInt32 modifier) {
             ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot check actor value data on a None actor.", registry, stackId);
             ERROR_AND_RETURN_0_IF(modifier < 0 || modifier > 2, "You must specify a valid modifier. Valid values are: 0 = Permanent; 1 = Temporary; 2 = Damage.", registry, stackId);
-            auto state = CALL_MEMBER_FN(subject, GetActorValueStateObj)(avIndex);
-            if (!state)
-               return 0.0F;
-            return state->modifiers[modifier];
+            return CALL_MEMBER_FN(subject, GetActorValueModifier)((RE::ActorValueModifier)avIndex, modifier);
          };
          float GetActorValueRegenDelay(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* subject, SInt32 avIndex) {
             ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot check actor value regen delay on a None actor.", registry, stackId);

@@ -6,6 +6,7 @@
 
 #include "skse/GameData.h"
 #include "skse/GameForms.h"
+#include "skse/GameRTTI.h"
 #include "ReverseEngineered/Types.h"
 #include "ReverseEngineered/Forms/TESObjectCELL.h"
 #include "ReverseEngineered/Forms/TESWorldSpace.h"

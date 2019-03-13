@@ -1,8 +1,10 @@
 #include "CellInteriorDataService.h"
+#include "skse/GameRTTI.h"
 #include "skse/Serialization.h"
 
 #include "ReverseEngineered/ExtraData.h"
 #include "ReverseEngineered/INI.h"
+#include "shared.h"
 
 void CellInteriorDataService::RevertCell(RE::TESObjectCELL* cell, const CellDefaults& defaults) {
    auto cellData = CALL_MEMBER_FN(cell, GetInteriorData)();

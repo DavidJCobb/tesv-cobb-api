@@ -5,6 +5,7 @@
 #include "skse/PapyrusVM.h"
 
 #include "skse/GameForms.h"
+#include "skse/GameObjects.h"
 #include "skse/GameReferences.h"
 #include "skse/GameRTTI.h"
 

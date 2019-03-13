@@ -5,6 +5,7 @@
 #include "Miscellaneous/strings.h"
 #include "ReverseEngineered/Forms/Actor.h"
 #include "skse/GameReferences.h"
+#include "skse/PluginAPI.h"
 
 class DetectionInterceptService {
    public:

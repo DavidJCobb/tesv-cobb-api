@@ -1,6 +1,7 @@
 #include "DetectionIntercept.h"
 #include "skse/Serialization.h"
 #include "ReverseEngineered/Systems/ChangeForms.h"
+#include "shared.h"
 #include <algorithm>
 
 namespace {

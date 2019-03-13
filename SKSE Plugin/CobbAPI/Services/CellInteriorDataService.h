@@ -2,6 +2,7 @@
 #include <mutex>
 #include <unordered_map>
 #include "ReverseEngineered/Forms/TESObjectCELL.h"
+#include "skse/PluginAPI.h"
 
 class CellInteriorDataService {
    public:

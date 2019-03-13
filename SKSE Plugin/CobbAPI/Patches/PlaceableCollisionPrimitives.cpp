@@ -1,4 +1,5 @@
 #include "PlaceableCollisionPrimitives.h"
+#include "skse/GameRTTI.h"
 #include "skse/SafeWrite.h"
 
 #include "ReverseEngineered/Forms/TESObjectREFR.h"

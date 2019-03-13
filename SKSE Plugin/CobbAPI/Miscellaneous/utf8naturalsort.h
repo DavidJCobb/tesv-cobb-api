@@ -5,6 +5,12 @@ namespace cobb {
    //
    template<typename String> SInt32 utf8_naturalcompare(const String& a, const String& b) {
       static_assert(is_basic_string<String>::value, "utf8_naturalcompare must receive a basic_string specialization.");
+      //
+      // NOTE: This function doesn't handle case-insensitivity. At present, that is the 
+      // responsibility of whatever String class you use. We don't (and can't) rely on 
+      // the char_traits of a basic_string when doing UTF-8, so your class has to alter 
+      // the data as its stored.
+      //
       struct _ {
          inline static bool isNumber(const char c) {
             return c >= '0' && c <= '9';

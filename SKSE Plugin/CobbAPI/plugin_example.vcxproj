@@ -1,21 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project InitialTargets="Fix" DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   
-   <!-- ================ UNDUPOBJ ================ -->
-      <!-- relevant topics -->
-      <!-- https://stackoverflow.com/questions/3729515/visual-studio-2010-2008-cant-handle-source-files-with-identical-names-in-diff/26935613 -->
-      <!-- https://stackoverflow.com/questions/7033855/msvc10-mp-builds-not-multicore-across-folders-in-a-project -->
-      <!-- https://stackoverflow.com/questions/18304911/how-can-one-modify-an-itemdefinitiongroup-from-an-msbuild-target -->
-      <!-- other maybe related info -->
-      <!-- https://stackoverflow.com/questions/841913/modify-msbuild-itemgroup-metadata -->
-   <UsingTask TaskName="UNDUPOBJ_TASK" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-      <ParameterGroup>
-         <OutputDir ParameterType="System.String" Required="true" />
-         <ItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
-         <OutputItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
-      </ParameterGroup>
-      <Task>
-         <Code><![CDATA[
+  <!-- ================ UNDUPOBJ ================ -->
+  <!-- relevant topics -->
+  <!-- https://stackoverflow.com/questions/3729515/visual-studio-2010-2008-cant-handle-source-files-with-identical-names-in-diff/26935613 -->
+  <!-- https://stackoverflow.com/questions/7033855/msvc10-mp-builds-not-multicore-across-folders-in-a-project -->
+  <!-- https://stackoverflow.com/questions/18304911/how-can-one-modify-an-itemdefinitiongroup-from-an-msbuild-target -->
+  <!-- other maybe related info -->
+  <!-- https://stackoverflow.com/questions/841913/modify-msbuild-itemgroup-metadata -->
+  <UsingTask TaskName="UNDUPOBJ_TASK" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <OutputDir ParameterType="System.String" Required="true" />
+      <ItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputItemList ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code><![CDATA[
 //
 // Normally, two CPP files in a project can't have the same filename even if 
 // they're in different folders, because the default settings for MSVC's linker 
@@ -30,6 +29,8 @@
 //
 // I've decided to employ a modified version of the approach provided at this 
 // link: https://stackoverflow.com/a/26935613
+//
+// Yeah. We have to write C# code in order to fix Visual Studio.
 //
 // If you need to copy this into another project, DO NOT FORGET to amend the 
 // Project tag: you need to specify the target name in the InitialTargets 
@@ -49,11 +50,17 @@
 foreach(var item in ItemList) {
    var filename = item.GetMetadata("Filename");
    var created  = item.GetMetadata("CreatedTime");
-   var date     = DateTime.Parse(created);
-   var stamp    = date.ToString("MMddyyHHmmssfffffff");
-   //
-   var output = Path.Combine(OutputDir, stamp) + "/";
-   System.IO.Directory.CreateDirectory(output);
+   DateTime date;
+   var output = "";
+   if (DateTime.TryParse(created, out date)) {
+      //var date     = DateTime.Parse(created);
+      var stamp    = date.ToString("MMddyyHHmmssfffffff");
+      //
+      output = Path.Combine(OutputDir, stamp) + "/";
+      System.IO.Directory.CreateDirectory(output);
+   } else {
+      output = OutputDir;
+   }
    //
    item.SetMetadata("ObjectFileName", output);
    //Log.LogMessage(MessageImportance.High, "Modified item: " + filename + " -> " + item.GetMetadata("ObjectFileName"));
@@ -61,22 +68,21 @@ foreach(var item in ItemList) {
 OutputItemList = ItemList;
 ItemList = new Microsoft.Build.Framework.ITaskItem[0];
       ]]></Code>
-      </Task>
-   </UsingTask>
-   <Target Name="Fix">
-      <Message Text="This is the BeforeBuild target" Importance="normal"/>
-      <!-- see stackoverflow topics for discussion on why we need to do some loopy copying stuff here -->
-      <ItemGroup>
-         <ClCompileCopy Include="@(ClCompile)"/>
-         <ClCompile Remove="@(ClCompile)"/>
-      </ItemGroup>
-      <UNDUPOBJ_TASK OutputDir="$(IntDir)" ItemList="@(ClCompileCopy)" OutputItemList="@(ClCompile)">
-         <Output ItemName="ClCompile" TaskParameter="OutputItemList"/>
-      </UNDUPOBJ_TASK>
-      <Message Text="This is the BeforeBuild target" Importance="normal"/>
-   </Target>
-   <!-- ================ UNDUPOBJ ================ -->
-   
+    </Task>
+  </UsingTask>
+  <Target Name="Fix">
+    <Message Text="This is the BeforeBuild target" Importance="normal" />
+    <!-- see stackoverflow topics for discussion on why we need to do some loopy copying stuff here -->
+    <ItemGroup>
+      <ClCompileCopy Include="@(ClCompile)" />
+      <ClCompile Remove="@(ClCompile)" />
+    </ItemGroup>
+    <UNDUPOBJ_TASK OutputDir="$(IntDir)" ItemList="@(ClCompileCopy)" OutputItemList="@(ClCompile)">
+      <Output ItemName="ClCompile" TaskParameter="OutputItemList" />
+    </UNDUPOBJ_TASK>
+    <Message Text="This is the BeforeBuild target" Importance="normal" />
+  </Target>
+  <!-- ================ UNDUPOBJ ================ -->
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -193,6 +199,7 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CobbRotation.cpp" />
+    <ClCompile Include="LuaSkyrim\test.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Miscellaneous\memory.cpp" />
     <ClCompile Include="Miscellaneous\strings.cpp" />
@@ -246,6 +253,12 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
     <ClCompile Include="Utilities\Dumps\ASM.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LuaSkyrim\test.h" />
+    <ClInclude Include="Lua\include\lauxlib.h" />
+    <ClInclude Include="Lua\include\lua.h" />
+    <ClInclude Include="Lua\include\lua.hpp" />
+    <ClInclude Include="Lua\include\luaconf.h" />
+    <ClInclude Include="Lua\include\lualib.h" />
     <ClInclude Include="Miscellaneous\math.h" />
     <ClInclude Include="Miscellaneous\memory.h" />
     <ClInclude Include="Miscellaneous\strings.h" />
@@ -345,6 +358,9 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
     <None Include="scripts\CobbAPIWorldspace.psc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Lua5.3.5\Lua5.3.5.vcxproj">
+      <Project>{5c40e38b-3c96-4dc4-812f-d44da9b5ce12}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\skse\skse.vcxproj">
       <Project>{7e0e2d11-eaeb-4404-8d77-ca3572c8680e}</Project>
     </ProjectReference>

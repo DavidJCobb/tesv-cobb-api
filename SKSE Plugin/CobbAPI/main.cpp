@@ -64,6 +64,8 @@
 #endif
 #endif
 
+#include "LuaSkyrim/test.h" // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
+
 static UInt32 g_pluginSerializationSignature = 'cAPI'; // confirmed with the SKSE team
 
 PluginHandle			    g_pluginHandle = kPluginHandle_Invalid;
@@ -79,7 +81,7 @@ void Callback_Serialization_Load(SKSESerializationInterface * intfc);
 void Callback_Serialization_FormDelete(UInt64 handle);
 
 static const char*  g_pluginName    = "CobbAPI";
-const UInt32 g_pluginVersion = 0x01000200; // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
+const UInt32 g_pluginVersion = 0x01000201; // 0xAABBCCDD = AA.BB.CC.DD with values converted to decimal // major.minor.update.internal-build-or-zero
 
 static bool g_TESVVersionSupported = false;
 static bool g_SKSEVersionSupported = false;
@@ -164,6 +166,7 @@ extern "C" {
             return false;
          }
       }
+LuaSkyrim::Test(); // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
       //
       // This plug-in supports the current Skyrim and SKSE versions:
       //

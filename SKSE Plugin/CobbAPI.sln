@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CobbAPI", "CobbAPI\plugin_e
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CobbSkyrimRE", "..\..\..\..\..\..\..\..\..\CobbVS\SkyrimRE\CobbSkyrimRE.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lua5.3.5", "Lua5.3.5\Lua5.3.5.vcxproj", "{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\..\..\..\..\..\..\..\..\CobbVS\SkyrimRE\CobbSkyrimRE.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
@@ -44,6 +46,14 @@ Global
 		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Release|Win32.ActiveCfg = Release|Win32
 		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Release|Win32.Build.0 = Release|Win32
 		{C2994FBC-4D84-43E4-AE33-7C6EA60489AB}.Release|x64.ActiveCfg = Release|Win32
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Debug|Win32.Build.0 = Debug|Win32
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Debug|x64.ActiveCfg = Debug|x64
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Debug|x64.Build.0 = Debug|x64
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Release|Win32.ActiveCfg = Release|Win32
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Release|Win32.Build.0 = Release|Win32
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Release|x64.ActiveCfg = Release|x64
+		{5C40E38B-3C96-4DC4-812F-D44DA9B5CE12}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

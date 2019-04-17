@@ -166,7 +166,6 @@ extern "C" {
             return false;
          }
       }
-LuaSkyrim::Test(); // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
       //
       // This plug-in supports the current Skyrim and SKSE versions:
       //
@@ -288,6 +287,9 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
    } else if (message->type == SKSEMessagingInterface::kMessage_PostPostLoad) {
       CobbPatches::Detection::Apply(); // Done here so we can tell if another mod has already claimed our patch site
    } else if (message->type == SKSEMessagingInterface::kMessage_DataLoaded) {
+      //
+LuaSkyrim::Test(); // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
+      //
       CobbPatches::PlaceableCollisionPrimitives::OnFormsLoaded();
       CobbPatches::OnLeveledActorRegenerated::Apply(); // deferred to avoid startup spam
    } else if (message->type == SKSEMessagingInterface::kMessage_NewGame) {

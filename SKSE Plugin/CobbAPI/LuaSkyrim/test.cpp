@@ -1,5 +1,7 @@
 #include "test.h"
-#include "Lua5.3.5/lua.hpp"
+#include "_includes.h"
+#include "IForm.h"
+#include "skse/GameForms.h" // LookupFormByID
 #include "skse/Utilities.h" // GetRuntimeDirectory
 
 namespace LuaSkyrim {
@@ -15,33 +17,50 @@ namespace LuaSkyrim {
       return path;
    };
 
-   static int LuaLog(lua_State* L) {
-      int n = lua_gettop(L); // number of arguments
-      //
-      const char* out = nullptr;
-      if (!lua_isstring(L, 1)) {
-         lua_pushliteral(L, "incorrect argument");
-         lua_error(L);
-      } else {
-         out = lua_tolstring(L, 1, nullptr);
-         _MESSAGE("Logging message from a Lua script: %s", out);
-      }
-      /*// Loop over the arguments:
-      for (int i = 2; i <= n; i++) {
-         if (!lua_isnumber(L, i)) {
-            lua_pushliteral(L, "incorrect argument");
-            lua_error(L);
+   namespace {
+      namespace _globals {
+         static luastackchange_t LuaLog(lua_State* L) {
+            int n = lua_gettop(L); // number of arguments
+            //
+            const char* out = nullptr;
+            if (!lua_isstring(L, 1)) {
+               lua_pushliteral(L, "incorrect argument");
+               lua_error(L);
+            } else {
+               out = lua_tolstring(L, 1, nullptr);
+               _MESSAGE("Logging message from a Lua script: %s", out);
+            }
+            /*// Loop over the arguments:
+            for (int i = 2; i <= n; i++) {
+               if (!lua_isnumber(L, i)) {
+                  lua_pushliteral(L, "incorrect argument");
+                  lua_error(L);
+               }
+               lua_tonumber(L, i);
+            }
+            //
+            // Returning two numbers:
+            //
+            lua_pushnumber(L, sum / n);
+            lua_pushnumber(L, sum);
+            return 2;
+            //*/
+            return 0; // return the number of return values, after pushing return values onto the Lua stack
          }
-         lua_tonumber(L, i);
+         static luastackchange_t FormByID(lua_State* L) {
+            int n = lua_gettop(L); // number of arguments
+                                   //
+            if (!lua_isnumber(L, 1)) {
+               lua_pushliteral(L, "incorrect argument");
+               lua_error(L);
+               return 0;
+            }
+            lua_Number num = lua_tonumber(L, 1);
+            UInt32 id = num;
+            TESForm* form = ::LookupFormByID(id);
+            return IForm::make(L, form);
+         }
       }
-      //
-      // Returning two numbers:
-      //
-      lua_pushnumber(L, sum / n);
-      lua_pushnumber(L, sum);
-      return 2;
-      //*/
-      return 0; // return the number of return values, after pushing return values onto the Lua stack
    }
 
    void Test() {
@@ -56,7 +75,9 @@ namespace LuaSkyrim {
          lua_close(luaVM); // Terminate the VM.
          return;
       }
-      lua_register(luaVM, "logmessage", LuaLog); // make a C function available to the Lua script under the name "logmessage"
+      IForm::setupMetatable(luaVM);
+      lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
+      lua_register(luaVM, "form_by_id", _globals::FormByID);
       //
       // Make the standard libraries available to scripts. There are 
       // some that we want to omit to avoid threading issues and similar.

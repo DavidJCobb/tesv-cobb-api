@@ -49,13 +49,15 @@ namespace LuaSkyrim {
          }
          static luastackchange_t FormByID(lua_State* L) {
             int n = lua_gettop(L); // number of arguments
-                                   //
+            //
+_MESSAGE("== Stack size at start of form getter: %d (i.e. that many arguments)", n);
             if (!lua_isnumber(L, 1)) {
                lua_pushliteral(L, "incorrect argument");
                lua_error(L);
                return 0;
             }
             lua_Number num = lua_tonumber(L, 1);
+            lua_pop(L, n); // technically, we only need this to ensure accurate debug logs in IForm::make, and we can remove it once that's done
             UInt32 id = num;
             TESForm* form = ::LookupFormByID(id);
             return IForm::make(L, form);
@@ -75,7 +77,13 @@ namespace LuaSkyrim {
          lua_close(luaVM); // Terminate the VM.
          return;
       }
+      //
+      // Set up metatables and similar for all native types that we plan to expose to Lua:
+      //
+      // DO NOT FORGET TO CALL THESE
+      //
       IForm::setupMetatable(luaVM);
+      //
       lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
       lua_register(luaVM, "form_by_id", _globals::FormByID);
       //

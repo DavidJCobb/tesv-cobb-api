@@ -16,20 +16,6 @@ namespace LuaSkyrim {
          static IForm* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
 
          static luastackchange_t make(lua_State* luaVM, TESForm*);
-         //
-         // TODO: FINISH ME
-         //
-         //  - If the form pointer is nullptr, return nil (should the caller handle this? the 
-         //    caller may HAVE to handle this)
-         //
-         //  - Get the weakmap (registry[registryName])
-         //
-         //  - See if the raw form pointer is in the weakmap (i.e. use it as a key in the table)
-         //
-         //     - If so, return the already-existing Lua-side wrapper
-         //
-         //     - If not, create a Lua-side wrapper, store it in the weakmap (map[pointer] = wrapper), 
-         //       and then return the wrapper
 
          TESForm* wrapped = nullptr;
    };

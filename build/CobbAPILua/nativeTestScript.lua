@@ -35,6 +35,12 @@ if form_by_id then
    if _validateForm(form) then
       logmessage(string.format("formID   == %08X", form:formID()))
       logmessage(string.format("formType == %u", form:formType()))
+      if form.gender then
+         local gender = form:gender()
+         logmessage(string.format("gender   == %s", tostring(gender)))
+      else
+         logmessage("IActorBase methods not present!")
+      end
       --
       local form2 = form_by_id(7)
       if form == form2 then

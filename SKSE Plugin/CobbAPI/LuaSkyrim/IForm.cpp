@@ -1,4 +1,6 @@
 #include "IForm.h"
+#include "IActorBase.h"
+#include "_classes.h"
 #include "ReverseEngineered/Forms/TESForm.h"
 
 namespace LuaSkyrim {
@@ -44,6 +46,7 @@ namespace LuaSkyrim {
       if (isDefined)
          return;
       {  // Create the metatable
+         /*//
          luaL_newmetatable(luaVM, metatableName);
          //
          lua_pushstring(luaVM, "__index");
@@ -56,6 +59,8 @@ namespace LuaSkyrim {
          luaL_setfuncs(luaVM, _metatableMethods, 0); // import functions into the metatable
          //
          lua_pop(luaVM, 1); // pop metatable from the stack
+         //*/
+         _defineClass(luaVM, metatableName, nullptr, _metatableMethods);
       }
       {  // Create the registry
          //
@@ -75,7 +80,13 @@ namespace LuaSkyrim {
       isDefined = true;
    };
    IForm* IForm::fromStack(lua_State* luaVM, UInt32 stackPos) {
+      return (IForm*) _asClass(luaVM, stackPos, metatableName);
+      //
+      // TODO: This needs to handle subclasses.
+      //
+      /*//
       return (IForm*) luaL_checkudata(luaVM, stackPos, metatableName);
+      //*/
    };
 
    luastackchange_t IForm::make(lua_State* luaVM, TESForm* form) {
@@ -102,8 +113,28 @@ namespace LuaSkyrim {
          lua_pop(luaVM, 2);
       }
       IForm* a = (IForm*) lua_newuserdata(luaVM, sizeof(IForm));
-      luaL_getmetatable(luaVM, metatableName);
-      lua_setmetatable (luaVM, -2);
+      if (form) {
+         /*//
+         //
+         // TODO: Can we improve this somehow?
+         //
+         switch (form->formType) {
+            case kFormType_NPC:
+               luaL_getmetatable(luaVM, IActorBase::metatableName);
+               break;
+            default:
+               luaL_getmetatable(luaVM, metatableName);
+         }
+         //*/
+         luaL_getmetatable(luaVM, metatableName);
+      } else {
+         //
+         // No form; return nil.
+         //
+         lua_pushnil(luaVM);
+         return 1;
+      }
+      lua_setmetatable(luaVM, -2);
       {  // Store the new wrapper.
          //
          // Store the newly-created heavy-userdata, so that we can reuse it 

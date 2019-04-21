@@ -1,6 +1,7 @@
 #include "test.h"
 #include "_includes.h"
 #include "IForm.h"
+#include "IActorBase.h"
 #include "skse/GameForms.h" // LookupFormByID
 #include "skse/Utilities.h" // GetRuntimeDirectory
 
@@ -81,6 +82,7 @@ namespace LuaSkyrim {
       // DO NOT FORGET TO CALL THESE
       //
       IForm::setupMetatable(luaVM);
+      IActorBase::setupMetatable(luaVM);
       //
       lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
       lua_register(luaVM, "form_by_id", _globals::FormByID);

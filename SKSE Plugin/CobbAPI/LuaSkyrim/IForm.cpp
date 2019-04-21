@@ -97,34 +97,9 @@ namespace LuaSkyrim {
             // We already have a wrapper for this form; return it.
             //
             lua_remove(luaVM, -2);
-            _MESSAGE("Reusing a form wrapper!");
-            {  // DEBUG ONLY
-               auto count = lua_gettop(luaVM);
-               if (count != 1)
-                  _MESSAGE("== WARNING: We are returning with %d elements in the Lua stack!", count);
-            }
             return 1;
          }
-         _MESSAGE("No pre-existing wrapper; stack size as of immediate check is %d.", lua_gettop(luaVM));
          lua_pop(luaVM, 2);
-         {  // DEBUG ONLY
-            auto count = lua_gettop(luaVM);
-            if (count != 0)
-               _MESSAGE("== WARNING: The stack is wrong as of the end of the reuse check!", count);
-         }
-         /*//
-         lua_pushlightuserdata(luaVM, form); // stack: [form, list]
-         lua_rawget(luaVM, -2); // stack: [list[form], list]
-         lua_remove(luaVM, -2); // stack: [list[form]]
-         if (lua_isnil(luaVM, -1) == 0) {
-            _MESSAGE("Reusing a form wrapper!");
-            //
-            // We already have a wrapper for this form; return it.
-            //
-            return 1;
-         }
-         lua_remove(luaVM, -1); // stack: [] // pop nil from the stack
-         //*/
       }
       IForm* a = (IForm*) lua_newuserdata(luaVM, sizeof(IForm));
       luaL_getmetatable(luaVM, metatableName);
@@ -136,22 +111,9 @@ namespace LuaSkyrim {
          //
          ; // STACK: [wrapper]
          lua_getfield (luaVM, LUA_REGISTRYINDEX, registryName); // STACK: [list, wrapper]
-_MESSAGE("About to persist the wrapper; got registry's wrapper list. Stack count is %d; should be 2.", lua_gettop(luaVM));
          lua_pushvalue(luaVM, -2);       // STACK: [wrapper, list, wrapper]
          lua_rawsetp  (luaVM, -2, form); // STACK: [list, wrapper]
          lua_pop      (luaVM, 1);        // STACK: [wrapper]
-         {  // DEBUG ONLY
-            auto count = lua_gettop(luaVM);
-            if (count != 1)
-               _MESSAGE("== WARNING: We are returning with %d elements in the Lua stack!", count);
-         }
-         /*//
-         lua_getfield(luaVM, LUA_REGISTRYINDEX, registryName); // STACK: [list, wrapper]
-         lua_pushlightuserdata(luaVM, form); // STACK: [form, list, wrapper]
-         lua_pushvalue(luaVM, -3); // STACK: [wrapper, form, list, wrapper]
-         lua_rawset(luaVM, -3); // STACK: [list, wrapper]
-         lua_remove(luaVM, -1); // STACK: [wrapper] // pop the registry from the stack
-         //*/
       }
       a->wrapped = form;
       return 1;

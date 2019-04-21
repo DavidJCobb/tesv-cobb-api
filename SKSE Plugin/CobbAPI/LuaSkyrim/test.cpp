@@ -30,7 +30,7 @@ namespace LuaSkyrim {
                out = lua_tolstring(L, 1, nullptr);
                _MESSAGE("Logging message from a Lua script: %s", out);
             }
-            /*// Loop over the arguments:
+            /*// SAMPLE CODE -- Loop over the arguments:
             for (int i = 2; i <= n; i++) {
                if (!lua_isnumber(L, i)) {
                   lua_pushliteral(L, "incorrect argument");
@@ -50,14 +50,12 @@ namespace LuaSkyrim {
          static luastackchange_t FormByID(lua_State* L) {
             int n = lua_gettop(L); // number of arguments
             //
-_MESSAGE("== Stack size at start of form getter: %d (i.e. that many arguments)", n);
             if (!lua_isnumber(L, 1)) {
                lua_pushliteral(L, "incorrect argument");
                lua_error(L);
                return 0;
             }
             lua_Number num = lua_tonumber(L, 1);
-            lua_pop(L, n); // technically, we only need this to ensure accurate debug logs in IForm::make, and we can remove it once that's done
             UInt32 id = num;
             TESForm* form = ::LookupFormByID(id);
             return IForm::make(L, form);

@@ -109,7 +109,8 @@ if (type != LUA_TTABLE) _MESSAGE("__index: key didn't exist on the base class; r
       //    end
       //    return userdata
       //
-      lua_checkstack(luaVM, 4);
+      lua_checkstack(luaVM, 3);
+      auto top = lua_gettop(luaVM);
       //
       void* userdata = lua_touserdata(luaVM, stackPos);
       if (!userdata)
@@ -122,29 +123,29 @@ if (type != LUA_TTABLE) _MESSAGE("__index: key didn't exist on the base class; r
       luaL_getmetatable(luaVM, classKey);
       // STACK: [classMeta, instanceMeta, ...]
       while (!lua_rawequal(luaVM, -1, -2)) {
+         //
+         // TODO: _asClass fails on superclasses (i.e. IForm member functions can be called 
+         // on an IActorBase, but will error because they can't tell they're running on a 
+         // valid IForm).
+         //
          lua_pushstring(luaVM, "__superclass"); // STACK: ["__superclass", classMeta, instanceMeta, ...]
-         auto type = lua_rawget(luaVM, -2); // STACK: [classMeta["__superclass"], "__superclass", classMeta, instanceMeta, ...]
+         auto type = lua_rawget(luaVM, -3); // STACK: [classMeta["__superclass"], classMeta, instanceMeta, ...]
          if (type != LUA_TTABLE) {
-            lua_pop(luaVM, 4);
+            lua_settop(luaVM, top);
             return nullptr;
          }
-         lua_replace(luaVM, -4); // STACK: ["__superclass", classMeta, classMeta["__superclass"], ...]
-         lua_pop    (luaVM, 1);  // STACK: [classMeta, classMeta["__superclass"], ...]
+         lua_replace(luaVM, -3); // STACK: [classMeta, classMeta["__superclass"], ...]
       }
+      lua_settop(luaVM, top);
       return userdata;
    }
    extern void _defineClass(lua_State* luaVM, const char* className, const char* superclassName, const luaL_Reg* methods) {
       //
       // LUA:
       //    local meta = {}
+      //    registry[className] = meta
       //    --
-      //    local a
-      //    if superclassName then
-      //       a = registry[superclassName]
-      //    else
-      //       a = meta
-      //    end
-      //    meta.__index = a
+      //    meta.__index = __index -- CFunction
       //    --
       //    if superclassName then
       //       meta.__superclass = registry[superclassName]
@@ -159,22 +160,16 @@ if (type != LUA_TTABLE) _MESSAGE("__index: key didn't exist on the base class; r
       //
       lua_checkstack(luaVM, 3);
       //
-      luaL_newmetatable(luaVM, className);
+      luaL_newmetatable(luaVM, className); // STACK: [newmeta]
       //
-      lua_pushstring(luaVM, "__index");
-      lua_pushcfunction(luaVM, &__index);
-      /*//
-      if (superclassName)
-         luaL_getmetatable(luaVM, superclassName);
-      else
-         lua_pushvalue(luaVM, -2); // pushes the metatable
-      //*/
-      lua_settable(luaVM, -3);
+      lua_pushstring   (luaVM, "__index"); // STACK: ["__index", newmeta]
+      lua_pushcfunction(luaVM, &__index);  // STACK: [CFunction:__index, "__index", newmeta]
+      lua_settable     (luaVM, -3);        // STACK: [newmeta]
       //
       if (superclassName) {
-         lua_pushstring   (luaVM, "__superclass");
-         luaL_getmetatable(luaVM, superclassName);
-         lua_settable     (luaVM, -3);
+         lua_pushstring   (luaVM, "__superclass"); // STACK: ["__superclass", newmeta]
+         luaL_getmetatable(luaVM, superclassName); // STACK: [supermeta, "__superclass", newmeta]
+         lua_settable     (luaVM, -3); // STACK: [newmeta]
       }
       //
       if (methods)

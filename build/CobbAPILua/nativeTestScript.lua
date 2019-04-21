@@ -12,6 +12,11 @@ if form_by_id then
          return
       end
       logmessage("Form wrapper exists.")
+      if not form.formID then
+         logmessage(" - Wrapper is missing its member functions!")
+         return false
+      end
+      --[[
       local mt = getmetatable(form)
       logmessage("Got the form-wrapper's metatable...")
       if mt then
@@ -25,6 +30,7 @@ if form_by_id then
          logmessage(" - It's not defined!")
          return false
       end
+      ]]--
       logmessage("Form wrapper is good!")
       return true
    end

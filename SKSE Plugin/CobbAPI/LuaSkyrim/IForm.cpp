@@ -45,23 +45,7 @@ namespace LuaSkyrim {
       static bool isDefined = false;
       if (isDefined)
          return;
-      {  // Create the metatable
-         /*//
-         luaL_newmetatable(luaVM, metatableName);
-         //
-         lua_pushstring(luaVM, "__index");
-         lua_pushvalue(luaVM, -2); // pushes the metatable
-         lua_settable(luaVM, -3); // metatable.__index = metatable
-         //
-         // TODO: The metatable should also define __meta, so that it can't be 
-         // retrieved using getmetatable(wrapperObj).
-         //
-         luaL_setfuncs(luaVM, _metatableMethods, 0); // import functions into the metatable
-         //
-         lua_pop(luaVM, 1); // pop metatable from the stack
-         //*/
-         _defineClass(luaVM, metatableName, nullptr, _metatableMethods);
-      }
+      _defineClass(luaVM, metatableName, nullptr, _metatableMethods);
       {  // Create the registry
          //
          // wrapper_map = {}
@@ -114,7 +98,6 @@ namespace LuaSkyrim {
       }
       IForm* a = (IForm*) lua_newuserdata(luaVM, sizeof(IForm));
       if (form) {
-         /*//
          //
          // TODO: Can we improve this somehow?
          //
@@ -125,8 +108,6 @@ namespace LuaSkyrim {
             default:
                luaL_getmetatable(luaVM, metatableName);
          }
-         //*/
-         luaL_getmetatable(luaVM, metatableName);
       } else {
          //
          // No form; return nil.

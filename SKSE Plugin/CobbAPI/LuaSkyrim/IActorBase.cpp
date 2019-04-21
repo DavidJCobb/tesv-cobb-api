@@ -45,23 +45,7 @@ namespace LuaSkyrim {
       static bool isDefined = false;
       if (isDefined)
          return;
-      {  // Create the metatable
-         _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
-         /*//
-         luaL_newmetatable(luaVM, metatableName);
-         //
-         lua_pushstring(luaVM, "__index");
-         luaL_getmetatable(luaVM, IForm::metatableName);
-         lua_settable(luaVM, -3); // metatable.__index = IForm_metatable
-         //
-         // TODO: Do we need to define __meta on every metatable, or just on 
-         // the base class's metatable?
-         //
-         luaL_setfuncs(luaVM, _metatableMethods, 0); // import functions into the metatable
-         //
-         lua_pop(luaVM, 1); // pop metatable from the stack
-         //*/
-      }
+      _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
       isDefined = true;
    };
    IActorBase* IActorBase::fromStack(lua_State* luaVM, UInt32 stackPos) {

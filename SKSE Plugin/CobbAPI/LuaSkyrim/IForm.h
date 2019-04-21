@@ -4,8 +4,29 @@
 class TESForm;
 namespace LuaSkyrim {
    //
-   // Interface for basic forms. Not suitable for forms that can 
-   // be unloaded or deleted at run-time.
+   // Interface for basic forms. Not suitable for forms that can be unloaded or 
+   // deleted at run-time.
+   //
+   // When defining subclasses, you should:
+   //
+   //  - Modify a switch-case in IForm::make, to associate your subclass with the 
+   //    proper form type.
+   // 
+   //  - Have your subclass inherit from IForm.
+   // 
+   //  - Have your subclass create its metatable similarly to IForm, but passing 
+   //    IForm::metatableName as the superclass name.
+   //
+   // TODO:
+   //
+   //  - Switch-cases suck. Is there a better way to associate classes (or their 
+   //    metatables) with form types?
+   //
+   //  - We should have a singleton, _G["skyrim"], for the majority of game API 
+   //    functions (e.g. "getFormByID"). Inside this singleton, we should have 
+   //    one singleton for each form interface (e.g. skyrim.IForm); these form 
+   //    interface singletons could hold useful methods (e.g. "for each form of 
+   //    this type") and constants (e.g. IActorBase.GENDER_MALE = 0).
    //
    class IForm {
       public:

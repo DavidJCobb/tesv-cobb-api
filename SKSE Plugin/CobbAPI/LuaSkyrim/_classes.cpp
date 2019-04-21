@@ -31,55 +31,17 @@ namespace LuaSkyrim {
          //       end
          //    end
          //
-         {  // DEBUG
-            auto key1 = lua_tostring(luaVM, 2);
-            auto key2 = lua_tostring(luaVM, -1);
-            if (key1 && key2) {
-               _MESSAGE("__index accessed; key is \"%s\" (should == \"%s\")", key1, key2);
-            } else {
-               if (key1)
-                  _MESSAGE("__index accessed; stack isn't what we expect; index 2 is \"%s\"", key1);
-               else if (key2)
-                  _MESSAGE("__index accessed; stack isn't what we expect; index -1 is \"%s\"", key2);
-               else
-                  _MESSAGE("__index accessed; stack isn't what we expect; key unknown");
-            }
-         }
-         /*//
-         lua_pushvalue(luaVM,  1); // STACK: [t,    k, t]
-         lua_rawget   (luaVM, -3); // STACK: [t[k], k, t]
-         if (!lua_isnil(luaVM, -1))
-            return 1;
-_MESSAGE("__index: key didn't exist on the userdata");
-         lua_pop(luaVM, 1); // STACK: [k, t]
-         //*/
          if (!lua_getmetatable(luaVM, -2)) // STACK: [meta, k, t]
             return 0;
-_MESSAGE("__index: found the userdata metatable");
          lua_replace  (luaVM, -3); // STACK: [k, meta]
          lua_pushvalue(luaVM, -1); // STACK: [k, k, meta]
          lua_rawget   (luaVM, -3); // STACK: [meta[k], k, meta]
-_MESSAGE("__index: key exists on the metatable? %d", !lua_isnil(luaVM, -1));
          if (!lua_isnil(luaVM, -1))
             return 1;
-_MESSAGE("__index: key didn't exist on the metatable");
          lua_pop(luaVM, 1); // STACK: [k, meta]
          while (true) {
-_MESSAGE("__index: new iteration; stack count is %d", lua_gettop(luaVM));
-            {  // DEBUG
-               lua_pushstring(luaVM, "__name"); // STACK: ["__name", k, meta]
-               if (lua_rawget(luaVM, -3) == LUA_TSTRING) { // STACK: [meta.__name, k, meta]
-                  auto name = lua_tostring(luaVM, -1);
-                  if (name)
-                     _MESSAGE(" - current metatable name is \"%s\"", name);
-                  else
-                     _MESSAGE(" - current metatable is nameless");
-               }
-               lua_pop(luaVM, 1); // STACK: [k, meta]
-            }
             lua_pushstring(luaVM, "__superclass"); // STACK: ["__superclass",    k, meta]
             auto type = lua_rawget(luaVM, -3);     // STACK: [meta.__superclass, k, meta]
-if (type != LUA_TTABLE) _MESSAGE("__index: key didn't exist on the base class; returning nothing");
             if (type != LUA_TTABLE)
                return 0;
             lua_replace  (luaVM, -3); // STACK: [k, meta.__superclass]
@@ -123,11 +85,6 @@ if (type != LUA_TTABLE) _MESSAGE("__index: key didn't exist on the base class; r
       luaL_getmetatable(luaVM, classKey);
       // STACK: [classMeta, instanceMeta, ...]
       while (!lua_rawequal(luaVM, -1, -2)) {
-         //
-         // TODO: _asClass fails on superclasses (i.e. IForm member functions can be called 
-         // on an IActorBase, but will error because they can't tell they're running on a 
-         // valid IForm).
-         //
          lua_pushstring(luaVM, "__superclass"); // STACK: ["__superclass", classMeta, instanceMeta, ...]
          auto type = lua_rawget(luaVM, -3); // STACK: [classMeta["__superclass"], classMeta, instanceMeta, ...]
          if (type != LUA_TTABLE) {

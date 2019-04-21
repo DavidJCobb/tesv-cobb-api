@@ -1,3 +1,9 @@
+local TESV_GENDERS = {
+   [-1] = "unknown",
+   [0]  = "male",
+   [1]  = "female",
+}
+
 if logmessage and nativeTable then
    logmessage("Found the native vars! Logging native table contents...")
    for k, v in pairs(nativeTable) do
@@ -16,21 +22,6 @@ if form_by_id then
          logmessage(" - Wrapper is missing its member functions!")
          return false
       end
-      --[[
-      local mt = getmetatable(form)
-      logmessage("Got the form-wrapper's metatable...")
-      if mt then
-         if mt.formID then
-            logmessage(" - It defines formID.")
-         else
-            logmessage(" - metatable.formID is not defined!")
-            return false
-         end
-      else
-         logmessage(" - It's not defined!")
-         return false
-      end
-      ]]--
       logmessage("Form wrapper is good!")
       return true
    end
@@ -43,7 +34,7 @@ if form_by_id then
       logmessage(string.format("formType == %u", form:formType()))
       if form.gender then
          local gender = form:gender()
-         logmessage(string.format("gender   == %s", tostring(gender)))
+         logmessage(string.format("gender   == %s", TESV_GENDERS[gender or -1]))
       else
          logmessage("IActorBase methods not present!")
       end

@@ -46,23 +46,19 @@ namespace LuaSkyrim {
       if (isDefined)
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
+      //
+      // TODO: It would be valuable to import a singleton for each form interface. These 
+      // singletons could hold useful static functions (e.g. "for each form of this type") 
+      // and relevant constants.
+      //
+      // TODO: Define these constants on IActorBase's singleton:
+      //    GENDER_MALE    =  0
+      //    GENDER_FEMALE  =  1
+      //    GENDER_UNKNOWN = -1
+      //
       isDefined = true;
    };
    IActorBase* IActorBase::fromStack(lua_State* luaVM, UInt32 stackPos) {
       return (IActorBase*)_asClass(luaVM, stackPos, metatableName);
-      /*//
-      return (IActorBase*) luaL_checkudata(luaVM, stackPos, metatableName);
-      //*/
-   };
-
-   luastackchange_t IActorBase::make(lua_State* luaVM, TESForm* form) {
-      if (form && form->formType != kFormType_NPC)
-         form = nullptr;
-      //
-      // TODO: The game can create ActorBases at run-time for leveled actors; we either 
-      // need to modify IActorBase to handle forms that can be deleted, or have it fail 
-      // on any 0xFFxxxxxx forms.
-      //
-      return IForm::make(luaVM, form);
    };
 };

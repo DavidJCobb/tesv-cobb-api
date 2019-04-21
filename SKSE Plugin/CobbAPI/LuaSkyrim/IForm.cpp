@@ -65,12 +65,6 @@ namespace LuaSkyrim {
    };
    IForm* IForm::fromStack(lua_State* luaVM, UInt32 stackPos) {
       return (IForm*) _asClass(luaVM, stackPos, metatableName);
-      //
-      // TODO: This needs to handle subclasses.
-      //
-      /*//
-      return (IForm*) luaL_checkudata(luaVM, stackPos, metatableName);
-      //*/
    };
 
    luastackchange_t IForm::make(lua_State* luaVM, TESForm* form) {

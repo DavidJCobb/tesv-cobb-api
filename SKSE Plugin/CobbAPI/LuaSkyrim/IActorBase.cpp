@@ -46,6 +46,7 @@ namespace LuaSkyrim {
       if (isDefined)
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
+      IForm::mapFormTypeToMetatable(luaVM, kFormType_NPC, metatableName);
       //
       // TODO: It would be valuable to import a singleton for each form interface. These 
       // singletons could hold useful static functions (e.g. "for each form of this type") 

@@ -22,6 +22,11 @@ namespace LuaSkyrim {
    //  - Switch-cases suck. Is there a better way to associate classes (or their 
    //    metatables) with form types?
    //
+   //     - We could have the I[Whatever]::setupMetatable function register the 
+   //       metatable in some table on the Lua registry mapping form types to 
+   //       metatables, and then have IForm::make look the metatable up from 
+   //       that table (defaulting to the IForm metatable if it's not found).
+   //
    //  - We should have a singleton, _G["skyrim"], for the majority of game API 
    //    functions (e.g. "getFormByID"). Inside this singleton, we should have 
    //    one singleton for each form interface (e.g. skyrim.IForm); these form 
@@ -30,10 +35,13 @@ namespace LuaSkyrim {
    //
    class IForm {
       public:
-         static constexpr char* metatableName = "Skyrim.IForm";
-         static constexpr char* registryName  = "Skyrim.IForm.wrappers";
+         static constexpr char* metatableName    = "Skyrim.IForm";
+         static constexpr char* subclassListName = "Skyrim.IForm.subclasses"; // name of a table mapping form types to subclass metatables
+         static constexpr char* registryName     = "Skyrim.IForm.wrappers"; // name of a weakmap holding existing form wrappers, so they can be reused
 
-         static void   setupMetatable(lua_State* luaVM);
+         static void setupMetatable(lua_State* luaVM);
+         static void mapFormTypeToMetatable(lua_State* luaVM, uint8_t formType, const char* metatableName); // must have called IForm::setupMetatable first
+
          static IForm* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
 
          static luastackchange_t make(lua_State* luaVM, TESForm*);

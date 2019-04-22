@@ -14,8 +14,5 @@ namespace LuaSkyrim {
 
          static void        setupMetatable(lua_State* luaVM);
          static IActorBase* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
-
-         static void mapFormTypeToMetatable(lua_State* luaVM, uint8_t formType, const char* metatableName) = delete;
-         static luastackchange_t make(lua_State* luaVM, TESForm*) = delete;
    };
 }

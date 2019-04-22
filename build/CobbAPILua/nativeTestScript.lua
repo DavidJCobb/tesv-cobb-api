@@ -38,6 +38,15 @@ if form_by_id then
       else
          logmessage("IActorBase methods not present!")
       end
+      if form.race then
+         local race = form:race()
+         if race then
+            logmessage(string.format("race     == %s", race:name()))
+            logmessage(string.format("isChild? == %s", tostring(race:isChild())))
+         else
+            logmessage("Unable to retrieve the race!")
+         end
+      end
       --
       local form2 = form_by_id(7)
       if form == form2 then
@@ -51,6 +60,26 @@ if form_by_id then
          end
       end
       form2 = nil
+      --
+      do
+         local mt = getmetatable(form)
+         if mt then
+            logmessage("IForm metatable tests as truthy.")
+            if mt.formID then
+               logmessage(" - metatable.formID is retrievable")
+            else
+               logmessage(" - metatable.formID is not retrievable")
+            end
+            mt.foo = 5
+            if mt.foo then
+               logmessage(" - Property assignment to the metatable is possible.")
+            else
+               logmessage(" - Property assignment to the metatable is impossible.")
+            end
+         else
+            logmessage("IForm metatable tests as nil or false.")
+         end
+      end
    end
    form = nil
    logmessage("Done working with the player actor-base.")

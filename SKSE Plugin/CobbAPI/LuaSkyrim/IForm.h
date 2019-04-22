@@ -8,24 +8,18 @@ namespace LuaSkyrim {
    // deleted at run-time.
    //
    // When defining subclasses, you should:
-   //
-   //  - Modify a switch-case in IForm::make, to associate your subclass with the 
-   //    proper form type.
    // 
    //  - Have your subclass inherit from IForm.
    // 
    //  - Have your subclass create its metatable similarly to IForm, but passing 
    //    IForm::metatableName as the superclass name.
    //
+   //  - After creating the metatable, map it to its form type by way of a call 
+   //    to IForm::mapFormTypeToMetatable. This will ensure that anything that 
+   //    returns a form to Lua (by way of IForm::make) will use your subclass 
+   //    if the form is of your subclass's form type.
+   //
    // TODO:
-   //
-   //  - Switch-cases suck. Is there a better way to associate classes (or their 
-   //    metatables) with form types?
-   //
-   //     - We could have the I[Whatever]::setupMetatable function register the 
-   //       metatable in some table on the Lua registry mapping form types to 
-   //       metatables, and then have IForm::make look the metatable up from 
-   //       that table (defaulting to the IForm metatable if it's not found).
    //
    //  - We should have a singleton, _G["skyrim"], for the majority of game API 
    //    functions (e.g. "getFormByID"). Inside this singleton, we should have 
@@ -33,21 +27,48 @@ namespace LuaSkyrim {
    //    interface singletons could hold useful methods (e.g. "for each form of 
    //    this type") and constants (e.g. IActorBase.GENDER_MALE = 0).
    //
+   //  - We should probably move form interfaces to a subfolder, and have a 
+   //    single file that includes all of them.
+   //
+   //     - That file should also define a function that sets up all form 
+   //       metatables and similar for a given lua_State.
+   //
    class IForm {
       public:
          static constexpr char* metatableName    = "Skyrim.IForm";
-         static constexpr char* subclassListName = "Skyrim.IForm.subclasses"; // name of a table mapping form types to subclass metatables
-         static constexpr char* registryName     = "Skyrim.IForm.wrappers"; // name of a weakmap holding existing form wrappers, so they can be reused
 
          static void setupMetatable(lua_State* luaVM);
-         static void mapFormTypeToMetatable(lua_State* luaVM, uint8_t formType, const char* metatableName); // must have called IForm::setupMetatable first
 
          static IForm* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
 
-         static luastackchange_t make(lua_State* luaVM, TESForm*);
-
          TESForm* wrapped = nullptr;
    };
+
+   // Given a TESForm pointer, this function checks if a heavy-userdata has been 
+   // created for the form; if so, that userdata is pushed onto the top of the Lua 
+   // stack; otherwise, a heavy-userdata is created for the form and pushed onto 
+   // the top of the stack.
+   //
+   // This function will create an IForm if the form is of an unrecognized type. 
+   // You can register other heavy-userdata classes (which should subclass IForm) 
+   // using IForm::mapFormTypeToMetatable.
+   //
+   extern luastackchange_t wrapForm(lua_State* luaVM, TESForm*);
+
+   //
+   // Map a form type to a Lua metatable, so that wrapForm uses that metatable 
+   // when passing a form to Lua. The metatable should be designed for a heavy 
+   // userdata whose C buffer is an IForm instance, i.e. you should subclass 
+   // IForm.
+   //
+   extern void mapFormTypeToMetatable(lua_State* luaVM, uint8_t formType, const char* metatableName);
+
+   //
+   // These keys are used in the Lua registry to power specific features for form 
+   // wrappers.
+   //
+   extern constexpr char* ce_formSubclassListKey = "Skyrim.IForm.subclasses";
+   extern constexpr char* ce_formWrapperReuseKey = "Skyrim.IForm.wrappers";
 
    //
    // Here's the approach that needs to be taken for providing access to forms to Lua 

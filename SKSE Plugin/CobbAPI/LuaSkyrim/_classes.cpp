@@ -1,7 +1,7 @@
 #include "_classes.h"
 
 namespace LuaSkyrim {
-   namespace {
+   namespace { // member functions for the class metatables
       static luastackchange_t __index(lua_State* luaVM) {
          //
          // LUA:
@@ -51,6 +51,14 @@ namespace LuaSkyrim {
                return 1;
             lua_pop(luaVM, 1); // STACK: [k, meta.__superclass]
          }
+      }
+   }
+   namespace _fakeUserdataMembers {
+      static luastackchange_t __index(lua_State* luaVM) {
+         return 0;
+      }
+      static luastackchange_t __newindex(lua_State* luaVM) {
+         return 0;
       }
    }
 
@@ -128,6 +136,13 @@ namespace LuaSkyrim {
          luaL_getmetatable(luaVM, superclassName); // STACK: [supermeta, "__superclass", newmeta]
          lua_settable     (luaVM, -3); // STACK: [newmeta]
       }
+      //
+      // Define __metatable on the metatable, so that Lua scripts can't retrieve 
+      // the metatable and do shenanigans with it:
+      //
+      lua_pushstring(luaVM, "__metatable");
+      lua_pushboolean(luaVM, false);
+      lua_settable(luaVM, -3); // metatable.__metatable = false
       //
       if (methods)
          luaL_setfuncs(luaVM, methods, 0); // import functions into the metatable

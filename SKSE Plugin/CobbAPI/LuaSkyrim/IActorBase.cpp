@@ -1,7 +1,7 @@
 #include "IActorBase.h"
 #include "_classes.h"
 #include "ReverseEngineered/Forms/TESForm.h"
-#include "ReverseEngineered/Forms/BaseForms/TESActorBase.h"
+#include "ReverseEngineered/Forms/BaseForms/TESNPC.h"
 
 namespace LuaSkyrim {
    namespace { // metatable methods
@@ -14,15 +14,29 @@ namespace LuaSkyrim {
             else {
                int gender = -1;
                if (form->wrapped->formType == kFormType_NPC) {
-                  auto  base = (RE::TESActorBase*) form->wrapped;
+                  auto  base = (RE::TESNPC*) form->wrapped;
                   auto& data = base->actorData;
-                  if (data.flags & RE::TESActorBaseData::kFlag_Female)
+                  if (data.flags & RE::TESNPC::kFlag_Female)
                      gender = 1;
                   else
                      gender = 0;
                }
                lua_pushnumber(L, gender);
             }
+            return 1;
+         };
+         luastackchange_t race(lua_State* L) {
+            IForm* form = IActorBase::fromStack(L);
+            luaL_argcheck(L, form != nullptr, 1, "'IActorBase' expected");
+            if (!form->wrapped) {
+               lua_pushnil(L);
+               return 1;
+            }
+            auto base = (RE::TESNPC*) form->wrapped;
+            auto race = base->race.race;
+            if (race)
+               return wrapForm(L, race);
+            lua_pushnil(L);
             return 1;
          };
          luastackchange_t __tostring(lua_State* L) {
@@ -38,6 +52,7 @@ namespace LuaSkyrim {
    }
    static const luaL_Reg _metatableMethods[] = {
       { "gender",     _methods::gender },
+      { "race",       _methods::race },
       { "__tostring", _methods::__tostring },
       { NULL, NULL }
    };
@@ -46,7 +61,7 @@ namespace LuaSkyrim {
       if (isDefined)
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
-      IForm::mapFormTypeToMetatable(luaVM, kFormType_NPC, metatableName);
+      mapFormTypeToMetatable(luaVM, kFormType_NPC, metatableName);
       //
       // TODO: It would be valuable to import a singleton for each form interface. These 
       // singletons could hold useful static functions (e.g. "for each form of this type") 

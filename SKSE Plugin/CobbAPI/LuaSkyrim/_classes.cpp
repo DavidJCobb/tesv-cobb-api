@@ -164,7 +164,10 @@ namespace LuaSkyrim {
       if (superclassName) {
          lua_pushstring   (luaVM, "__superclass"); // STACK: ["__superclass", newmeta]
          luaL_getmetatable(luaVM, superclassName); // STACK: [supermeta, "__superclass", newmeta]
-         lua_settable     (luaVM, -3); // STACK: [newmeta]
+         if (lua_isnil(luaVM, -1)) {
+            _MESSAGE("WARNING: Failed to set up %s as the superclass of %s; the former's metatable is not yet defined.", superclassName, className);
+         }
+         lua_settable(luaVM, -3); // STACK: [newmeta]
       }
       //
       // Define __metatable on the metatable, so that Lua scripts can't retrieve 

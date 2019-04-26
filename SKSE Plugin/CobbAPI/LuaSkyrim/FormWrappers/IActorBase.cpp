@@ -1,5 +1,5 @@
 #include "IActorBase.h"
-#include "_classes.h"
+#include "LuaSkyrim/_classes.h"
 #include "ReverseEngineered/Forms/TESForm.h"
 #include "ReverseEngineered/Forms/BaseForms/TESNPC.h"
 

@@ -1,13 +1,18 @@
 #pragma once
-#include "_includes.h"
+#include "LuaSkyrim/_includes.h"
 
 class TESForm;
 namespace LuaSkyrim {
    //
-   // Interface for basic forms. Not suitable for forms that can be unloaded or 
-   // deleted at run-time.
+   // IFORM
    //
-   // When defining subclasses, you should:
+   // Interface for forms; the base type used for heavy-userdata that serve 
+   // as wrappers for passing TESForm pointers to Lua. It can and should be 
+   // subclassed for different form types, and there are some facilities 
+   // built-in to allow for form types whose forms can be unloaded or deleted 
+   // from memory during Skyrim's normal operation.
+   //
+   // WHEN DEFINING SUBCLASSES, YOU SHOULD:
    // 
    //  - Have your subclass inherit from IForm.
    //
@@ -26,6 +31,14 @@ namespace LuaSkyrim {
    //       pass that condition as your boolean. For example, only actor-bases 
    //       that were created at run-time (0xFF load order index) can be deleted, 
    //       so IActorBase passes the result of a form ID check as the boolean.
+   //
+   //       Typically, wrappers for form types that can unload will contain 
+   //       extra information that can be used to relocate the wrapped form, in 
+   //       the case that it is unloaded and later reloaded. For example, a 
+   //       wrapper for TESObjectREFR should store the reference form ID, while 
+   //       a wrapper for an exterior TESObjectCELL should store the grid coord-
+   //       inates and parent TESWorldSpace of the cell. You'll want to be doing 
+   //       this in the constructor.
    // 
    //  - Have your subclass create its metatable similarly to IForm, but passing 
    //    IForm::metatableName as the superclass name.
@@ -38,7 +51,7 @@ namespace LuaSkyrim {
    //  - Map the subclass itself to its form type using mapFormTypeToFactory. 
    //    The factory argument should be formWrapperFactory<YourSubclassHere>.
    //
-   // When defining member functions on a subclass, you should:
+   // WHEN DEFINING MEMBER FUNCTIONS ON A SUBCLASS, YOU SHOULD:
    //
    //  - Begin them with this code:
    // 
@@ -47,6 +60,14 @@ namespace LuaSkyrim {
    //       auto form = wrapper->unwrap();
    //
    //  - Check whether the form is nullptr.
+   //
+   // THINGS TO NOTE:
+   //
+   //  - Because we're mapping subclasses to form types, things can get a little 
+   //    weird. Suppose you define a subclass for TESObjectREFR, but no subclass 
+   //    for Actor. If Lua attempts to return an Actor, then it will use the IForm 
+   //    wrapper, not the IReference wrapper, because IReference only maps to the 
+   //    form type for TESObjectREFR and not the form type for Actor.
    //
    // TODO:
    //

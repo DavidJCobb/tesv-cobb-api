@@ -25,7 +25,7 @@ if form_by_id then
       logmessage("Form wrapper is good!")
       return true
    end
-   
+   --
    logmessage("Attempting to run form_by_id...")
    local form = form_by_id(7)
    logmessage("Retrieved the player actor-base.")
@@ -82,6 +82,39 @@ if form_by_id then
       end
    end
    form = nil
+   --
+   form = form_by_id(0x14)
+   if form then
+      logmessage("Got the player reference.")
+      logmessage(string.format("formID   == %08X", form:formID()))
+      logmessage(string.format("formType == %u", form:formType()))
+      if form.baseForm then
+         local base = form:baseForm()
+         if base then
+            logmessage(string.format("baseID   == %08X", base:formID()))
+            logmessage(string.format("baseType == %u", base:formType()))
+         else
+            logmessage("base     == irretrievable or nullptr")
+         end
+         local cell = form:parentCell()
+         if cell then
+            logmessage(string.format("cellID   == %08X", cell:formID()))
+            logmessage(string.format("cellType == %u", cell:formType()))
+         else
+            logmessage("cell     == irretrievable or nullptr")
+         end
+         local x, y, z = form:position()
+         logmessage(string.format("position == (%s, %s, %s)", tostring(x), tostring(y), tostring(z)))
+         local a, b, c = form:position()
+         logmessage(string.format("rotation == (%s, %s, %s)", tostring(a), tostring(b), tostring(c)))
+         local scale = form:scale()
+         logmessage(string.format("scale    == %s", tostring(scale)))
+      else
+         logmessage("IReference member functions not available!")
+      end
+      form = nil
+   end
+   --
    logmessage("Done working with the player actor-base.")
 end
 

@@ -1,6 +1,5 @@
 #include "IForm.h"
-#include "IActorBase.h"
-#include "_classes.h"
+#include "LuaSkyrim/_classes.h"
 #include "ReverseEngineered/Forms/TESForm.h"
 
 namespace LuaSkyrim {

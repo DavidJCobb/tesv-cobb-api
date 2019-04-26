@@ -1,5 +1,5 @@
 #pragma once
-#include "_includes.h"
+#include "LuaSkyrim/_includes.h"
 #include "IForm.h"
 
 class TESForm;

@@ -4,6 +4,8 @@
 #include "ReverseEngineered/Forms/TESForm.h"
 
 namespace LuaSkyrim {
+   static FormWrapperFactoryFunction _wrapperFactoriesByFormType[0xFF];
+
    luastackchange_t wrapForm(lua_State* luaVM, TESForm* form) {
       if (!form) {
          //
@@ -34,7 +36,13 @@ namespace LuaSkyrim {
          }
          lua_pop(luaVM, 2);
       }
-      IForm* a = (IForm*)lua_newuserdata(luaVM, sizeof(IForm));
+      auto formType = form->formType;
+      IForm* a;
+      if (_wrapperFactoriesByFormType[formType]) {
+         a = _wrapperFactoriesByFormType[formType](luaVM, form);
+      } else {
+         a = formWrapperFactory<IForm>(luaVM, form);
+      }
       //
       lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formSubclassListKey);
       if (lua_isnil(luaVM, -1)) {
@@ -72,6 +80,10 @@ namespace LuaSkyrim {
       return 1;
    };
 
+   void mapFormTypeToFactory(uint8_t formType, FormWrapperFactoryFunction func) {
+      _wrapperFactoriesByFormType[formType] = func;
+   }
+
    void mapFormTypeToMetatable(lua_State* luaVM, uint8_t formType, const char* metatableName) {
       lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formSubclassListKey); // STACK: [subclassList]
       if (lua_isnil(luaVM, -1)) {
@@ -89,30 +101,37 @@ namespace LuaSkyrim {
    namespace { // metatable methods
       namespace _methods {
          luastackchange_t formID(lua_State* L) {
-            IForm* form = IForm::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IForm' expected");
-            if (!form->wrapped)
+            IForm* wrapper = IForm::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
+            auto form = wrapper->unwrap();
+            if (!form)
                lua_pushnumber(L, 0);
             else
-               lua_pushnumber(L, form->wrapped->formID);
+               lua_pushnumber(L, form->formID);
             return 1;
          };
          luastackchange_t formType(lua_State* L) {
-            IForm* form = IForm::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IForm' expected");
-            if (!form->wrapped)
+            IForm* wrapper = IForm::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
+            auto form = wrapper->unwrap();
+            if (!form)
                lua_pushnumber(L, 0);
             else
-               lua_pushnumber(L, form->wrapped->formType);
+               lua_pushnumber(L, form->formType);
             return 1;
          };
          luastackchange_t __tostring(lua_State* L) {
-            IForm* form = IForm::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IForm' expected");
-            if (!form->wrapped)
+            IForm* wrapper = IForm::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
+            auto form = wrapper->unwrap();
+            if (!form)
                lua_pushfstring(L, "[NONE]");
-            else
-               lua_pushfstring(L, "[FORM:%08X]", form->wrapped->formID);
+            else {
+               auto signature = wrapper->signature();
+               if (!signature)
+                  signature = "????";
+               lua_pushfstring(L, "[%s:%08X]", signature, form->formID);
+            }
             return 1; // indicate how many things we added to the Lua stack
          }
       }

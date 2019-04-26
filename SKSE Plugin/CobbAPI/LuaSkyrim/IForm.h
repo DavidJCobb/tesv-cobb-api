@@ -10,6 +10,22 @@ namespace LuaSkyrim {
    // When defining subclasses, you should:
    // 
    //  - Have your subclass inherit from IForm.
+   //
+   //     - If your subclass represents a form type that is always in memory, 
+   //       then define its constructor as so:
+   //
+   //          YourSubclassHere(TESForm* f) : IForm(f) {};
+   //
+   //     - If your subclass represents a form type that can be unloaded or 
+   //       deleted, then you should manually define a constructor that calls 
+   //       TESForm's private constructor, passing true as the boolean, e.g.
+   //
+   //          YourSubclassHere(TESForm* f) : IForm(f, true) {};
+   //
+   //       If only some forms of your subclass can be unloaded, then you can 
+   //       pass that condition as your boolean. For example, only actor-bases 
+   //       that were created at run-time (0xFF load order index) can be deleted, 
+   //       so IActorBase passes the result of a form ID check as the boolean.
    // 
    //  - Have your subclass create its metatable similarly to IForm, but passing 
    //    IForm::metatableName as the superclass name.
@@ -18,6 +34,19 @@ namespace LuaSkyrim {
    //    to IForm::mapFormTypeToMetatable. This will ensure that anything that 
    //    returns a form to Lua (by way of IForm::make) will use your subclass 
    //    if the form is of your subclass's form type.
+   //
+   //  - Map the subclass itself to its form type using mapFormTypeToFactory. 
+   //    The factory argument should be formWrapperFactory<YourSubclassHere>.
+   //
+   // When defining member functions on a subclass, you should:
+   //
+   //  - Begin them with this code:
+   // 
+   //       YourSubclassHere* wrapper = YourSubclassHere::fromStack(L);
+   //       luaL_argcheck(L, wrapper != nullptr, 1, "'YourSubclassHere' expected");
+   //       auto form = wrapper->unwrap();
+   //
+   //  - Check whether the form is nullptr.
    //
    // TODO:
    //
@@ -34,15 +63,36 @@ namespace LuaSkyrim {
    //       metatables and similar for a given lua_State.
    //
    class IForm {
+      protected:
+         IForm(TESForm* form, bool canUnload) : canUnload(canUnload), wrapped(form) {};
       public:
-         static constexpr char* metatableName    = "Skyrim.IForm";
+         IForm(TESForm* form) : wrapped(form) {};
+         //
+         virtual void resolve() {};
+         virtual void abandon() {};
+         virtual const char* signature() const { return "FORM"; };
+         //
+         static constexpr char* metatableName = "Skyrim.IForm";
 
-         static void setupMetatable(lua_State* luaVM);
+         TESForm*   wrapped   = nullptr;
+         const bool canUnload = false;
 
+         static void   setupMetatable(lua_State* luaVM);
          static IForm* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
 
-         TESForm* wrapped = nullptr;
+         TESForm* unwrap() {
+            if (this->wrapped == nullptr && this->canUnload)
+               this->resolve();
+            return this->wrapped;
+         };
    };
+
+   template<typename T> IForm* formWrapperFactory(lua_State* luaVM, TESForm* form) {
+      void* a = lua_newuserdata(luaVM, sizeof(T));
+      new (a) T(form);
+      return (IForm*) a;
+   };
+   typedef IForm* (*FormWrapperFactoryFunction)(lua_State*, TESForm*);
 
    // Given a TESForm pointer, this function checks if a heavy-userdata has been 
    // created for the form; if so, that userdata is pushed onto the top of the Lua 
@@ -54,6 +104,16 @@ namespace LuaSkyrim {
    // using IForm::mapFormTypeToMetatable.
    //
    extern luastackchange_t wrapForm(lua_State* luaVM, TESForm*);
+
+   //
+   // Map a form type to a constructor for an IForm subclass, so that we can 
+   // probably create wrappers for that subclass without having to switch-case 
+   // on the form type. This is needed because subclasses can vary in size, e.g. 
+   // ICell which will need to store the worldspace pointer and grid coordinates 
+   // for exterior cells, since those can unload unpredictably; or TESObjectREFR, 
+   // which will need to store the form ID for similar reasons.
+   //
+   extern void mapFormTypeToFactory(uint8_t formType, FormWrapperFactoryFunction);
 
    //
    // Map a form type to a Lua metatable, so that wrapForm uses that metatable 

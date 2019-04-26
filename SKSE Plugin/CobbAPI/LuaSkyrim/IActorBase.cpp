@@ -4,17 +4,20 @@
 #include "ReverseEngineered/Forms/BaseForms/TESNPC.h"
 
 namespace LuaSkyrim {
+   IActorBase::IActorBase(TESForm* form) : IForm(form, ((form->formID & 0xFF000000) == 0xFF000000)) {};
+
    namespace { // metatable methods
       namespace _methods {
          luastackchange_t gender(lua_State* L) {
-            IForm* form = IActorBase::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IActorBase' expected");
-            if (!form->wrapped)
+            IForm* wrapper = IActorBase::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
+            auto form = wrapper->unwrap();
+            if (!form)
                lua_pushnumber(L, -1);
             else {
                int gender = -1;
-               if (form->wrapped->formType == kFormType_NPC) {
-                  auto  base = (RE::TESNPC*) form->wrapped;
+               if (form->formType == kFormType_NPC) {
+                  auto  base = (RE::TESNPC*) form;
                   auto& data = base->actorData;
                   if (data.flags & RE::TESNPC::kFlag_Female)
                      gender = 1;
@@ -26,34 +29,25 @@ namespace LuaSkyrim {
             return 1;
          };
          luastackchange_t race(lua_State* L) {
-            IForm* form = IActorBase::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IActorBase' expected");
-            if (!form->wrapped) {
+            IForm* wrapper = IActorBase::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
+            auto form = wrapper->unwrap();
+            if (!form) {
                lua_pushnil(L);
                return 1;
             }
-            auto base = (RE::TESNPC*) form->wrapped;
+            auto base = (RE::TESNPC*) form;
             auto race = base->race.race;
             if (race)
                return wrapForm(L, race);
             lua_pushnil(L);
             return 1;
          };
-         luastackchange_t __tostring(lua_State* L) {
-            IForm* form = IForm::fromStack(L);
-            luaL_argcheck(L, form != nullptr, 1, "'IActorBase' expected");
-            if (!form->wrapped)
-               lua_pushfstring(L, "[NONE]");
-            else
-               lua_pushfstring(L, "[NPC_:%08X]", form->wrapped->formID);
-            return 1; // indicate how many things we added to the Lua stack
-         }
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "gender",     _methods::gender },
-      { "race",       _methods::race },
-      { "__tostring", _methods::__tostring },
+      { "gender", _methods::gender },
+      { "race",   _methods::race },
       { NULL, NULL }
    };
    void IActorBase::setupMetatable(lua_State* luaVM) {
@@ -61,6 +55,7 @@ namespace LuaSkyrim {
       if (isDefined)
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
+      mapFormTypeToFactory  (kFormType_NPC, formWrapperFactory<IActorBase>);
       mapFormTypeToMetatable(luaVM, kFormType_NPC, metatableName);
       //
       // TODO: It would be valuable to import a singleton for each form interface. These 

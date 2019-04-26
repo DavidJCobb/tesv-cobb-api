@@ -2,6 +2,7 @@
 #include "_includes.h"
 #include "IForm.h"
 
+class TESForm;
 namespace LuaSkyrim {
    //
    // TODO: The game can create ActorBases at run-time for leveled actors; we either 
@@ -10,6 +11,10 @@ namespace LuaSkyrim {
    //
    class IActorBase : public IForm {
       public:
+         IActorBase(TESForm* form);
+
+         virtual const char* signature() const { return "NPC_"; };
+
          static constexpr char* metatableName = "Skyrim.IActorBase";
 
          static void        setupMetatable(lua_State* luaVM);

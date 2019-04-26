@@ -6,30 +6,32 @@ namespace LuaSkyrim {
          //
          // LUA:
          //    function __index(t, k)
-         //       local a = rawget(t, k)
-         //       if a then
-         //          return a
-         //       end
          //       local meta = getmetatable(t)
          //       if not meta then
          //          return nil
          //       end
-         //       local b = rawget(meta, k)
-         //       if b then
-         //          return b
+         //       local a = rawget(meta, k)
+         //       if a then
+         //          return a
          //       end
          //       while true do
-         //          local c = rawget(meta, "__superclass")
-         //          if type(c) ~= "table" then
+         //          local b = rawget(meta, "__superclass")
+         //          if type(b) ~= "table" then
          //             return nil
          //          end
-         //          meta = c
-         //          local d = rawget(meta, k)
-         //          if d then
-         //             return d
+         //          meta = b
+         //          local c = rawget(meta, k)
+         //          if c then
+         //             return c
          //          end
          //       end
          //    end
+         //
+         //
+         // TODO: This function should return nil if the key is the name of 
+         // any metamethod, or if the key is something we use internally (e.g. 
+         // "__superclass"), to prevent Lua scripts from accessing superclass 
+         // metatables and doing shenanigans with them.
          //
          if (!lua_getmetatable(luaVM, -2)) // STACK: [meta, k, t]
             return 0;
@@ -39,12 +41,33 @@ namespace LuaSkyrim {
          if (!lua_isnil(luaVM, -1))
             return 1;
          lua_pop(luaVM, 1); // STACK: [k, meta]
+         //
+         // If we want to use fields instead of methods, then every metatable 
+         // needs to have a table of getters (field name as key; CFunction as 
+         // value), and we need to look up from that table at this point.
+         //
+         // If we go that route, then we'll want to update the documentation 
+         // comment at the top of this function, which is a Lua translation 
+         // of the C code.
+         //
          while (true) {
             lua_pushstring(luaVM, "__superclass"); // STACK: ["__superclass",    k, meta]
             auto type = lua_rawget(luaVM, -3);     // STACK: [meta.__superclass, k, meta]
             if (type != LUA_TTABLE)
                return 0;
             lua_replace  (luaVM, -3); // STACK: [k, meta.__superclass]
+            //
+            // If we want to use fields instead of methods, then we need to 
+            // replace the rest of this loop with code equivalent to:
+            //
+            //    if meta.__superclass[k].__index then
+            //       return meta.__superclass[k].__index(meta.__superclass[k], k)
+            //    end
+            //
+            // If we go that route, then we'll want to update the documentation 
+            // comment at the top of this function, which is a Lua translation 
+            // of the C code.
+            //
             lua_pushvalue(luaVM, -1); // STACK: [k, k, meta.__superclass]
             lua_rawget   (luaVM, -3); // STACK: [meta.__superclass[k], k, meta.__superclass]
             if (!lua_isnil(luaVM, -1))
@@ -52,14 +75,21 @@ namespace LuaSkyrim {
             lua_pop(luaVM, 1); // STACK: [k, meta.__superclass]
          }
       }
-   }
-   namespace _fakeUserdataMembers {
-      static luastackchange_t __index(lua_State* luaVM) {
-         return 0;
-      }
-      static luastackchange_t __newindex(lua_State* luaVM) {
-         return 0;
-      }
+      //
+      // If we want to use fields instead of methods, then we need to add a 
+      // __newindex metamethod, and modify (_defineClass) to create two tables 
+      // (__getters and __setters) on the metatable. Those two tables will need 
+      // to be maps of field names to CFunctions; __index will need to consult 
+      // the getter table (as written above) and __newindex will need to consult 
+      // the setter table.
+      //
+      // We should probably add a __newindex method anyway to make writes silently 
+      // fail.
+      //
+      // If we go with fields, then we should probably also modify (_defineClass) 
+      // to take optional luaL_Reg*s of field-getters and field-setters, and to 
+      // write those CFunctions into the relevant metatable tables.
+      //
    }
 
    extern void* _asClass(lua_State* luaVM, SInt32 stackPos, const char* classKey) {

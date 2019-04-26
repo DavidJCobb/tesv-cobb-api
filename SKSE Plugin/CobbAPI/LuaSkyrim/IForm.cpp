@@ -5,6 +5,13 @@
 
 namespace LuaSkyrim {
    luastackchange_t wrapForm(lua_State* luaVM, TESForm* form) {
+      if (!form) {
+         //
+         // No form; return nil.
+         //
+         lua_pushnil(luaVM);
+         return 1;
+      }
       {  // Reuse.
          //
          // Check if a heavy-userdata already exists for this form, and if so, 
@@ -27,34 +34,27 @@ namespace LuaSkyrim {
          }
          lua_pop(luaVM, 2);
       }
-      IForm* a = (IForm*) lua_newuserdata(luaVM, sizeof(IForm));
-      if (form) {
-         lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formSubclassListKey);
-         if (lua_isnil(luaVM, -1)) {
+      IForm* a = (IForm*)lua_newuserdata(luaVM, sizeof(IForm));
+      //
+      lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formSubclassListKey);
+      if (lua_isnil(luaVM, -1)) {
+         //
+         // This should never occur. It means that the map of form types to subclass metatables 
+         // doesn't exist, but that shouldn't happen if IForm::setupMetatable was called.
+         //
+         lua_pop(luaVM, 1);
+         luaL_getmetatable(luaVM, IForm::metatableName);
+      } else {
+         lua_pushinteger(luaVM, form->formType); // STACK: [formType, subclassList]
+         lua_rawget     (luaVM, -2); // STACK: [subclassList[formType], subclassList]
+         lua_remove     (luaVM, -2); // STACK: [subclassList[formType]]
+         if (lua_type(luaVM, -1) != LUA_TTABLE) {
             //
-            // This should never occur. It means that the map of form types to subclass metatables 
-            // doesn't exist, but that shouldn't happen if IForm::setupMetatable was called.
+            // This form type isn't mapped to a subclass. Use IForm's metatable.
             //
             lua_pop(luaVM, 1);
             luaL_getmetatable(luaVM, IForm::metatableName);
-         } else {
-            lua_pushinteger(luaVM, form->formType); // STACK: [formType, subclassList]
-            lua_rawget     (luaVM, -2); // STACK: [subclassList[formType], subclassList]
-            lua_remove     (luaVM, -2); // STACK: [subclassList[formType]]
-            if (lua_type(luaVM, -1) != LUA_TTABLE) {
-               //
-               // This form type isn't mapped to a subclass. Use IForm's metatable.
-               //
-               lua_pop(luaVM, 1);
-               luaL_getmetatable(luaVM, IForm::metatableName);
-            }
          }
-      } else {
-         //
-         // No form; return nil.
-         //
-         lua_pushnil(luaVM);
-         return 1;
       }
       lua_setmetatable(luaVM, -2);
       {  // Store the new wrapper.

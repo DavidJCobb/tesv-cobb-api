@@ -26,6 +26,7 @@
 #include "Services/RevealService.h"
 #include "Services/TeleportMarkerService.h"
 #include "Services/WeakReferenceService.h"
+#include "LuaSkyrim/SkyrimLuaService.h"
 
 #include "Papyrus/AcousticSpace.h"
 #include "Papyrus/Actor.h"
@@ -354,6 +355,7 @@ void Callback_Serialization_FormDelete(UInt64 handle) {
    //_MESSAGE("CobbAPI notified of form deletion by SKSE VM hook. Form ID: 0x%08X", argFormID);
    //
    DetectionInterceptService::GetInstance().OnFormDestroyed(argFormID); // don't filter to created refs; we need to catch the reset of a LeveledActor
+   SkyrimLuaService::GetInstance().OnReferenceDelete(argFormID);
 };
 void Callback_Serialization_Save(SKSESerializationInterface* intfc) {
    _MESSAGE("Saving...");

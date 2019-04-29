@@ -42,6 +42,41 @@ namespace LuaSkyrim {
    //       this in the constructor.
    //
    //  - Have your subclass override signature().
+   //
+   //     - If your subclass represents a form that can be unloaded or deleted 
+   //       at run-time, then you must also override resolve(), abandon(), and 
+   //       possibly ruleOutForm(...).
+   //
+   //       The general strategy for these form types is to store "directions to 
+   //       the form" alongside the wrapped form pointer. Whenever Lua code isn't 
+   //       running, we set the pointer to nullptr; the next time a Lua script 
+   //       attempts to access the form, we "follow the directions" to retrieve 
+   //       the form again. If the form has unloaded since the last time Lua 
+   //       worked with it, then we'll get nullptr and we know that the form is 
+   //       currently unavailable. If the form unloaded and then reloaded (such 
+   //       that it's now located at a different address), then we'll get the 
+   //       fresh, up-to-date pointer.
+   //
+   //       As for ruleOutForm(TESForm*)? Well, consider this case: we get a 
+   //       wrapper for a created reference -- a TESObjectREFR with an 0xFF 
+   //       load order index. The reference is later deleted, and the form ID 
+   //       is reused for another reference. Then, Lua attempts to access the 
+   //       new reference. Well, we already have a wrapper for that form ID... 
+   //       How would we be able to tell that that wrapper is for a different 
+   //       form? Well, every reference gets a unique(ish) handle, separate 
+   //       from the form ID, so what if we also stored the reference handle? 
+   //       And what if the "reuse existing wrappers" code could pass the new 
+   //       reference to some function on the existing wrapper, which could 
+   //       then compare the reference handles? Thus, ruleOutForm(TESForm*).
+   //
+   //       ruleOutForm should return true if the argument CANNOT BE the form 
+   //       that the wrapper was originally created for.
+   //
+   //       Note that ruleOutForm is only relevant for forms that can be 
+   //       created and deleted, since those are the only ones that should be 
+   //       able to end up sharing formTypes and formIDs at run-time. Of course, 
+   //       in practice, I think every form type that can be created can also be 
+   //       deleted.
    // 
    //  - Have your subclass create its metatable similarly to IForm, but passing 
    //    IForm::metatableName as the superclass name.
@@ -86,6 +121,14 @@ namespace LuaSkyrim {
    //     - That file should also define a function that sets up all form 
    //       metatables and similar for a given lua_State.
    //
+   //  - If we hook the game's reference-delete event, then we don't need to 
+   //    guard against new references reusing the form IDs of old references. 
+   //    Likewise if we hook every gameplay-related deletion of other created 
+   //    forms.
+   //
+   //     - We have code for this in place for references, although currently, 
+   //       that isn't hooked up to our specific test (it's in SkyrimLuaService).
+   //
    class IForm {
       protected:
          IForm(TESForm* form, bool canUnload) : canUnload(canUnload), wrapped(form), formType(form ? form->formType : 0) {};
@@ -94,18 +137,22 @@ namespace LuaSkyrim {
          //
          virtual void resolve() {};
          virtual void abandon() {};
-         virtual const char* signature()   const { return "FORM"; };
+         virtual const char* signature() const { return "FORM"; }; // return a four-character string matching the form type's record signature
+         virtual bool ruleOutForm(TESForm*) { return false; };
          //
          static constexpr char* metatableName = "Skyrim.IForm";
 
          TESForm*      wrapped   = nullptr;
          const bool    canUnload = false; // whether this form can be unloaded/deleted at run-time
+         bool          isDeleted = false; // indicates whether this wrapper wrapped a form that we know to have since been deleted
          const uint8_t formType  = 0;     // formType of the wrapped form
 
          static void   setupClass(lua_State* luaVM);
          static IForm* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
 
          TESForm* unwrap() {
+            if (this->isDeleted)
+               return nullptr;
             if (this->wrapped == nullptr && this->canUnload)
                this->resolve();
             return this->wrapped;

@@ -29,9 +29,22 @@ namespace LuaSkyrim {
          lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
          if (lua_rawgeti(luaVM, -1, formID) == LUA_TUSERDATA) {  // STACK: [wrapper, list]
             IForm* a = IForm::fromStack(luaVM, -1);
-            if (a && a->formType == form->formType) { // We need this check for forms using temporary formIDs, which can be reused.
+            if (a && !a->isDeleted && a->formType == form->formType && !a->ruleOutForm(form)) {
                //
-               // We already have a wrapper for this form; return it.
+               // If a wrapper already exists for this form ID, then we need to make sure 
+               // it actually refers to this form. If so, then we can return it.
+               //
+               //  - Temporary form IDs can themselves be reused for different forms, so 
+               //    we need to check the form type and make sure that we are in fact 
+               //    referring to the same form.
+               //
+               //  - The form type alone isn't enough, though, because a new form of the 
+               //    same type could be created with the same form ID (particularly 
+               //    common for TESObjectREFR). We need to also check any distinguishing 
+               //    characteristics about the form.
+               //
+               // But if those tests pass, then we already have a wrapper for this form, 
+               // and we can return it.
                //
                lua_remove(luaVM, -2);
                return 1;

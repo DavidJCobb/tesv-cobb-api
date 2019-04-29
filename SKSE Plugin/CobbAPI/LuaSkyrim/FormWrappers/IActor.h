@@ -7,6 +7,7 @@ namespace LuaSkyrim {
       public:
          IActor(TESForm* form) : IReference(form) {};
 
+         virtual void resolve();
          virtual const char* signature()   const { return "ACHR"; };
          virtual uint8_t     getFormType() const { return kFormType_Character; };
 

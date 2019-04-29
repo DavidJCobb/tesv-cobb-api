@@ -199,8 +199,12 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CobbRotation.cpp" />
-    <ClCompile Include="LuaSkyrim\IActorBase.cpp" />
-    <ClCompile Include="LuaSkyrim\IForm.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IActor.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IActorBase.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IForm.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IRace.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IReference.cpp" />
+    <ClCompile Include="LuaSkyrim\SkyrimLuaService.cpp" />
     <ClCompile Include="LuaSkyrim\test.cpp" />
     <ClCompile Include="LuaSkyrim\_classes.cpp" />
     <ClCompile Include="main.cpp" />
@@ -256,8 +260,12 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
     <ClCompile Include="Utilities\Dumps\ASM.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LuaSkyrim\IActorBase.h" />
-    <ClInclude Include="LuaSkyrim\IForm.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IActor.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IActorBase.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IForm.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IRace.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IReference.h" />
+    <ClInclude Include="LuaSkyrim\SkyrimLuaService.h" />
     <ClInclude Include="LuaSkyrim\test.h" />
     <ClInclude Include="LuaSkyrim\_classes.h" />
     <ClInclude Include="LuaSkyrim\_includes.h" />

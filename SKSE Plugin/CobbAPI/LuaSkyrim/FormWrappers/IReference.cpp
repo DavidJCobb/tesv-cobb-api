@@ -5,16 +5,28 @@
 
 namespace LuaSkyrim {
    IReference::IReference(TESForm* form) : IForm(form, true) {
-      if (form)
-         this->formID = form->formID;
+      if (form) {
+         auto ref = (RE::TESObjectREFR*) form;
+         this->formID    = form->formID;
+         this->refHandle = ref->handleRefObject.GetRefHandle();
+      }
    };
    void IReference::resolve() {
       auto form = LookupFormByID(this->formID);
-      if (form)
-         this->wrapped = DYNAMIC_CAST(form, TESForm, TESObjectREFR);
+      if (form) {
+         auto ref = (RE::TESObjectREFR*) DYNAMIC_CAST(form, TESForm, TESObjectREFR);
+         if (ref && this->_verifyRef(ref))
+            this->wrapped = form;
+      }
    };
    void IReference::abandon() {
       this->wrapped = nullptr;
+   };
+   bool IReference::ruleOutForm(TESForm* form) {
+      auto ref = (RE::TESObjectREFR*) form;
+      if (ref->handleRefObject.GetRefHandle() != this->refHandle)
+         return true;
+      return false;
    };
 
    namespace { // metatable methods

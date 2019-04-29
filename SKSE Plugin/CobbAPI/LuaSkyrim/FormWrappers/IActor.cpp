@@ -4,6 +4,15 @@
 #include "skse/GameRTTI.h"
 
 namespace LuaSkyrim {
+   void IActor::resolve() {
+      auto form = LookupFormByID(this->formID);
+      if (form) {
+         auto ref = (RE::Actor*) DYNAMIC_CAST(form, TESForm, Actor);
+         if (ref && this->_verifyRef(ref))
+            this->wrapped = form;
+      }
+   };
+
    namespace { // metatable methods
       namespace _methods {
          luastackchange_t isSneaking(lua_State* L) {

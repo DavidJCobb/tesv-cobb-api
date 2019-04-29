@@ -16,7 +16,7 @@ namespace LuaSkyrim {
 
          static constexpr char* metatableName = "Skyrim.IReference";
 
-         static void        setupMetatable(lua_State* luaVM);
-         static IReference* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
+         static void        setupClass(lua_State* luaVM);
+         static IReference* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
    };
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "LuaSkyrim/_includes.h"
+#include "skse/GameForms.h" // for easy access to kFormType enum
 
 class TESForm;
 namespace LuaSkyrim {
@@ -39,6 +40,8 @@ namespace LuaSkyrim {
    //       a wrapper for an exterior TESObjectCELL should store the grid coord-
    //       inates and parent TESWorldSpace of the cell. You'll want to be doing 
    //       this in the constructor.
+   //
+   //  - Have your subclass override signature().
    // 
    //  - Have your subclass create its metatable similarly to IForm, but passing 
    //    IForm::metatableName as the superclass name.
@@ -85,21 +88,22 @@ namespace LuaSkyrim {
    //
    class IForm {
       protected:
-         IForm(TESForm* form, bool canUnload) : canUnload(canUnload), wrapped(form) {};
+         IForm(TESForm* form, bool canUnload) : canUnload(canUnload), wrapped(form), formType(form ? form->formType : 0) {};
       public:
-         IForm(TESForm* form) : wrapped(form) {};
+         IForm(TESForm* form) : wrapped(form), formType(form ? form->formType : 0) {};
          //
          virtual void resolve() {};
          virtual void abandon() {};
-         virtual const char* signature() const { return "FORM"; };
+         virtual const char* signature()   const { return "FORM"; };
          //
          static constexpr char* metatableName = "Skyrim.IForm";
 
-         TESForm*   wrapped   = nullptr;
-         const bool canUnload = false;
+         TESForm*      wrapped   = nullptr;
+         const bool    canUnload = false; // whether this form can be unloaded/deleted at run-time
+         const uint8_t formType  = 0;     // formType of the wrapped form
 
-         static void   setupMetatable(lua_State* luaVM);
-         static IForm* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
+         static void   setupClass(lua_State* luaVM);
+         static IForm* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
 
          TESForm* unwrap() {
             if (this->wrapped == nullptr && this->canUnload)

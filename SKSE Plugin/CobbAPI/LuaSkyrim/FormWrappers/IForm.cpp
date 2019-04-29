@@ -13,6 +13,7 @@ namespace LuaSkyrim {
          lua_pushnil(luaVM);
          return 1;
       }
+      auto formID = form->formID;
       {  // Reuse.
          //
          // Check if a heavy-userdata already exists for this form, and if so, 
@@ -26,12 +27,15 @@ namespace LuaSkyrim {
          //    end
          //
          lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
-         if (lua_rawgetp(luaVM, -1, form) == LUA_TUSERDATA) {  // STACK: [wrapper, list]
-            //
-            // We already have a wrapper for this form; return it.
-            //
-            lua_remove(luaVM, -2);
-            return 1;
+         if (lua_rawgeti(luaVM, -1, formID) == LUA_TUSERDATA) {  // STACK: [wrapper, list]
+            IForm* a = IForm::fromStack(luaVM, -1);
+            if (a && a->formType == form->formType) { // We need this check for forms using temporary formIDs, which can be reused.
+               //
+               // We already have a wrapper for this form; return it.
+               //
+               lua_remove(luaVM, -2);
+               return 1;
+            }
          }
          lua_pop(luaVM, 2);
       }
@@ -71,9 +75,9 @@ namespace LuaSkyrim {
          //
          ; // STACK: [wrapper]
          lua_getfield (luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list, wrapper]
-         lua_pushvalue(luaVM, -2);       // STACK: [wrapper, list, wrapper]
-         lua_rawsetp  (luaVM, -2, form); // STACK: [list, wrapper]
-         lua_pop      (luaVM, 1);        // STACK: [wrapper]
+         lua_pushvalue(luaVM, -2);         // STACK: [wrapper, list, wrapper]
+         lua_rawseti  (luaVM, -2, formID); // STACK: [list, wrapper]
+         lua_pop      (luaVM, 1);          // STACK: [wrapper]
       }
       a->wrapped = form;
       return 1;
@@ -99,7 +103,7 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
-         luastackchange_t formID(lua_State* L) {
+         luastackchange_t getFormID(lua_State* L) {
             IForm* wrapper = IForm::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
             auto form = wrapper->unwrap();
@@ -109,7 +113,7 @@ namespace LuaSkyrim {
                lua_pushnumber(L, form->formID);
             return 1;
          };
-         luastackchange_t formType(lua_State* L) {
+         luastackchange_t getFormType(lua_State* L) {
             IForm* wrapper = IForm::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
             auto form = wrapper->unwrap();
@@ -136,12 +140,12 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "formID",     _methods::formID },
-      { "formType",   _methods::formType },
-      { "__tostring", _methods::__tostring },
+      { "getFormID",   _methods::getFormID },
+      { "getFormType", _methods::getFormType },
+      { "__tostring",  _methods::__tostring },
       { NULL, NULL }
    };
-   void IForm::setupMetatable(lua_State* luaVM) {
+   void IForm::setupClass(lua_State* luaVM) {
       static bool isDefined = false;
       if (isDefined)
          return;
@@ -168,7 +172,7 @@ namespace LuaSkyrim {
       isDefined = true;
    };
 
-   IForm* IForm::fromStack(lua_State* luaVM, UInt32 stackPos) {
+   IForm* IForm::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IForm*) _asClass(luaVM, stackPos, metatableName);
    };
 };

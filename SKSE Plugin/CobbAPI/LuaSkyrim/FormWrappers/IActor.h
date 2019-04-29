@@ -7,11 +7,12 @@ namespace LuaSkyrim {
       public:
          IActor(TESForm* form) : IReference(form) {};
 
-         virtual const char* signature() const { return "ACHR"; };
+         virtual const char* signature()   const { return "ACHR"; };
+         virtual uint8_t     getFormType() const { return kFormType_Character; };
 
          static constexpr char* metatableName = "Skyrim.IActor";
 
-         static void    setupMetatable(lua_State* luaVM);
-         static IActor* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
+         static void    setupClass(lua_State* luaVM);
+         static IActor* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
    };
 }

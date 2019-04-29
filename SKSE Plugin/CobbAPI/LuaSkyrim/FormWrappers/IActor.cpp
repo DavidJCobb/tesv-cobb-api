@@ -6,7 +6,7 @@
 namespace LuaSkyrim {
    namespace { // metatable methods
       namespace _methods {
-         luastackchange_t sneaking(lua_State* L) {
+         luastackchange_t isSneaking(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
             auto form = (RE::Actor*) wrapper->unwrap();
@@ -19,10 +19,10 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "sneaking", _methods::sneaking },
+      { "isSneaking", _methods::isSneaking },
       { NULL, NULL }
    };
-   void IActor::setupMetatable(lua_State* luaVM) {
+   void IActor::setupClass(lua_State* luaVM) {
       static bool isDefined = false;
       if (isDefined)
          return;
@@ -36,7 +36,7 @@ namespace LuaSkyrim {
       //
       isDefined = true;
    };
-   IActor* IActor::fromStack(lua_State* luaVM, UInt32 stackPos) {
+   IActor* IActor::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IActor*) _asClass(luaVM, stackPos, metatableName);
    };
 };

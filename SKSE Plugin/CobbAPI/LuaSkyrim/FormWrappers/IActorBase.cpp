@@ -8,7 +8,7 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
-         luastackchange_t gender(lua_State* L) {
+         luastackchange_t getGender(lua_State* L) {
             IForm* wrapper = IActorBase::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
             auto form = wrapper->unwrap();
@@ -28,7 +28,7 @@ namespace LuaSkyrim {
             }
             return 1;
          };
-         luastackchange_t race(lua_State* L) {
+         luastackchange_t getRace(lua_State* L) {
             IForm* wrapper = IActorBase::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
             auto form = wrapper->unwrap();
@@ -46,11 +46,11 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "gender", _methods::gender },
-      { "race",   _methods::race },
+      { "getGender", _methods::getGender },
+      { "getRace",   _methods::getRace },
       { NULL, NULL }
    };
-   void IActorBase::setupMetatable(lua_State* luaVM) {
+   void IActorBase::setupClass(lua_State* luaVM) {
       static bool isDefined = false;
       if (isDefined)
          return;
@@ -69,7 +69,7 @@ namespace LuaSkyrim {
       //
       isDefined = true;
    };
-   IActorBase* IActorBase::fromStack(lua_State* luaVM, UInt32 stackPos) {
+   IActorBase* IActorBase::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IActorBase*)_asClass(luaVM, stackPos, metatableName);
    };
 };

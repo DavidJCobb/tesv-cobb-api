@@ -11,7 +11,7 @@ namespace LuaSkyrim {
 
          virtual const char* signature() const { return "RACE"; };
 
-         static void   setupMetatable(lua_State* luaVM);
-         static IRace* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
+         static void   setupClass(lua_State* luaVM);
+         static IRace* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
    };
 }

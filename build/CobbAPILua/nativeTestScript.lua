@@ -18,7 +18,7 @@ if form_by_id then
          return
       end
       logmessage("Form wrapper exists.")
-      if not form.formID then
+      if not form.getFormID then
          logmessage(" - Wrapper is missing its member functions!")
          return false
       end
@@ -30,18 +30,18 @@ if form_by_id then
    local form = form_by_id(7)
    logmessage("Retrieved the player actor-base.")
    if _validateForm(form) then
-      logmessage(string.format("formID   == %08X", form:formID()))
-      logmessage(string.format("formType == %u", form:formType()))
-      if form.gender then
-         local gender = form:gender()
+      logmessage(string.format("formID   == %08X", form:getFormID()))
+      logmessage(string.format("formType == %u", form:getFormType()))
+      if form.getGender then
+         local gender = form:getGender()
          logmessage(string.format("gender   == %s", TESV_GENDERS[gender or -1]))
       else
          logmessage("IActorBase methods not present!")
       end
       if form.race then
-         local race = form:race()
+         local race = form:getRace()
          if race then
-            logmessage(string.format("race     == %s", race:name()))
+            logmessage(string.format("race     == %s", race:getName()))
             logmessage(string.format("isChild? == %s", tostring(race:isChild())))
          else
             logmessage("Unable to retrieve the race!")
@@ -65,7 +65,7 @@ if form_by_id then
          local mt = getmetatable(form)
          if mt then
             logmessage("IForm metatable tests as truthy.")
-            if mt.formID then
+            if mt.getFormID then
                logmessage(" - metatable.formID is retrievable")
             else
                logmessage(" - metatable.formID is not retrievable")
@@ -86,28 +86,28 @@ if form_by_id then
    form = form_by_id(0x14)
    if form then
       logmessage("Got the player reference.")
-      logmessage(string.format("formID   == %08X", form:formID()))
-      logmessage(string.format("formType == %u", form:formType()))
-      if form.baseForm then
-         local base = form:baseForm()
+      logmessage(string.format("formID   == %08X", form:getFormID()))
+      logmessage(string.format("formType == %u", form:getFormType()))
+      if form.getBaseForm then
+         local base = form:getBaseForm()
          if base then
-            logmessage(string.format("baseID   == %08X", base:formID()))
-            logmessage(string.format("baseType == %u", base:formType()))
+            logmessage(string.format("baseID   == %08X", base:getFormID()))
+            logmessage(string.format("baseType == %u", base:getFormType()))
          else
             logmessage("base     == irretrievable or nullptr")
          end
-         local cell = form:parentCell()
+         local cell = form:getParentCell()
          if cell then
-            logmessage(string.format("cellID   == %08X", cell:formID()))
-            logmessage(string.format("cellType == %u", cell:formType()))
+            logmessage(string.format("cellID   == %08X", cell:getFormID()))
+            logmessage(string.format("cellType == %u", cell:getFormType()))
          else
             logmessage("cell     == irretrievable or nullptr")
          end
-         local x, y, z = form:position()
+         local x, y, z = form:getPosition()
          logmessage(string.format("position == (%s, %s, %s)", tostring(x), tostring(y), tostring(z)))
-         local a, b, c = form:position()
+         local a, b, c = form:getRotation()
          logmessage(string.format("rotation == (%s, %s, %s)", tostring(a), tostring(b), tostring(c)))
-         local scale = form:scale()
+         local scale = form:getScale()
          logmessage(string.format("scale    == %s", tostring(scale)))
       else
          logmessage("IReference member functions not available!")

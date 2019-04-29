@@ -86,11 +86,11 @@ namespace LuaSkyrim {
       //
       // DO NOT FORGET TO CALL THESE
       //
-      IForm::setupMetatable(luaVM);
-      IActorBase::setupMetatable(luaVM);
-      IRace::setupMetatable(luaVM);
-      IReference::setupMetatable(luaVM);
-      IActor::setupMetatable(luaVM);
+      IForm::setupClass(luaVM);
+      IActorBase::setupClass(luaVM);
+      IRace::setupClass(luaVM);
+      IReference::setupClass(luaVM);
+      IActor::setupClass(luaVM);
       //
       lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
       lua_register(luaVM, "form_by_id", _globals::FormByID);

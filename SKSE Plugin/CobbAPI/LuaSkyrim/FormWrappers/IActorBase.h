@@ -17,7 +17,7 @@ namespace LuaSkyrim {
 
          static constexpr char* metatableName = "Skyrim.IActorBase";
 
-         static void        setupMetatable(lua_State* luaVM);
-         static IActorBase* fromStack(lua_State* luaVM, UInt32 stackPos = 1);
+         static void        setupClass(lua_State* luaVM);
+         static IActorBase* fromStack(lua_State* luaVM, SInt32 stackPos = -1);
    };
 }

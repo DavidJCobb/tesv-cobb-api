@@ -19,7 +19,7 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
-         luastackchange_t baseForm(lua_State* L) {
+         luastackchange_t getBaseForm(lua_State* L) {
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
             auto form = (RE::TESObjectREFR*) wrapper->unwrap();
@@ -31,7 +31,7 @@ namespace LuaSkyrim {
             lua_pushnil(L);
             return 1;
          };
-         luastackchange_t parentCell(lua_State* L) {
+         luastackchange_t getParentCell(lua_State* L) {
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
             auto form = (RE::TESObjectREFR*) wrapper->unwrap();
@@ -43,16 +43,7 @@ namespace LuaSkyrim {
             lua_pushnil(L);
             return 1;
          };
-         luastackchange_t position(lua_State* L) {
-            //
-            // TODO: Allow setting the position by way of three number arguments. 
-            // If nil is specified for an axis, leave it unchanged.
-            //
-            // TODO: Is there a prettier way to *modify* the position? (Probably 
-            // not without either making a dedicated function for the purpose, 
-            // accepting a fourth argument as an enum for mod/set, or using field 
-            // accessors instead of method accessors.)
-            //
+         luastackchange_t getPosition(lua_State* L) {
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
             auto form = (RE::TESObjectREFR*) wrapper->unwrap();
@@ -63,15 +54,10 @@ namespace LuaSkyrim {
             lua_pushnumber(L, form->pos.z);
             return 3;
          };
-         luastackchange_t rotation(lua_State* L) {
+         luastackchange_t getRotation(lua_State* L) {
             //
-            // TODO: Allow setting the rotation by way of three number arguments. 
-            // If nil is specified for an axis, leave it unchanged.
-            //
-            // TODO: Is there a prettier way to *modify* the rotation? (Probably 
-            // not without either making a dedicated function for the purpose, 
-            // accepting a fourth argument as an enum for mod/set, or using field 
-            // accessors instead of method accessors.)
+            // TODO: We should use degrees for Lua -- so, the getter should convert 
+            // to degrees and the setter, to radians.
             //
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
@@ -83,10 +69,7 @@ namespace LuaSkyrim {
             lua_pushnumber(L, form->rot.z);
             return 3;
          };
-         luastackchange_t scale(lua_State* L) {
-            //
-            // TODO: Allow setting the scale by way of a number argument.
-            //
+         luastackchange_t getScale(lua_State* L) {
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
             auto form = (RE::TESObjectREFR*) wrapper->unwrap();
@@ -99,14 +82,14 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "baseForm",   _methods::baseForm },
-      { "parentCell", _methods::parentCell },
-      { "position",   _methods::position },
-      { "rotation",   _methods::rotation },
-      { "scale",      _methods::scale },
+      { "getBaseForm",   _methods::getBaseForm },
+      { "getParentCell", _methods::getParentCell },
+      { "getPosition",   _methods::getPosition },
+      { "getRotation",   _methods::getRotation },
+      { "getScale",      _methods::getScale },
       { NULL, NULL }
    };
-   void IReference::setupMetatable(lua_State* luaVM) {
+   void IReference::setupClass(lua_State* luaVM) {
       static bool isDefined = false;
       if (isDefined)
          return;
@@ -120,7 +103,7 @@ namespace LuaSkyrim {
       //
       isDefined = true;
    };
-   IReference* IReference::fromStack(lua_State* luaVM, UInt32 stackPos) {
+   IReference* IReference::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IReference*) _asClass(luaVM, stackPos, metatableName);
    };
 };

@@ -18,10 +18,11 @@ class SkyrimLuaService {
       std::recursive_mutex setupLock;
       std::unordered_map<DWORD, lua_State*> childThreads; // TODO: put a lock on this
       //
-      void       prepForThreads();
-      lua_State* getOrCreateThread(DWORD threadID);
+      void prepForThreads();
       //
    public:
+      lua_State* getOrCreateThread(DWORD threadID);
+
       void StartVM();
       void StopVM();
 

@@ -7,6 +7,7 @@
 #include "FormWrappers/IActorBase.h"
 #include "FormWrappers/IRace.h"
 #include "FormWrappers/IReference.h"
+#include "Hooks.h"
 
 #include "skse/GameForms.h" // LookupFormByID
 #include "skse/Utilities.h" // GetRuntimeDirectory
@@ -101,12 +102,7 @@ namespace { // APIs provided to Lua; we're gonna change how these work in the fu
    }
 }
 
-void _badThreadHandler(DWORD threadID) {
-   _MESSAGE("Thread %08X tried to access the Lua Lock before it was readied -- this will crash!", threadID);
-};
-
 SkyrimLuaService::SkyrimLuaService() {
-   CobbDebugSetBadThreadHandler(_badThreadHandler);
 }
 
 void SkyrimLuaService::StartVM() {
@@ -144,6 +140,8 @@ _MESSAGE(" - Starting Lua VM...");
    IRace::setupClass(luaVM);
    IReference::setupClass(luaVM);
    IActor::setupClass(luaVM);
+   //
+   HookManager::attach(luaVM);
    //
    lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
    lua_register(luaVM, "form_by_id", _globals::FormByID);
@@ -192,7 +190,7 @@ _MESSAGE("Stopping Lua VM...");
 }
 
 void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
-_MESSAGE("[THREAD %08X] Lua VM was notified about the deletion of form %08X...", GetCurrentThreadId(), formID);
+//_MESSAGE("[THREAD %08X] Lua VM was notified about the deletion of form %08X...", GetCurrentThreadId(), formID);
    if (this->setupLock.try_lock())
       this->setupLock.unlock();
    else
@@ -201,7 +199,7 @@ _MESSAGE("[THREAD %08X] Lua VM was notified about the deletion of form %08X...",
    auto luaVM = this->getOrCreateThread(GetCurrentThreadId());
    if (!luaVM)
       return;
-_MESSAGE(" - Responding...");
+//_MESSAGE(" - Responding...");
    if (lua_status(luaVM) != LUA_OK) {
       _MESSAGE(" - WARNING: VM thread is not OK!");
    }
@@ -213,6 +211,6 @@ _MESSAGE(" - Responding...");
          a->isDeleted = true;
       }
    }
-_MESSAGE(" - Done");
+//_MESSAGE(" - Done");
    lua_pop(luaVM, 2);
 }

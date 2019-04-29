@@ -26,7 +26,9 @@
 #include "Services/RevealService.h"
 #include "Services/TeleportMarkerService.h"
 #include "Services/WeakReferenceService.h"
+
 #include "LuaSkyrim/SkyrimLuaService.h"
+#include "LuaSkyrim/Hooks.h"
 
 #include "Papyrus/AcousticSpace.h"
 #include "Papyrus/Actor.h"
@@ -195,6 +197,8 @@ extern "C" {
          //CobbPatches::FormRestoreState::Apply(); // started in 1.6, but not yet ready
          CobbPatches::PlaceableCollisionPrimitives::Apply();
          CobbPatches::SetMotionType::Apply();
+         //
+         LuaSkyrim::HookManager::setup();
       }
       {  // Messaging callbacks.
          g_ISKSEMessaging->RegisterListener(g_pluginHandle, "SKSE", Callback_Messaging_SKSE);

@@ -209,7 +209,7 @@
     <ClCompile Include="lzio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="luauser.c">
+    <ClCompile Include="luauser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

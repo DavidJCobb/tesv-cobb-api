@@ -116,6 +116,25 @@ if form_by_id then
    end
    --
    logmessage("Done working with the player actor-base.")
+   --
+   if skyrim_hooks then
+      logmessage("The skyrim_hooks singleton exists.")
+      if skyrim_hooks.registerForEvent then
+         logmessage(" - The event registration API exists.")
+         --
+         local function _hook(actor, avIndex, pendingChange)
+            if avIndex == 0x18 then
+               logmessage("Detected pending change to health: " .. tostring(pendingChange))
+               return pendingChange
+            end
+         end
+         skyrim_hooks.registerForEvent(_hook)
+      else
+         logmessage(" - The event registration API is absent.")
+      end
+   else
+      logmessage("The skyrim_hooks singleton is absent.")
+   end
 end
 
 return 5

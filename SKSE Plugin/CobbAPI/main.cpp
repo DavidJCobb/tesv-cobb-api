@@ -288,9 +288,6 @@ void Callback_Messaging_SKSE(SKSEMessagingInterface::Message* message) {
    } else if (message->type == SKSEMessagingInterface::kMessage_PostPostLoad) {
       CobbPatches::Detection::Apply(); // Done here so we can tell if another mod has already claimed our patch site
    } else if (message->type == SKSEMessagingInterface::kMessage_DataLoaded) {
-      //
-LuaSkyrim::Test(); // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
-      //
       CobbPatches::PlaceableCollisionPrimitives::OnFormsLoaded();
       CobbPatches::OnLeveledActorRegenerated::Apply(); // deferred to avoid startup spam
    } else if (message->type == SKSEMessagingInterface::kMessage_NewGame) {
@@ -300,11 +297,18 @@ LuaSkyrim::Test(); // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TES
       WeakReferenceService::GetInstance().NewGame();
       TeleportMarkerService::GetInstance().NewGame();
       RevealService::GetInstance().MassReset();
+_MESSAGE("LuaVM: starting due to new game");
+      SkyrimLuaService::GetInstance().StartVM(); // hm, this may be too early...
    } else if (message->type == SKSEMessagingInterface::kMessage_PreLoadGame) {
       CellInteriorDataService::GetInstance().ResetAll();
       DetectionInterceptService::GetInstance().Reset();
       RevealService::GetInstance().MassReset();
       TeleportMarkerService::GetInstance().EmptyLoad();
+_MESSAGE("LuaVM: stopping due to pre-load-game");
+      SkyrimLuaService::GetInstance().StopVM();
+   } else if (message->type == SKSEMessagingInterface::kMessage_PostLoadGame) {
+_MESSAGE("LuaVM: starting due to post-load-game");
+      SkyrimLuaService::GetInstance().StartVM();
    }
 };
 void Callback_Messaging_Cobb(SKSEMessagingInterface::Message* message) {
@@ -315,6 +319,8 @@ void Callback_Messaging_Cobb(SKSEMessagingInterface::Message* message) {
       if (event.compare(0, std::string::npos, "quit game", message->dataLen) == 0) { // event == "before new session" should work, but it doesn't
          CellInteriorDataService::GetInstance().ResetAll();
          TeleportMarkerService::GetInstance().QuitGame();
+_MESSAGE("LuaVM: stopping due to quit game");
+         SkyrimLuaService::GetInstance().StopVM();
       }
       return;
    } else if (message->type == CobbAPIMessage::skseMessageType) { // 'cAPI'

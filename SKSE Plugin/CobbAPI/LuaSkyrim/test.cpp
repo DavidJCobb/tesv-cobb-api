@@ -70,6 +70,7 @@ namespace LuaSkyrim {
    }
 
    void Test() {
+return; // --------------- TEST ----- TEST ----- TEST ----- TEST ----- TEST -----
       lua_State* luaVM = luaL_newstate(); // create the entire VM
       //
       std::string file = "nativeTestScript.lua";

@@ -122,13 +122,39 @@ if form_by_id then
       if skyrim_hooks.registerForEvent then
          logmessage(" - The event registration API exists.")
          --
-         local function _hook(actor, avIndex, pendingChange)
+         local player = form_by_id(0x14)
+         local function _hook01(actor, avIndex, pendingChange)
+            if actor ~= player then
+               --logmessage("AV change not on the player.")
+            end
             if avIndex == 0x18 then
-               logmessage("Detected pending change to health: " .. tostring(pendingChange))
+               --logmessage("Detected pending change to health: " .. tostring(pendingChange))
+               if actor and actor.getActorValue then
+                  --logmessage(" - Actor param looks correct...")
+                  --logmessage(string.format(" - Current health  is %s.", tostring(actor:getActorValue(0x18))))
+                  local magicka = actor:getActorValue(0x19)
+                  --logmessage(string.format(" - Current magicka is %s.", tostring(magicka)))
+                  if magicka and pendingChange < 0 then
+                     --logmessage(" - Gonna try routing damage through magicka...")
+                     if magicka + pendingChange >= 0 then
+                        --logmessage("    - Route: magicka can fully absorb the incoming damage.")
+                        actor:damageActorValue(0x19, pendingChange)
+                        --logmessage("       - Set-Magicka complete.")
+                        return 0
+                     end
+                     --logmessage("    - Route: damage bleeds through magicka and into health.")
+                     local healthMod = magicka + pendingChange;
+                     if magicka > 0 then
+                        actor:damageActorValue(0x19, -magicka)
+                     end
+                     --logmessage("       - Set-Magicka complete.")
+                     return healthMod;
+                  end
+               end
                return pendingChange
             end
          end
-         skyrim_hooks.registerForEvent(_hook)
+         skyrim_hooks.registerForEvent(_hook01)
       else
          logmessage(" - The event registration API is absent.")
       end

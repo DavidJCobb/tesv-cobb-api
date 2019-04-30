@@ -280,6 +280,7 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
     <ClInclude Include="Lua\include\lualib.h" />
     <ClInclude Include="Miscellaneous\math.h" />
     <ClInclude Include="Miscellaneous\memory.h" />
+    <ClInclude Include="Miscellaneous\scope_control.h" />
     <ClInclude Include="Miscellaneous\strings.h" />
     <ClInclude Include="Miscellaneous\utf8naturalsort.h" />
     <ClInclude Include="Miscellaneous\utf8string.h" />

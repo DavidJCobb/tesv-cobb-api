@@ -14,34 +14,8 @@
 
 using namespace LuaSkyrim;
 
-constexpr char* ce_luaThreadStorage = "LuaSkyrim.threads";
-
-void SkyrimLuaService::prepForThreads() {
-   auto luaVM = this->state;
-   if (!luaVM)
-      return;
-   lua_newtable(luaVM);
-   lua_setfield(luaVM, LUA_REGISTRYINDEX, ce_luaThreadStorage); // STACK: []
-};
-lua_State* SkyrimLuaService::getOrCreateThread(DWORD threadID) {
-   auto luaVM = this->state;
-   if (!luaVM)
-      return nullptr;
-return luaVM; // ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST
-   if (threadID == this->threadID)
-      return luaVM;
-   try { // If we already have this thread, don't make a state for it.
-      return this->childThreads.at(threadID);
-   } catch (std::out_of_range) {}
-_MESSAGE("Creating Lua child thread for %08X...", threadID);
-   //
-   auto created = lua_newthread(luaVM); // STACK: [thread]
-   lua_getfield (luaVM, LUA_REGISTRYINDEX, ce_luaThreadStorage); // STACK: [list, thread]
-   lua_pushvalue(luaVM, -2);           // STACK: [thread, list, thread]
-   lua_rawseti  (luaVM, -2, threadID); // STACK: [list, thread]
-   lua_pop      (luaVM, 2);            // STACK: []
-   this->childThreads[threadID] = created;
-   return created;
+lua_State* SkyrimLuaService::getState() {
+   return this->state;
 };
 
 namespace { // utility tools
@@ -109,15 +83,11 @@ SkyrimLuaService::SkyrimLuaService() {
 void SkyrimLuaService::StartVM() {
    if (this->state)
       return;
-_MESSAGE("[THREAD %08X] Attempting to start Lua VM...", GetCurrentThreadId());
    std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
-_MESSAGE(" - Lock set...");
    //
    lua_State* luaVM = luaL_newstate(); // create a VM instance
    this->state    = luaVM;
    this->threadID = GetCurrentThreadId();
-_MESSAGE("[THREAD %08X] Prepping for child threads...", this->threadID);
-   this->prepForThreads();
    //
    std::string file = "nativeTestScript.lua";
    file = GetScriptBasePath() + file;
@@ -130,7 +100,6 @@ _MESSAGE("[THREAD %08X] Prepping for child threads...", this->threadID);
       this->threadID = 0;
       return;
    }
-_MESSAGE(" - Starting Lua VM...");
    //
    // Set up metatables and similar for all native types that we plan to expose to Lua:
    //
@@ -187,7 +156,6 @@ _MESSAGE("Stopping Lua VM...");
    lua_close(this->state); // should also kill child threads
    this->state    = nullptr;
    this->threadID = 0;
-   this->childThreads.clear();
 }
 
 void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
@@ -197,7 +165,7 @@ void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
    else
       return;
    //
-   auto luaVM = this->getOrCreateThread(GetCurrentThreadId());
+   auto luaVM = this->state;
    if (!luaVM)
       return;
 //_MESSAGE(" - Responding...");

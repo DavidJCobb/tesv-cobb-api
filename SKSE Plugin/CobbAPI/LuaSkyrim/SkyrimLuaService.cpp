@@ -27,6 +27,7 @@ lua_State* SkyrimLuaService::getOrCreateThread(DWORD threadID) {
    auto luaVM = this->state;
    if (!luaVM)
       return nullptr;
+return luaVM; // ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST ---- TEST
    if (threadID == this->threadID)
       return luaVM;
    try { // If we already have this thread, don't make a state for it.

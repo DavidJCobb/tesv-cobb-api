@@ -94,28 +94,39 @@ namespace LuaSkyrim {
       auto  luaVM   = service.getOrCreateThread(GetCurrentThreadId());
       if (!luaVM)
          return pendingChange;
+_MESSAGE("Intercepting an AV change...");
       lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptAVChange); // STACK: [list]
-      if (lua_type(luaVM, -1) != LUA_TTABLE)
+_MESSAGE(" - Got hook list.");
+      if (lua_type(luaVM, -1) != LUA_TTABLE) {
+         lua_pop(luaVM, 1);
          return pendingChange;
+      }
+_MESSAGE(" - Starting loop... Stack size is %d...", lua_gettop(luaVM));
       for (int i = 1; ; i++) {
-         lua_rawgeti(luaVM, -1, i);
+_MESSAGE(" - Processing element %d... Stack size is %d...", i, lua_gettop(luaVM));
+         lua_rawgeti(luaVM, -1, i); // STACK: [list[i], list]
          if (lua_isnil(luaVM, -1)) {
-            lua_pop(luaVM, 2);
+_MESSAGE("    - Element doesn't exist! We're at the end of the list.");
+            lua_pop(luaVM, 2); // STACK: []
             return pendingChange;
          }
          if (lua_isfunction(luaVM, -1)) {
-            lua_pushnumber (luaVM, pendingChange); // arg3
-            lua_pushinteger(luaVM, avIndex);   // arg2
+_MESSAGE("    - Element is a function! Executing...");
             wrapForm(luaVM, (TESForm*)target); // arg1
-            lua_call(luaVM, 3, 1);
+            lua_pushinteger(luaVM, avIndex);   // arg2
+            lua_pushnumber (luaVM, pendingChange); // arg3
+            lua_call(luaVM, 3, 1); // STACK: [(list[i](target, avIndex, pendingChange)), list]
+_MESSAGE("    - Executed.");
             if (lua_isnumber(luaVM, -1)) {
                pendingChange = lua_tonumber(luaVM, -1);
+_MESSAGE("    - Function returned %f.", pendingChange);
             } else if (lua_isinteger(luaVM, -1)) {
                pendingChange = lua_tointeger(luaVM, -1);
+_MESSAGE("    - Function returned %f.", pendingChange);
             }
-            lua_pop(luaVM, 1);
-         }
-         lua_pop(luaVM, 1);
+            lua_pop(luaVM, 1); // STACK: [list]
+         } else
+            lua_pop(luaVM, 1); // STACK: [list]
       }
    }
 }

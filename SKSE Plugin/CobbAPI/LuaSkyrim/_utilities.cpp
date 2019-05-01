@@ -2,6 +2,25 @@
 
 namespace LuaSkyrim {
    namespace util {
+      luastackchange_t errorHandler(lua_State* luaVM) {
+         auto original = lua_tostring(luaVM, -1);
+         luaL_traceback(luaVM, luaVM, original, 1);
+         _MESSAGE("Intercepted an error from Lua:\n%s\n\n--", lua_tostring(luaVM, -1));
+         return 1;
+      }
+      luastackchange_t safeCall(lua_State* luaVM, int argCount, int returnCount) {
+         int handlerPos = lua_gettop(luaVM) - argCount;
+         //
+         // Add the error handler to the stack, and then move it before the Lua 
+         // function and arguments:
+         //
+         lua_pushcfunction(luaVM, errorHandler);
+         lua_insert(luaVM, handlerPos);
+         //
+         auto ret = lua_pcall(luaVM, argCount, returnCount, handlerPos);
+         lua_remove(luaVM, handlerPos); // remove error handler from stack
+         return ret;
+      }
       void tableKeys(lua_State* luaVM, std::vector<std::string>& out, int stackPos) {
          stackPos = lua_absindex(luaVM, stackPos);
          lua_pushnil(luaVM); // STACK: [nil, ..., table]

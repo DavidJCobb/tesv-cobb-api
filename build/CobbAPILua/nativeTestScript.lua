@@ -131,7 +131,7 @@ if form_by_id then
          logmessage(" - The event registration API exists.")
          --
          local player = form_by_id(0x14)
-         local function _hook01(actor, avIndex, pendingChange, originalChange)
+         local function _hook01(actor, avIndex, pendingChange, originalChange) -- route health damage through magicka first
             logmessage("Hook01 intercepted change on an actor...")
             if actor ~= player then
                logmessage(" - Not player. Ignoring.")
@@ -161,6 +161,8 @@ if form_by_id then
                return
             end
             if pendingChange < 0 and originalChange < 0 then
+               skyrim_hooks.unregisterForEvent("Reduction25%StackA", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE);
+               skyrim_hooks.unregisterForEvent("Reduction25%StackB", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE);
                local modifier = originalChange * 0.25
                logmessage(string.format(" - Change is damage: %s (originally %s); will reduce by %s.", -pendingChange, -originalChange, -modifier))
                if pendingChange > modifier then -- they're negative, so flip the comparison
@@ -170,9 +172,9 @@ if form_by_id then
                return pendingChange - modifier
             end
          end
-         skyrim_hooks.registerForEvent("TESTEnergyShields",  _hook01)
-         skyrim_hooks.registerForEvent("Reduction25%StackA", _hook02) --
-         skyrim_hooks.registerForEvent("Reduction25%StackB", _hook02) -- these should produce a total 50% reduction
+         skyrim_hooks.registerForEvent("TESTEnergyShields",  SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook01)
+         skyrim_hooks.registerForEvent("Reduction25%StackA", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook02) --
+         skyrim_hooks.registerForEvent("Reduction25%StackB", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook02) -- these should produce a total 50% reduction
       else
          logmessage(" - The event registration API is absent.")
       end

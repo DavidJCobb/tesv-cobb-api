@@ -1,6 +1,7 @@
 #include "SkyrimLuaService.h"
 #include "_includes.h"
 #include "Lua5.3.5/luauser.h"
+#include "_utilities.h"
 
 #include "FormWrappers/IForm.h"
 #include "FormWrappers/IActor.h"
@@ -135,7 +136,8 @@ void SkyrimLuaService::StartVM() {
    //
    _MESSAGE("Lua: Executing script file at hardcoded path...");
    auto stackSizePrior = lua_gettop(luaVM);
-   int  result = lua_pcall(luaVM, 0, LUA_MULTRET, 0);
+   //int  result = lua_pcall(luaVM, 0, LUA_MULTRET, 0);
+   int  result = util::safeCall(luaVM, 0, LUA_MULTRET);
    if (result) {
       _MESSAGE("Failed to run script: %s\n", lua_tostring(luaVM, -1));
       lua_settop(luaVM, stackSizePrior);

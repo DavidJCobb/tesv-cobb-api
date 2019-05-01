@@ -50,11 +50,6 @@ namespace LuaSkyrim {
       }
       namespace _methods {
          luastackchange_t registerForEvent(lua_State* luaVM) {
-            //
-            // TODO: Registrations should specify a name, so they can be unregistered; 
-            // we should also allow specifying filters to be applied on the C++ side 
-            // of things.
-            //
             luaL_argcheck(luaVM, lua_isstring  (luaVM, 1), 1, "unique string expected");
             luaL_argcheck(luaVM, lua_isnumber  (luaVM, 2), 2, "hook type (as number) expected");
             luaL_argcheck(luaVM, lua_isfunction(luaVM, 3), 3, "function expected");
@@ -73,14 +68,13 @@ namespace LuaSkyrim {
             }
             lua_pop(luaVM, 1); // STACK: [list, arg3, arg2, arg1]
             lua_pushvalue(luaVM, 1);
-            lua_pushvalue(luaVM, 2); // STACK: [arg2, arg1, list, arg3, arg2, arg1]
+            lua_pushvalue(luaVM, 3); // STACK: [arg3, arg1, list, arg3, arg2, arg1]
             lua_rawset(luaVM, -3); // STACK: [list, arg3, arg2, arg1]
             return 0;
          }
          luastackchange_t unregisterForEvent(lua_State* luaVM) {
             luaL_argcheck(luaVM, lua_isstring(luaVM, 1), 1, "string expected");
             luaL_argcheck(luaVM, lua_isnumber(luaVM, 2), 2, "hook type (as number) expected");
-            luaL_argcheck(luaVM, lua_isfunction(luaVM, 3), 3, "function expected");
             const char* listKey = nullptr;
             _helpers::eventConstantToListRegistryKey(luaVM, lua_tonumber(luaVM, 2), listKey);
             lua_getfield(luaVM, LUA_REGISTRYINDEX, listKey); // STACK: [list]
@@ -165,7 +159,7 @@ namespace LuaSkyrim {
          return pendingChange;
       lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptAVChange); // STACK: [list]
       if (lua_type(luaVM, -1) != LUA_TTABLE) {
-_MESSAGE("LUA: INTERNAL: Unable to get the list of listeners for the InterceptAVChange hook!");
+//_MESSAGE("LUA: INTERNAL: Unable to get the list of listeners for the InterceptAVChange hook!");
          lua_pop(luaVM, 1);
          return pendingChange;
       }
@@ -183,7 +177,7 @@ _MESSAGE("LUA: INTERNAL: Unable to get the list of listeners for the InterceptAV
       std::vector<std::string> listeners;
       util::tableKeys(luaVM, listeners, -1);
       float originalChange = pendingChange;
-_MESSAGE("LUA: INTERNAL: InterceptAVChange hook is going to execute %d listeners...", listeners.size());
+//_MESSAGE("LUA: INTERNAL: InterceptAVChange hook is going to execute %d listeners...", listeners.size());
       for (const auto& it : listeners) {
          // STACK: [list]
          lua_pushstring(luaVM, it.c_str()); // STACK: [     key,  list]
@@ -202,8 +196,9 @@ _MESSAGE("LUA: INTERNAL: InterceptAVChange hook is going to execute %d listeners
                }
             }
             lua_settop(luaVM, top);
+            lua_pop(luaVM, 1); // pop the function, too
          } else {
-_MESSAGE(" - Failed to access one of the listener functions (%s). It tests as not a function.", it.c_str());
+//_MESSAGE(" - Failed to access one of the listener functions (%s). It tests as not a function.", it.c_str());
             lua_pop(luaVM, 1); // STACK: [list]
          }
       }

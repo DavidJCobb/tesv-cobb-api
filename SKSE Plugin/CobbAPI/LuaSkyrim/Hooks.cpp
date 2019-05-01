@@ -3,6 +3,7 @@
 #include "FormWrappers/IForm.h"
 
 #include "Miscellaneous/scope_control.h"
+#include "_utilities.h"
 
 #include "skse/SafeWrite.h"
 
@@ -42,25 +43,36 @@ namespace LuaSkyrim {
             // we should also allow specifying filters to be applied on the C++ side 
             // of things.
             //
-            luaL_argcheck(luaVM, lua_isfunction(luaVM, 1), 1, "function expected");
+            luaL_argcheck(luaVM, lua_isstring(luaVM, 1),   1, "unique string expected");
+            luaL_argcheck(luaVM, lua_isfunction(luaVM, 2), 2, "function expected");
             lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptAVChange); // STACK: [list]
             if (lua_type(luaVM, -1) != LUA_TTABLE)
-               return 0; // TODO: warn
-            for (int i = 1; ; i++) {
-               lua_rawgeti(luaVM, -1, i);
-               if (lua_isnil(luaVM, -1)) {
-                  lua_pop      (luaVM, 1); // STACK: [list]
-                  lua_pushvalue(luaVM, 1); // STACK: [arg1, list]
-                  lua_rawseti  (luaVM, -2, i); // STACK: [list]
-                  return 0;
-               }
-               lua_pop(luaVM, 1);
+               return 0; // TODO: warn: hook unavailable (DLL didn't do setup properly or something)
+            lua_pushvalue(luaVM,  1); // STACK: [arg1,       list, arg2, arg1]
+            lua_rawget   (luaVM, -2); // STACK: [list[arg1], list, arg2, arg1]
+            if (!lua_isnil(luaVM, -1)) {
+               //
+               // This event name is already in use.
+               //
+               // TODO: Warn.
+               //
+               return 0;
             }
+            lua_pop(luaVM, 1); // STACK: [list, arg2, arg1]
+            lua_pushvalue(luaVM, 1);
+            lua_pushvalue(luaVM, 2); // STACK: [arg2, arg1, list, arg2, arg1]
+            lua_rawset(luaVM, -3); // STACK: [list, arg2, arg1]
+            lua_pop(luaVM, 3); // should be arg count + 1
+            return 0;
          }
-         luastackchange_t unregisterForEvent(lua_State* L) {
-            //
-            // TODO
-            //
+         luastackchange_t unregisterForEvent(lua_State* luaVM) {
+            luaL_argcheck(luaVM, lua_isstring(luaVM, 1), 1, "string expected");
+            lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptAVChange); // STACK: [list]
+            if (lua_type(luaVM, -1) != LUA_TTABLE)
+               return 0; // TODO: warn: hook unavailable (DLL didn't do setup properly or something)
+            lua_pushvalue(luaVM, 1);
+            lua_pushnil(luaVM); // STACK: [nil, arg1, list, ...]
+            lua_rawset(luaVM, -3); // STACK: [list, ...]
             return 0;
          }
       }
@@ -103,6 +115,12 @@ namespace LuaSkyrim {
       // effect that Lua can only react to actor value changes that were caused by 
       // something other than Lua.
       //
+      // TODO: Can the game run multiple actor value changes concurrently? There 
+      // are three threads that we can intercept a change from: the main thread 
+      // (for changes from the console), and the two AI linear task threads. Are 
+      // these ever working at the same time? If so, then this implementation of 
+      // a recursion check will cause us to miss events from simultaneous changes.
+      //
       static bool s_isRunning = false;
       if (s_isRunning)
          return pendingChange;
@@ -117,8 +135,13 @@ namespace LuaSkyrim {
          lua_pop(luaVM, 1);
          return pendingChange;
       }
-      for (int i = 1; ; i++) {
-         lua_rawgeti(luaVM, -1, i); // STACK: [list[i], list]
+      std::vector<std::string> listeners;
+      util::tableKeys(luaVM, -1);
+      float originalChange = pendingChange;
+      for (const auto& it : listeners) {
+         // STACK: [list]
+         lua_pushstring(luaVM, it.c_str()); // STACK: [     key,  list]
+         lua_rawget    (luaVM, -2);         // STACK: [list[key], list]
          if (lua_isnil(luaVM, -1)) {
             lua_pop(luaVM, 2); // STACK: []
             return pendingChange;
@@ -127,7 +150,8 @@ namespace LuaSkyrim {
             wrapForm(luaVM, (TESForm*)target); // arg1
             lua_pushinteger(luaVM, avIndex);   // arg2
             lua_pushnumber (luaVM, pendingChange); // arg3
-            if (lua_pcall(luaVM, 3, 1, 0) == 0) { // STACK: [(list[i](target, avIndex, pendingChange)) or errorText, list]
+            lua_pushnumber (luaVM, originalChange); // arg4
+            if (lua_pcall(luaVM, 4, 1, 0) == 0) { // STACK: [(list[i](target, avIndex, pendingChange)) or errorText, list]
                if (lua_isnumber(luaVM, -1)) {
                   pendingChange = lua_tonumber(luaVM, -1);
                } else if (lua_isinteger(luaVM, -1)) {

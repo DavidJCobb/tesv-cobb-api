@@ -27,6 +27,10 @@ namespace LuaSkyrim {
          //    end
          //
          lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
+         if (lua_isnil(luaVM, -1)) {
+            _MESSAGE("LUA: WARNING: The form wrapper reuse table is missing!");
+            return 0;
+         }
          if (lua_rawgeti(luaVM, -1, formID) == LUA_TUSERDATA) {  // STACK: [wrapper, list]
             IForm* a = IForm::fromStack(luaVM, -1);
             if (a && !a->isDeleted && a->formType == form->formType && !a->ruleOutForm(form)) {
@@ -159,9 +163,10 @@ namespace LuaSkyrim {
       { NULL, NULL }
    };
    void IForm::setupClass(lua_State* luaVM) {
-      static bool isDefined = false;
-      if (isDefined)
+      if (_isClassDefined(luaVM, metatableName)) {
+         _MESSAGE("LUA: WARNING: The IForm class has already been set up!");
          return;
+      }
       _defineClass(luaVM, metatableName, nullptr, _metatableMethods);
       {  // Create the registry
          //
@@ -182,7 +187,6 @@ namespace LuaSkyrim {
          lua_newtable(luaVM);
          lua_setfield(luaVM, LUA_REGISTRYINDEX, ce_formSubclassListKey);
       }
-      isDefined = true;
    };
 
    IForm* IForm::fromStack(lua_State* luaVM, SInt32 stackPos) {

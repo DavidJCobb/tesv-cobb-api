@@ -37,13 +37,11 @@ namespace LuaSkyrim {
       { NULL, NULL }
    };
    void IRace::setupClass(lua_State* luaVM) {
-      static bool isDefined = false;
-      if (isDefined)
+      if (_isClassDefined(luaVM, metatableName))
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
       mapFormTypeToFactory  (kFormType_Race, formWrapperFactory<IRace>);
       mapFormTypeToMetatable(luaVM, kFormType_Race, metatableName);
-      isDefined = true;
    };
    IRace* IRace::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IRace*) _asClass(luaVM, stackPos, metatableName);

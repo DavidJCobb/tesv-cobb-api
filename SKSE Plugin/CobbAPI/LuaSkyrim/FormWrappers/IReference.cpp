@@ -102,8 +102,7 @@ namespace LuaSkyrim {
       { NULL, NULL }
    };
    void IReference::setupClass(lua_State* luaVM) {
-      static bool isDefined = false;
-      if (isDefined)
+      if (_isClassDefined(luaVM, metatableName))
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
       mapFormTypeToFactory  (kFormType_Reference, formWrapperFactory<IReference>);
@@ -113,7 +112,6 @@ namespace LuaSkyrim {
       // singletons could hold useful static functions (e.g. "for each form of this type") 
       // and relevant constants.
       //
-      isDefined = true;
    };
    IReference* IReference::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IReference*) _asClass(luaVM, stackPos, metatableName);

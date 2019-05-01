@@ -93,8 +93,7 @@ namespace LuaSkyrim {
       { NULL, NULL }
    };
    void IActor::setupClass(lua_State* luaVM) {
-      static bool isDefined = false;
-      if (isDefined)
+      if (_isClassDefined(luaVM, metatableName))
          return;
       _defineClass(luaVM, metatableName, IReference::metatableName, _metatableMethods);
       mapFormTypeToFactory  (kFormType_Character, formWrapperFactory<IActor>);
@@ -104,7 +103,6 @@ namespace LuaSkyrim {
       // singletons could hold useful static functions (e.g. "for each form of this type") 
       // and relevant constants.
       //
-      isDefined = true;
    };
    IActor* IActor::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IActor*) _asClass(luaVM, stackPos, metatableName);

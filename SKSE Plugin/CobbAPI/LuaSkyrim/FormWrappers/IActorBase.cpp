@@ -51,8 +51,7 @@ namespace LuaSkyrim {
       { NULL, NULL }
    };
    void IActorBase::setupClass(lua_State* luaVM) {
-      static bool isDefined = false;
-      if (isDefined)
+      if (_isClassDefined(luaVM, metatableName))
          return;
       _defineClass(luaVM, metatableName, IForm::metatableName, _metatableMethods);
       mapFormTypeToFactory  (kFormType_NPC, formWrapperFactory<IActorBase>);
@@ -67,7 +66,6 @@ namespace LuaSkyrim {
       //    GENDER_FEMALE  =  1
       //    GENDER_UNKNOWN = -1
       //
-      isDefined = true;
    };
    IActorBase* IActorBase::fromStack(lua_State* luaVM, SInt32 stackPos) {
       return (IActorBase*)_asClass(luaVM, stackPos, metatableName);

@@ -81,9 +81,10 @@ SkyrimLuaService::SkyrimLuaService() {
 }
 
 void SkyrimLuaService::StartVM() {
+   std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
    if (this->state)
       return;
-   std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
+   _MESSAGE("Lua: VM is starting...");
    //
    lua_State* luaVM = luaL_newstate(); // create a VM instance
    this->state    = luaVM;
@@ -132,6 +133,7 @@ void SkyrimLuaService::StartVM() {
    //
    // Now let's run the script:
    //
+   _MESSAGE("Lua: Executing script file at hardcoded path...");
    auto stackSizePrior = lua_gettop(luaVM);
    int  result = lua_pcall(luaVM, 0, LUA_MULTRET, 0);
    if (result) {
@@ -139,6 +141,8 @@ void SkyrimLuaService::StartVM() {
       lua_settop(luaVM, stackSizePrior);
       return;
    }
+   _MESSAGE("Lua: Script executed without any detectable errors.");
+   /*//
    //
    // Every Lua script is an anonymous function. If the script ran a top-level 
    // "return" statement, then the return value will be at the top of the Lua 
@@ -147,13 +151,15 @@ void SkyrimLuaService::StartVM() {
    double returned = lua_tonumber(luaVM, -1);
    lua_settop(luaVM, stackSizePrior);
    _MESSAGE("Script returned: %.0f\n", returned);
+   //*/
 }
 void SkyrimLuaService::StopVM() {
+   std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
    if (!this->state)
       return;
-   std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
-_MESSAGE("Stopping Lua VM...");
+   _MESSAGE("Lua: VM is shutting down...");
    lua_close(this->state); // should also kill child threads
+   lua_unlock(this->state); // lua_close doesn't call this on its own, when it REALLY REALLY BLOODY SHOULD
    this->state    = nullptr;
    this->threadID = 0;
 }

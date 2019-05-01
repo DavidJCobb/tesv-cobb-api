@@ -195,4 +195,9 @@ namespace LuaSkyrim {
          luaL_setfuncs(luaVM, methods, 0); // import functions into the metatable
       lua_pop(luaVM, 1); // pop metatable from the stack
    }
+   extern bool _isClassDefined(lua_State* luaVM, const char* className) {
+      bool result = luaL_getmetatable(luaVM, className) == LUA_TTABLE;
+      lua_pop(luaVM, 1);
+      return result;
+   }
 }

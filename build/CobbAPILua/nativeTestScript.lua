@@ -13,12 +13,20 @@ if logmessage and nativeTable then
 end
 if form_by_id then
    local function _validateForm(form)
+      local function _wrap(form)
+         return not not form.getFormID
+      end
       if not form then
          logmessage("Form wrapper doesn't exist!")
          return
       end
       logmessage("Form wrapper exists.")
-      if not form.getFormID then
+      local err, result = pcall(_wrap, form)
+      if err then
+         logmessage(" - Wrapper throws on access. No metatable?")
+         return false
+      end
+      if not result then
          logmessage(" - Wrapper is missing its member functions!")
          return false
       end
@@ -123,38 +131,48 @@ if form_by_id then
          logmessage(" - The event registration API exists.")
          --
          local player = form_by_id(0x14)
-         local function _hook01(actor, avIndex, pendingChange)
+         local function _hook01(actor, avIndex, pendingChange, originalChange)
+            logmessage("Hook01 intercepted change on an actor...")
             if actor ~= player then
-               --logmessage("AV change not on the player.")
+               logmessage(" - Not player. Ignoring.")
+               return
             end
             if avIndex == 0x18 then
-               --logmessage("Detected pending change to health: " .. tostring(pendingChange))
-               if actor and actor.getActorValue then
-                  --logmessage(" - Actor param looks correct...")
-                  --logmessage(string.format(" - Current health  is %s.", tostring(actor:getActorValue(0x18))))
+               if pendingChange < 0 and originalChange < 0 then
+                  logmessage(" - It's health damage. Routing through magicka...")
                   local magicka = actor:getActorValue(0x19)
-                  --logmessage(string.format(" - Current magicka is %s.", tostring(magicka)))
-                  if magicka and pendingChange < 0 then
-                     --logmessage(" - Gonna try routing damage through magicka...")
-                     if magicka + pendingChange >= 0 then
-                        --logmessage("    - Route: magicka can fully absorb the incoming damage.")
-                        actor:damageActorValue(0x19, pendingChange)
-                        --logmessage("       - Set-Magicka complete.")
-                        return 0
-                     end
-                     --logmessage("    - Route: damage bleeds through magicka and into health.")
-                     local healthMod = magicka + pendingChange;
-                     if magicka > 0 then
-                        actor:damageActorValue(0x19, -magicka)
-                     end
-                     --logmessage("       - Set-Magicka complete.")
-                     return healthMod;
+                  if magicka + pendingChange >= 0 then
+                     actor:damageActorValue(0x19, pendingChange)
+                     return 0
                   end
+                  local healthMod = magicka + pendingChange;
+                  if magicka > 0 then
+                     actor:damageActorValue(0x19, -magicka)
+                  end
+                  return healthMod;
                end
                return pendingChange
             end
          end
-         skyrim_hooks.registerForEvent(_hook01)
+         local function _hook02(actor, avIndex, pendingChange, originalChange) -- reduce health damage by 20%
+            logmessage("Hook02 intercepted change on an actor...")
+            if avIndex ~= 0x18 or actor == player then
+               logmessage(" - Not health, or player. Ignoring.")
+               return
+            end
+            if pendingChange < 0 and originalChange < 0 then
+               local modifier = originalChange * 0.25
+               logmessage(" - Change is damage: %f (originally %f); will reduce by %f.", pendingChange, originalChange, modifier)
+               if pendingChange > modifier then -- they're negative, so flip the comparison
+                  logmessage(" - Reducing to zero.")
+                  return 0
+               end
+               return pendingChange - modifier
+            end
+         end
+         skyrim_hooks.registerForEvent("TESTEnergyShields",  _hook01)
+         skyrim_hooks.registerForEvent("Reduction25%StackA", _hook02) --
+         skyrim_hooks.registerForEvent("Reduction25%StackB", _hook02) -- these should produce a total 50% reduction
       else
          logmessage(" - The event registration API is absent.")
       end

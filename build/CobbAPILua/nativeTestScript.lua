@@ -162,7 +162,7 @@ if form_by_id then
             end
             if pendingChange < 0 and originalChange < 0 then
                local modifier = originalChange * 0.25
-               logmessage(" - Change is damage: %f (originally %f); will reduce by %f.", pendingChange, originalChange, modifier)
+               logmessage(string.format(" - Change is damage: %s (originally %s); will reduce by %s.", -pendingChange, -originalChange, -modifier))
                if pendingChange > modifier then -- they're negative, so flip the comparison
                   logmessage(" - Reducing to zero.")
                   return 0

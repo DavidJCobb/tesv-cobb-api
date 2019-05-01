@@ -136,22 +136,20 @@ namespace LuaSkyrim {
          return pendingChange;
       }
       std::vector<std::string> listeners;
-      util::tableKeys(luaVM, -1);
+      util::tableKeys(luaVM, listeners, -1);
+      _MESSAGE("LUA: ABOUT TO FIRE %d LISTENERS FOR INTERCEPT-AV EVENT...", listeners.size());
       float originalChange = pendingChange;
       for (const auto& it : listeners) {
+         _MESSAGE(" - Executing listener: %s", it.c_str());
          // STACK: [list]
          lua_pushstring(luaVM, it.c_str()); // STACK: [     key,  list]
          lua_rawget    (luaVM, -2);         // STACK: [list[key], list]
-         if (lua_isnil(luaVM, -1)) {
-            lua_pop(luaVM, 2); // STACK: []
-            return pendingChange;
-         }
          if (lua_isfunction(luaVM, -1)) {
             wrapForm(luaVM, (TESForm*)target); // arg1
             lua_pushinteger(luaVM, avIndex);   // arg2
             lua_pushnumber (luaVM, pendingChange); // arg3
             lua_pushnumber (luaVM, originalChange); // arg4
-            if (lua_pcall(luaVM, 4, 1, 0) == 0) { // STACK: [(list[i](target, avIndex, pendingChange)) or errorText, list]
+            if (lua_pcall(luaVM, 4, 1, 0) == LUA_OK) { // STACK: [(list[i](target, avIndex, pendingChange)) or errorText, list]
                if (lua_isnumber(luaVM, -1)) {
                   pendingChange = lua_tonumber(luaVM, -1);
                } else if (lua_isinteger(luaVM, -1)) {
@@ -164,5 +162,6 @@ namespace LuaSkyrim {
          } else
             lua_pop(luaVM, 1); // STACK: [list]
       }
+      return pendingChange;
    }
 }

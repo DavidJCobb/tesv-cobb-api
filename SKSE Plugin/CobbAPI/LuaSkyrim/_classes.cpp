@@ -75,35 +75,32 @@ namespace LuaSkyrim {
             lua_pop(luaVM, 1); // STACK: [k, meta.__superclass]
          }
       }
-      //
-      // If we want to use fields instead of methods, then we need to add a 
-      // __newindex metamethod, and modify (_defineClass) to create two tables 
-      // (__getters and __setters) on the metatable. Those two tables will need 
-      // to be maps of field names to CFunctions; __index will need to consult 
-      // the getter table (as written above) and __newindex will need to consult 
-      // the setter table.
-      //
-      // We should probably add a __newindex method anyway to make writes silently 
-      // fail.
-      //
-      // If we go with fields, then we should probably also modify (_defineClass) 
-      // to take optional luaL_Reg*s of field-getters and field-setters, and to 
-      // write those CFunctions into the relevant metatable tables.
-      //
-      // The issue with fields is that it becomes impossible to adjust structs 
-      // without creating wrappers for them. Consider something like this:
-      //
-      //    local position = myReference.position -- returns {x, y, z}
-      //    position[0] = 5
-      //
-      // That code wouldn't do anything if we just return the value. To make it 
-      // work, we'd have to construct an entire wrapper just for the reference's 
-      // position, and synch it with the reference. By contrast, methods make 
-      // this easy:
-      //
-      //    local x, y, z = myReference:position()
-      //    myReference:position(5, nil, nil) -- nil = unchanged
-      //
+   }
+   namespace { // helper functions
+      void _setupMetamethod(lua_State* luaVM, const char* metamethod, int superPos, int subPos) {
+         superPos = lua_absindex(luaVM, superPos);
+         subPos   = lua_absindex(luaVM, subPos);
+         //
+         // Don't overwrite the metamethod if it already exists on the subclass metatable:
+         //
+         lua_pushstring(luaVM, metamethod);
+         if (lua_rawget(luaVM, subPos) != LUA_TNIL) {
+            lua_pop(luaVM, 1);
+            return;
+         }
+         lua_pop(luaVM, 1);
+         //
+         // Copy the metamethod from the superclass table to the subclass table, if it 
+         // exists on the former:
+         //
+         lua_pushstring(luaVM, metamethod); // STACK: [metamethod, ...]
+         lua_pushstring(luaVM, metamethod); // STACK: [metamethod, metamethod, ...]
+         lua_rawget    (luaVM, superPos);   // STACK: [super[metamethod], metamethod, ...]
+         if (!lua_isnil(luaVM, -1))
+            lua_rawset(luaVM, subPos); // STACK: [...]
+         else
+            lua_pop(luaVM, 2);
+      }
    }
 
    extern void* _asClass(lua_State* luaVM, SInt32 stackPos, const char* classKey) {
@@ -176,12 +173,24 @@ namespace LuaSkyrim {
       lua_settable     (luaVM, -3);        // STACK: [newmeta]
       //
       if (superclassName) {
-         lua_pushstring   (luaVM, "__superclass"); // STACK: ["__superclass", newmeta]
-         luaL_getmetatable(luaVM, superclassName); // STACK: [supermeta, "__superclass", newmeta]
+         luaL_getmetatable(luaVM, superclassName); // STACK: [supermeta, newmeta]
          if (lua_isnil(luaVM, -1)) {
-            _MESSAGE("WARNING: Failed to set up %s as the superclass of %s; the former's metatable is not yet defined. Are you defining your classes in the wrong order?", superclassName, className);
+            _MESSAGE("WARNING: Failed to set up %s as the superclass of %s; the former's metatable is not yet defined. Are you setting up your classes in the wrong order?", superclassName, className);
+            lua_pop(luaVM, 1);
+         } else {
+            lua_pushstring(luaVM, "__superclass"); // STACK: ["__superclass", supermeta, newmeta]
+            lua_pushvalue (luaVM, -2); // STACK: [supermeta, "__superclass", supermeta, newmeta]
+            lua_settable  (luaVM, -4); // STACK: [supermeta, newmeta]
+            //
+            // Lua only applies "operator" metamethods using rawget, so we can't rely 
+            // on classes to inherit them automatically. We need to copy  them from 
+            // the superclass to the subclass by hand. We have a helper function for 
+            // this.
+            //
+            _setupMetamethod(luaVM, "__tostring", -1, -2);
+            //
+            lua_pop(luaVM, 1); // STACK: [newmeta]
          }
-         lua_settable(luaVM, -3); // STACK: [newmeta]
       }
       //
       // Define __metatable on the metatable, so that Lua scripts can't retrieve 

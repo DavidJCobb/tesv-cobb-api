@@ -1,6 +1,9 @@
 #include "IActor.h"
 #include "LuaSkyrim/_classes.h"
 #include "ReverseEngineered/Forms/Actor.h"
+#include "ReverseEngineered/Forms/BaseForms/TESActorBase.h"
+#include "ReverseEngineered/Systems/GameData.h"
+
 #include "skse/GameRTTI.h"
 
 namespace LuaSkyrim {
@@ -49,7 +52,7 @@ namespace LuaSkyrim {
             auto form = (RE::Actor*) wrapper->unwrap();
             if (!form)
                return 0;
-            form->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, avIndex, value);
+            form->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, avIndex, -value);
             return 0;
          };
          luastackchange_t getActorValue(lua_State* L) {
@@ -72,6 +75,46 @@ namespace LuaSkyrim {
             lua_pushboolean(L, result);
             return 1;
          };
+         luastackchange_t modifyDeathCount(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr,  1, "'IActor' expected");
+            luaL_argcheck(L, lua_isinteger(L, 2), 2, "integer expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            luaL_argcheck(L, form != nullptr, 1, "the actor cannot be null");
+            auto base = (RE::TESActorBase*) form->baseForm;
+            luaL_argcheck(L, base != nullptr, 1, "the actor must have a base form");
+            auto mod  = lua_tointeger(L, 2);
+            if (form) {
+               luaL_argcheck(L, (base->actorData.flags & RE::TESActorBaseData::kFlag_Unique), 1, "cannot modify death counts for non-unique actor-bases");
+               auto extra = (RE::ExtraLeveledCreature*) CALL_MEMBER_FN((RE::BaseExtraList*) &form->extraData, GetByType)(0x2D);
+               if (extra && extra->unk08)
+                  base = (RE::TESActorBase*) extra->unk08;
+               CALL_MEMBER_FN((RE::TES*) *g_TES, ModActorBaseDeathCount)(base, mod);
+            }
+            return 0;
+         };
+         luastackchange_t pushAwayFrom(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            luaL_argcheck(L, lua_isnumber(L, 2), 2, "numeric x-coordinate expected");
+            luaL_argcheck(L, lua_isnumber(L, 3), 3, "numeric y-coordinate expected");
+            luaL_argcheck(L, lua_isnumber(L, 4), 4, "numeric z-coordinate expected");
+            luaL_argcheck(L, lua_isnumber(L, 5), 5, "numeric magnitude expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            auto pm = form->processManager;
+            if (!pm)
+               return 0;
+            if (pm->unk9B != 0) // if actor is not in high process, then it can't be pushed, per the Papyrus func for this
+               return 0;
+            float x = lua_tonumber(L, 2);
+            float y = lua_tonumber(L, 3);
+            float z = lua_tonumber(L, 4);
+            float mag = lua_tonumber(L, 5);
+            CALL_MEMBER_FN(pm, PushActorAway)(form, x, y, z, mag);
+            return 0;
+         };
          luastackchange_t restoreActorValue(lua_State* L) {
             uint8_t avIndex = _helpers::getAVIndexArg(L, 2, 2);
             float   value   = _helpers::getAVValueArg(L, 3, 3);
@@ -80,7 +123,7 @@ namespace LuaSkyrim {
             auto form = (RE::Actor*) wrapper->unwrap();
             if (!form)
                return 0;
-            form->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, avIndex, -value);
+            form->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, avIndex, value);
             return 0;
          };
       }
@@ -89,6 +132,8 @@ namespace LuaSkyrim {
       { "damageActorValue",  _methods::damageActorValue },
       { "getActorValue",     _methods::getActorValue },
       { "isSneaking",        _methods::isSneaking },
+      { "modifyDeathCount",  _methods::modifyDeathCount },
+      { "pushAwayFrom",      _methods::pushAwayFrom }, // args: x,y,z to push away from; force magnitude
       { "restoreActorValue", _methods::restoreActorValue },
       { NULL, NULL }
    };

@@ -1,7 +1,9 @@
 #include "IActorBase.h"
 #include "LuaSkyrim/_classes.h"
 #include "ReverseEngineered/Forms/TESForm.h"
+#include "ReverseEngineered/Forms/BaseForms/TESActorBase.h"
 #include "ReverseEngineered/Forms/BaseForms/TESNPC.h"
+#include "ReverseEngineered/Systems/GameData.h"
 
 namespace LuaSkyrim {
    IActorBase::IActorBase(TESForm* form) : IForm(form, ((form->formID & 0xFF000000) == 0xFF000000)) {};
@@ -43,11 +45,26 @@ namespace LuaSkyrim {
             lua_pushnil(L);
             return 1;
          };
+         luastackchange_t isUnique(lua_State* L) {
+            IForm* wrapper = IActorBase::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
+            auto form = (RE::TESActorBase*) wrapper->unwrap();
+            if (!form)
+               lua_pushnil(L);
+            else {
+               if (form->actorData.flags & RE::TESActorBaseData::kFlag_Unique)
+                  lua_pushboolean(L, true);
+               else
+                  lua_pushboolean(L, false);
+            }
+            return 1;
+         };
       }
    }
    static const luaL_Reg _metatableMethods[] = {
       { "getGender", _methods::getGender },
       { "getRace",   _methods::getRace },
+      { "isUnique",  _methods::isUnique },
       { NULL, NULL }
    };
    void IActorBase::setupClass(lua_State* luaVM) {

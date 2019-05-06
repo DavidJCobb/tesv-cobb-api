@@ -145,12 +145,14 @@ namespace LuaSkyrim {
             luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
             auto form = wrapper->unwrap();
             if (!form)
-               lua_pushfstring(L, "[NONE]");
+               lua_pushstring(L, "[Wrapped Form:NONE]");
             else {
                auto signature = wrapper->signature();
                if (!signature)
                   signature = "????";
-               lua_pushfstring(L, "[%s:%08X]", signature, form->formID);
+               char hex[9];
+               snprintf(hex, sizeof(hex), "%08X", form->formID);
+               lua_pushfstring(L, "[Wrapped Form:%s:%s]", signature, hex);
             }
             return 1; // indicate how many things we added to the Lua stack
          }

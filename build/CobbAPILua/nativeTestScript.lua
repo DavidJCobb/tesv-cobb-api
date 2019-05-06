@@ -132,22 +132,22 @@ if form_by_id then
          --
          local player = form_by_id(0x14)
          local function _hook01(actor, avIndex, pendingChange, originalChange) -- route health damage through magicka first
-            logmessage("Hook01 intercepted change on an actor...")
+            --logmessage("Hook01 intercepted change on an actor...")
             if actor ~= player then
-               logmessage(" - Not player. Ignoring.")
+               --logmessage(" - Not player. Ignoring.")
                return
             end
             if avIndex == 0x18 then
                if pendingChange < 0 and originalChange < 0 then
-                  logmessage(" - It's health damage. Routing through magicka...")
+                  --logmessage(" - It's health damage. Routing through magicka...")
                   local magicka = actor:getActorValue(0x19)
                   if magicka + pendingChange >= 0 then
-                     actor:damageActorValue(0x19, pendingChange)
+                     actor:damageActorValue(0x19, -pendingChange) -- pendingChange is negative; negative damage == restore; double-negative damage == damage
                      return 0
                   end
                   local healthMod = magicka + pendingChange;
                   if magicka > 0 then
-                     actor:damageActorValue(0x19, -magicka)
+                     actor:damageActorValue(0x19, magicka)
                   end
                   return healthMod;
                end
@@ -155,19 +155,19 @@ if form_by_id then
             end
          end
          local function _hook02(actor, avIndex, pendingChange, originalChange) -- reduce health damage by 20%
-            logmessage("Hook02 intercepted change on an actor...")
+            --logmessage("Hook02 intercepted change on an actor...")
             if avIndex ~= 0x18 or actor == player then
-               logmessage(" - Not health, or player. Ignoring.")
+               --logmessage(" - Not health, or player. Ignoring.")
                return
             end
             if pendingChange < 0 and originalChange < 0 then
                skyrim_hooks.unregisterForEvent("Reduction25%StackA", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE);
                skyrim_hooks.unregisterForEvent("Reduction25%StackB", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE);
-               logmessage(" - Listener unregistered.")
+               --logmessage(" - Listener unregistered.")
                local modifier = originalChange * 0.25
-               logmessage(string.format(" - Change is damage: %s (originally %s); will reduce by %s.", -pendingChange, -originalChange, -modifier))
+               --logmessage(string.format(" - Change is damage: %s (originally %s); will reduce by %s.", -pendingChange, -originalChange, -modifier))
                if pendingChange > modifier then -- they're negative, so flip the comparison
-                  logmessage(" - Reducing to zero.")
+                  --logmessage(" - Reducing to zero.")
                   return 0
                end
                return pendingChange - modifier
@@ -176,6 +176,38 @@ if form_by_id then
          skyrim_hooks.registerForEvent("TESTEnergyShields",  SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook01)
          skyrim_hooks.registerForEvent("Reduction25%StackA", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook02) --
          skyrim_hooks.registerForEvent("Reduction25%StackB", SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE, _hook02) -- these should produce a total 50% reduction
+         --
+         local function _deathHook(victim, killer, willStillKill)
+            --
+            -- (actor) is the actor that is about to die. (willStillKill) 
+            -- is true if the Lua listeners that have run before yours 
+            -- have not prevented the actor's death.
+            --
+            -- Return (nil) or (willStillKill) to make no changes to the 
+            -- actor's fate. Return (false) to prevent them from dying, 
+            -- or (true) if you explicitly want them to die (overruling 
+            -- previous listeners). Note that listeners that run after 
+            -- yours can overrule your decision.
+            --
+            -- Note that the actor's health may be below zero when this 
+            -- function runs. If you want them to instantly regen health 
+            -- or something, then you may want to raise their health to 
+            -- zero (but be mindful of other hooks that may have edited 
+            -- it already!).
+            --
+            --logmessage("Intercepted slaying of " .. tostring(victim) .. " by " .. tostring(killer) .. ".")
+            if victim == player then
+               return
+            end
+            if killer ~= player then
+               return
+            end
+            local x, y, z = killer:getPosition()
+            victim:pushAwayFrom(x, y, z, 10)
+            victim:restoreActorValue(0x18, 999999) -- restore to full health
+            return false -- prevent death
+         end
+         skyrim_hooks.registerForEvent("PushInsteadOfKill", SKYRIM_HOOK_INTERCEPT_ACTOR_KILL, _deathHook)
       else
          logmessage(" - The event registration API is absent.")
       end

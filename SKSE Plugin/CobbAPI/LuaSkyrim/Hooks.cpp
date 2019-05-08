@@ -7,6 +7,8 @@
 
 #include "skse/SafeWrite.h"
 
+#include <functional>
+
 namespace LuaSkyrim {
    namespace Patches {
       namespace InterceptActorKill {
@@ -161,45 +163,65 @@ namespace LuaSkyrim {
       Patches::Apply();
    };
 
+   void _forEachListenerOfType(lua_State* luaVM, const char* registryKey, std::function<void(lua_State*)> functor) {
+      lua_getfield(luaVM, LUA_REGISTRYINDEX, registryKey); // STACK: [list]
+      if (lua_type(luaVM, -1) != LUA_TTABLE) {
+         lua_pop(luaVM, 1);
+         return;
+      }
+      std::vector<std::string> listeners;
+      util::tableKeys(luaVM, listeners, -1);
+      if (!listeners.size())
+         return;
+      // STACK: [list]
+      for (const auto& it : listeners) {
+         // STACK: [list]
+         lua_pushstring(luaVM, it.c_str()); // STACK: [      key, list]
+         lua_rawget    (luaVM, -2);         // STACK: [list[key], list]
+         if (lua_isfunction(luaVM, -1)) {
+            auto top = lua_gettop(luaVM);
+            functor(luaVM);
+            if (top > lua_gettop(luaVM)) {
+               _MESSAGE("WARNING: The hook/event handler for %s managed the Lua stack incorrectly!", registryKey);
+            }
+            lua_settop(luaVM, top - 1); // STACK: [list]
+         } else {
+            //_MESSAGE(" - Failed to access one of the listener functions (%s). It tests as not a function.", it.c_str());
+            lua_pop(luaVM, 1); // STACK: [list]
+         }
+      }
+      lua_pop(luaVM, 1); // STACK: []
+      return;
+   };
+
    bool HookManager::interceptActorKill(RE::Actor* target, RE::Actor* killer) {
       auto& service = SkyrimLuaService::GetInstance();
       auto  luaVM   = service.getState();
       if (!luaVM)
          return true;
-      lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptActorKill); // STACK: [list]
-      if (lua_type(luaVM, -1) != LUA_TTABLE) {
-         lua_pop(luaVM, 1);
-         return true;
-      }
-      std::vector<std::string> listeners;
-      util::tableKeys(luaVM, listeners, -1);
-      if (!listeners.size())
-         return true;
-      wrapForm(luaVM, (TESForm*)target); // STACK: [arg1, list]
-      wrapForm(luaVM, (TESForm*)killer); // STACK: [arg2, arg1, list]
-      bool result = true;
-      for (const auto& it : listeners) {
-         // STACK: [list]
-         lua_pushstring(luaVM, it.c_str()); // STACK: [     key,  arg2, arg1, list]
-         lua_rawget    (luaVM, -4);         // STACK: [list[key], arg2, arg1, list]
-         if (lua_isfunction(luaVM, -1)) {
-            auto top = lua_gettop(luaVM);
-            lua_pushvalue  (luaVM, -3);     // arg1 // STACK: [arg1, list[key], arg2, arg1, list]
-            lua_pushvalue  (luaVM, -3);     // arg2 // STACK: [arg2, arg1, list[key], arg2, arg1, list]
-            lua_pushboolean(luaVM, result); // arg3 // STACK: [result, arg2, arg1, list[key], arg2, arg1, list]
+      //
+      // Wrap the forms outside of the loop, so that we don't do redundant 
+      // processing. Capture their Lua stack indices for use when pushing 
+      // args to each listener.
+      //
+      wrapForm(luaVM, (TESForm*)target); // STACK: [arg1]
+      auto victimPos = lua_gettop(luaVM);
+      wrapForm(luaVM, (TESForm*)killer); // STACK: [arg2, arg1]
+      auto killerPos = lua_gettop(luaVM);
+      //
+      bool result  = true;
+      _forEachListenerOfType(luaVM, ce_hookFunctionList_interceptActorKill,
+         [victimPos, killerPos, &result](lua_State* luaVM) {
+            lua_pushvalue  (luaVM, victimPos);
+            lua_pushvalue  (luaVM, killerPos);
+            lua_pushboolean(luaVM, result);
             if (util::safeCall(luaVM, 3, 1) == LUA_OK) { // STACK: [(list[i](target, result)) or errorText, arg2, arg1, list]
                if (lua_isboolean(luaVM, -1))
                   result = lua_toboolean(luaVM, -1);
             }
-            lua_settop(luaVM, top);
-            lua_pop(luaVM, 1); // pop the function, too // STACK: [arg1, list]
-         } else {
-            //_MESSAGE(" - Failed to access one of the listener functions (%s). It tests as not a function.", it.c_str());
-            lua_pop(luaVM, 1); // STACK: [arg1, list]
          }
-      }
-      // STACK: [arg2, arg1, list]
-      lua_pop(luaVM, 3); // STACK: []
+      );
+      lua_pop(luaVM, 2); // pop forms
       return result;
    }
    float HookManager::interceptAVChange(RE::Actor* target, uint8_t avIndex, float pendingChange) {
@@ -212,7 +234,8 @@ namespace LuaSkyrim {
       //
       // We solve this by disallowing recursion in this hook. This has the side-
       // effect that Lua can only react to actor value changes that were caused by 
-      // something other than Lua.
+      // something other than Lua reacting to an actor value change (i.e. the 
+      // vanilla game or a different Lua hook).
       //
       // TODO: Can the game run multiple actor value changes concurrently? There 
       // are three threads that we can intercept a change from: the main thread 
@@ -229,55 +252,31 @@ namespace LuaSkyrim {
       auto  luaVM   = service.getState();
       if (!luaVM)
          return pendingChange;
-      lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_hookFunctionList_interceptAVChange); // STACK: [list]
-      if (lua_type(luaVM, -1) != LUA_TTABLE) {
-//_MESSAGE("LUA: INTERNAL: Unable to get the list of listeners for the InterceptAVChange hook!");
-         lua_pop(luaVM, 1);
-         return pendingChange;
-      }
       //
-      // We can't use lua_next to iterate the list of listeners, because a listener 
-      // could conceivably unregister itself (or any other listener), which would 
-      // potentially break lua_next iteration. Instead, we get a list of all keys 
-      // using a helper function (which uses lua_next), and then iterate those keys 
-      // manually.
+      // Wrap the forms outside of the loop, so that we don't do redundant 
+      // processing. Capture their Lua stack indices for use when pushing 
+      // args to each listener.
       //
-      // Note that our helper function only retrieves string (and number) keys, but 
-      // since every listener must identify itself with a unique string anyway, that 
-      // isn't a major issue.
-      //
-      std::vector<std::string> listeners;
-      util::tableKeys(luaVM, listeners, -1);
-      if (!listeners.size())
-         return pendingChange;
-      wrapForm(luaVM, (TESForm*)target); // STACK: [arg1, list] // Wrap the form outside of the loop, to avoid redundant lookups/etc.
+      wrapForm(luaVM, (TESForm*)target); // STACK: [arg1]
+      auto  actorPos       = lua_gettop(luaVM);
       float originalChange = pendingChange;
-      for (const auto& it : listeners) {
-         // STACK: [list]
-         lua_pushstring(luaVM, it.c_str()); // STACK: [     key,  arg1, list]
-         lua_rawget    (luaVM, -3);         // STACK: [list[key], arg1, list]
-         if (lua_isfunction(luaVM, -1)) {
-            auto top = lua_gettop(luaVM);
-            lua_pushvalue  (luaVM, -2);             // arg1
-            lua_pushinteger(luaVM, avIndex);        // arg2
-            lua_pushnumber (luaVM, pendingChange);  // arg3
-            lua_pushnumber (luaVM, originalChange); // arg4
-            if (util::safeCall(luaVM, 4, 1) == LUA_OK) { // STACK: [(list[i](target, avIndex, pendingChange)) or errorText, arg1, list]
+      //
+      _forEachListenerOfType(luaVM, ce_hookFunctionList_interceptAVChange,
+         [actorPos, avIndex, originalChange, &pendingChange](lua_State* luaVM) {
+            lua_pushvalue  (luaVM, actorPos);
+            lua_pushinteger(luaVM, avIndex);
+            lua_pushnumber (luaVM, pendingChange);
+            lua_pushnumber (luaVM, originalChange);
+            if (util::safeCall(luaVM, 4, 1) == LUA_OK) {
                if (lua_isnumber(luaVM, -1)) {
                   pendingChange = lua_tonumber(luaVM, -1);
                } else if (lua_isinteger(luaVM, -1)) {
                   pendingChange = lua_tointeger(luaVM, -1);
                }
             }
-            lua_settop(luaVM, top);
-            lua_pop(luaVM, 1); // pop the function, too // STACK: [arg1, list]
-         } else {
-            //_MESSAGE(" - Failed to access one of the listener functions (%s). It tests as not a function.", it.c_str());
-            lua_pop(luaVM, 1); // STACK: [arg1, list]
          }
-      }
-      // STACK: [arg1, list]
-      lua_pop(luaVM, 2); // STACK: []
+      );
+      lua_pop(luaVM, 1); // pop forms
       return pendingChange;
    }
 }

@@ -120,6 +120,15 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
+         luastackchange_t getEditorID(lua_State* L) {
+            IForm* wrapper = IForm::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
+            auto form = (RE::TESForm*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            lua_pushstring(L, form->GetEditorID());
+            return 1;
+         };
          luastackchange_t getFormID(lua_State* L) {
             IForm* wrapper = IForm::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IForm' expected");
@@ -159,6 +168,7 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
+      { "getEditorID", _methods::getEditorID },
       { "getFormID",   _methods::getFormID },
       { "getFormType", _methods::getFormType },
       { "__tostring",  _methods::__tostring },

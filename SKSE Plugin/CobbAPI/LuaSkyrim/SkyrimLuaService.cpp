@@ -6,6 +6,7 @@
 #include "FormWrappers/IForm.h"
 #include "FormWrappers/IActor.h"
 #include "FormWrappers/IActorBase.h"
+#include "FormWrappers/IGlobal.h"
 #include "FormWrappers/IRace.h"
 #include "FormWrappers/IReference.h"
 #include "Hooks.h"
@@ -108,10 +109,11 @@ void SkyrimLuaService::StartVM() {
    // DO NOT FORGET TO CALL THESE
    //
    IForm::setupClass(luaVM);
-   IActorBase::setupClass(luaVM);
-   IRace::setupClass(luaVM);
-   IReference::setupClass(luaVM);
-   IActor::setupClass(luaVM);
+   /**/IActorBase::setupClass(luaVM);
+   /**/IGlobal::setupClass(luaVM);
+   /**/IRace::setupClass(luaVM);
+   /**/IReference::setupClass(luaVM);
+   /**//**/IActor::setupClass(luaVM);
    //
    HookManager::attach(luaVM);
    //

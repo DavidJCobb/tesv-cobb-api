@@ -4,13 +4,21 @@ local TESV_GENDERS = {
    [1]  = "female",
 }
 
-if logmessage and nativeTable then
-   logmessage("Found the native vars! Logging native table contents...")
-   for k, v in pairs(nativeTable) do
-      logmessage(string.format("nativeTable[%s] == %s", k, v))
+local function d(...)
+   for i = 1, select("#", ...) do
+      logmessage(tostring(select(i, ...)))
    end
-   logmessage("Done logging!")
 end
+local function df(format, ...)
+   local args = {...}
+   for i = 1, select("#", ...) do
+      if args[i] == nil or type(args[i]) == "boolean" then
+         args[i] = tostring(args[i])
+      end
+   end
+   logmessage(string.format(format, table.unpack(args)))
+end
+
 if form_by_id then
    local function _validateForm(form)
       local function _wrap(form)
@@ -38,19 +46,21 @@ if form_by_id then
    local form = form_by_id(7)
    logmessage("Retrieved the player actor-base.")
    if _validateForm(form) then
-      logmessage(string.format("formID   == %08X", form:getFormID()))
-      logmessage(string.format("formType == %u", form:getFormType()))
+      df("formID   == %08X", form:getFormID())
+      df("formType == %u",   form:getFormType())
+      df("editorID == %08X", form:getEditorID())
       if form.getGender then
          local gender = form:getGender()
-         logmessage(string.format("gender   == %s", TESV_GENDERS[gender or -1]))
+         df("gender   == %s", TESV_GENDERS[gender or -1])
+         df("isUnique == %s", form:isUnique())
       else
          logmessage("IActorBase methods not present!")
       end
       if form.race then
          local race = form:getRace()
          if race then
-            logmessage(string.format("race     == %s", race:getName()))
-            logmessage(string.format("isChild? == %s", tostring(race:isChild())))
+            df("race     == %s", race:getName())
+            df("isChild? == %s", race:isChild())
          else
             logmessage("Unable to retrieve the race!")
          end
@@ -94,29 +104,38 @@ if form_by_id then
    form = form_by_id(0x14)
    if form then
       logmessage("Got the player reference.")
-      logmessage(string.format("formID   == %08X", form:getFormID()))
-      logmessage(string.format("formType == %u", form:getFormType()))
+      df("formID   == %08X", form:getFormID())
+      df("formType == %u", form:getFormType())
+      df("name     == %s", form:getName())
       if form.getBaseForm then
          local base = form:getBaseForm()
          if base then
-            logmessage(string.format("baseID   == %08X", base:getFormID()))
-            logmessage(string.format("baseType == %u", base:getFormType()))
+            df("baseID   == %08X", base:getFormID())
+            df("baseType == %u", base:getFormType())
          else
             logmessage("base     == irretrievable or nullptr")
          end
          local cell = form:getParentCell()
          if cell then
-            logmessage(string.format("cellID   == %08X", cell:getFormID()))
-            logmessage(string.format("cellType == %u", cell:getFormType()))
+            df("cellID   == %08X", cell:getFormID())
+            df("cellType == %u",   cell:getFormType())
          else
             logmessage("cell     == irretrievable or nullptr")
          end
          local x, y, z = form:getPosition()
-         logmessage(string.format("position == (%s, %s, %s)", tostring(x), tostring(y), tostring(z)))
+         df("position == (%s, %s, %s)", x, y, z)
          local a, b, c = form:getRotation()
-         logmessage(string.format("rotation == (%s, %s, %s)", tostring(a), tostring(b), tostring(c)))
+         df("rotation == (%s, %s, %s)", a, b, c)
          local scale = form:getScale()
-         logmessage(string.format("scale    == %s", tostring(scale)))
+         df("scale    == %s", scale)
+         if form.getLevel then
+            df("level      == %s", form:getLevel())
+            df("weapon out == %s", form:isWeaponDrawn())
+            df("is dead    == %s", form:isDead())
+            df("max carry  == %s", form:getMaxCarryWeight())
+         else
+            logmessage("IActor member functions not available!")
+         end
       else
          logmessage("IReference member functions not available!")
       end
@@ -203,6 +222,8 @@ if form_by_id then
                return
             end
             local x, y, z = killer:getPosition()
+            local a, b, c = victim:getPosition()
+            victim:pushAwayFrom(a, b, c - 50, 5) -- can we stack two pushes to launch them upward as well as away?
             victim:pushAwayFrom(x, y, z, 10)
             victim:restoreActorValue(0x18, 999999) -- restore to full health
             return false -- prevent death

@@ -10,6 +10,14 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
+         luastackchange_t getDeathCount(lua_State* L) {
+            IForm* wrapper = IActorBase::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
+            auto form = (RE::TESActorBase*) wrapper->unwrap();
+            luaL_argcheck(L, form != nullptr, 1, "the actor-base cannot be null");
+            lua_pushinteger(L, CALL_MEMBER_FN((RE::TES*) *g_TES, GetActorBaseDeathCount)(form));
+            return 1;
+         };
          luastackchange_t getGender(lua_State* L) {
             IForm* wrapper = IActorBase::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActorBase' expected");
@@ -62,9 +70,10 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "getGender", _methods::getGender },
-      { "getRace",   _methods::getRace },
-      { "isUnique",  _methods::isUnique },
+      { "getDeathCount", _methods::getDeathCount },
+      { "getGender",     _methods::getGender },
+      { "getRace",       _methods::getRace },
+      { "isUnique",      _methods::isUnique },
       { NULL, NULL }
    };
    void IActorBase::setupClass(lua_State* luaVM) {

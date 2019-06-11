@@ -25,6 +25,7 @@ namespace LuaSkyrim {
                pop  ecx; // restore
                test al, al;
                jz   lSkip;
+               jmp  lExit;
             lSkip:
                mov  eax, 0x006AC401; // jump to original function's return statement
                jmp  eax;
@@ -153,8 +154,8 @@ namespace LuaSkyrim {
       //
       // Set up the various hooks' Lua stuff:
       //
-      _prepHook(luaVM, "SKYRIM_HOOK_INTERCEPT_ACTOR_KILL",         kHook_InterceptActorKill, ce_hookFunctionList_interceptActorKill, -1);
-      _prepHook(luaVM, "SKYRIM_HOOK_INTERCEPT_ACTOR_VALUE_CHANGE", kHook_InterceptAVChange,  ce_hookFunctionList_interceptAVChange,  -1);
+      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_KILL",         kHook_InterceptActorKill, ce_hookFunctionList_interceptActorKill, -1);
+      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_VALUE_CHANGE", kHook_InterceptAVChange,  ce_hookFunctionList_interceptAVChange,  -1);
       //
       lua_pop(luaVM, 1); // pop the constant-to-registry-name map from the stack
    }

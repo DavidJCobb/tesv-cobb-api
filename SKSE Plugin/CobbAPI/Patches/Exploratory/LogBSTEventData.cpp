@@ -68,12 +68,73 @@ namespace CobbPatches {
                   return instance;
                };
          };
+         class DumpPlayerBow : public RE::BSTEventSink<RE::TESPlayerBowShotEvent> {
+            public:
+               virtual EventResult Handle(void* aEv, void* aSource) override {
+                  auto ev     = convertEvent(aEv);
+                  auto source = convertSource(aSource);
+                  if (ev) {
+                     _MESSAGE("TESPlayerBowShotEvent");
+                     _MESSAGE(" - unk00 == %08X", ev->unk00);
+                     _MESSAGE(" - unk04 == %08X", ev->unk04);
+                     _MESSAGE(" - unk08 == %08X", ev->unk08);
+                     _MESSAGE(" - isSungazing == %d", ev->isSungazing);
+                  }
+                  return EventResult::kEvent_Continue;
+               };
+               //
+               static DumpPlayerBow& GetInstance() {
+                  static DumpPlayerBow instance;
+                  return instance;
+               };
+         };
+         class DumpSpell : public RE::BSTEventSink<RE::TESSpellCastEvent> {
+            public:
+               virtual EventResult Handle(void* aEv, void* aSource) override {
+                  auto ev     = convertEvent(aEv);
+                  auto source = convertSource(aSource);
+                  if (ev) {
+                     _MESSAGE("TESSpellCastEvent");
+                     _MESSAGE(" - unk00 == %08X", ev->unk00);
+                     _MESSAGE(" - unk04 == %08X", ev->unk04);
+                  }
+                  return EventResult::kEvent_Continue;
+               };
+               //
+               static DumpSpell& GetInstance() {
+                  static DumpSpell instance;
+                  return instance;
+               };
+         };
+         class DumpTopicInfo : public RE::BSTEventSink<RE::TESTopicInfoEvent> {
+            public:
+               virtual EventResult Handle(void* aEv, void* aSource) override {
+                  auto ev     = convertEvent(aEv);
+                  auto source = convertSource(aSource);
+                  if (ev) {
+                     _MESSAGE("TESTopicInfoEvent");
+                     _MESSAGE(" - unk00 == %08X", ev->speaker);
+                     _MESSAGE(" - unk04 == %08X", ev->unk04);
+                     _MESSAGE(" - unk08 == %08X", ev->infoFormID);
+                     _MESSAGE(" - unk0C == %08X", ev->type);
+                  }
+                  return EventResult::kEvent_Continue;
+               };
+               //
+               static DumpTopicInfo& GetInstance() {
+                  static DumpTopicInfo instance;
+                  return instance;
+               };
+         };
          //
          void Apply() {
             auto holder = RE::BSTEventSourceHolder::GetOrCreate();
             CALL_MEMBER_FN(&holder->death, AddEventSink)(&DumpDeath::GetInstance());
             CALL_MEMBER_FN(&holder->equip, AddEventSink)(&DumpEquip::GetInstance());
             CALL_MEMBER_FN(&holder->hit,   AddEventSink)(&DumpHit::GetInstance());
+            CALL_MEMBER_FN(&holder->playerBowShotEvent, AddEventSink)(&DumpPlayerBow::GetInstance());
+            CALL_MEMBER_FN(&holder->spellCast, AddEventSink)(&DumpSpell::GetInstance());
+            CALL_MEMBER_FN(&holder->topicInfo, AddEventSink)(&DumpTopicInfo::GetInstance());
             _MESSAGE("Registered for some test events; will dump fields when they fire");
          }
       }

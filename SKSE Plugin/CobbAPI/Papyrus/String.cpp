@@ -141,7 +141,7 @@ namespace CobbPapyrus {
             out.reserve(regex.size());
             auto a = regex.begin();
             auto b = sentinel.begin();
-            for (; !cobb::utf8::is_end(regex, a) && !cobb::utf8::is_end(sentinel, b); cobb::utf8::advance(regex, a), cobb::utf8::advance(sentinel, b)) {
+            for (; a != regex.end() && b != sentinel.end(); cobb::utf8::advance(regex, a), cobb::utf8::advance(sentinel, b)) {
                auto x = cobb::utf8::get(regex, a);
                auto y = cobb::utf8::get(sentinel, b);
                if (y == '0')
@@ -325,22 +325,28 @@ bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
       //
       UInt32 count = 0;
       _MESSAGE("UTF8 TEST: ASCII: %s", testASCII.c_str());
-      for (auto it = testASCII.begin(); !utf8::is_end(testASCII, it); utf8::advance(testASCII, it)) {
-         _MESSAGE("[%d]: %04X", count, utf8::get(testASCII, it));
+      for (auto it = testASCII.begin(); it != testASCII.end(); utf8::advance(testASCII, it)) {
+         auto distance = std::distance(testASCII.begin(), it);
+         _MESSAGE("[%d==%d]: %04X", count, distance, utf8::get(testASCII, it));
+         ++count;
       }
       _MESSAGE("[Length]: %d", utf8::count(testASCII));
       //
       count = 0;
       _MESSAGE("UTF8 TEST: WINDOWS-1252: %s", testWin1252.c_str());
-      for (auto it = testWin1252.begin(); !utf8::is_end(testWin1252, it); utf8::advance(testWin1252, it)) {
-         _MESSAGE("[%d]: %04X", count, utf8::get(testWin1252, it));
+      for (auto it = testWin1252.begin(); it != testWin1252.end(); utf8::advance(testWin1252, it)) {
+         auto distance = std::distance(testWin1252.begin(), it);
+         _MESSAGE("[%d==%d]: %04X", count, distance, utf8::get(testWin1252, it));
+         ++count;
       }
       _MESSAGE("[Length]: %d", utf8::count(testWin1252));
       //
       count = 0;
       _MESSAGE("UTF8 TEST: CHINESE: %s", testChinese.c_str());
-      for (auto it = testChinese.begin(); !utf8::is_end(testChinese, it); utf8::advance(testChinese, it)) {
-         _MESSAGE("[%d]: %04X", count, utf8::get(testChinese, it));
+      for (auto it = testChinese.begin(); it != testChinese.end(); utf8::advance(testChinese, it)) {
+         auto distance = std::distance(testChinese.begin(), it);
+         _MESSAGE("[%d==%d]: %04X", count, distance, utf8::get(testChinese, it));
+         ++count;
       }
       _MESSAGE("[Length]: %d", utf8::count(testChinese));
    }

@@ -3,28 +3,29 @@
 namespace cobb {
    namespace utf8 {
       inline static UInt8 _get_bytecount(char c) {
-         if ((c & 0b11011111) == c)
+         if ((c & 0b11100000) == 0b11000000)
             return 2;
-         if ((c & 0b11101111) == c)
+         if ((c & 0b11110000) == 0b11100000)
             return 3;
-         if ((c & 0b11110111) == c)
+         if ((c & 0b11111000) == 0b11110000)
             return 4;
-         // if ((c & 0b10111111) == c) then it's a continuation byte; can't know what of
+         // if (c) is a continuation byte, we can't know the bytecount of the glyph it belongs to, 
+         // but this should never be called on a valid continuation byte anyway
          // HTML5 spec says that on dispay, any invalid bytes should be treated as Windows-1252
-         // so that's how we oughta handle an out-of-place continuation byte
+         // so returning 1 handles out-of-place continuation bytes
          return 1;
       }
       inline static bool _is_bytecount(char c) {
-         if ((c & 0b11011111) == c)
+         if ((c & 0b11100000) == 0b11000000)
             return true;
-         if ((c & 0b11101111) == c)
+         if ((c & 0b11110000) == 0b11100000)
             return true;
-         return ((c & 0b11110111) == c);
+         return ((c & 0b11111000) == 0b11110000);
       }
       inline static bool _is_continuation(char c) {
-         return ((c & 0b10111111) == c);
+         return ((c & 0b11000000) == 0b10000000);
       }
-      inline static UInt32 _win1252_to_unicode(char c) {
+      inline static UInt32 _win1252_to_unicode(unsigned char c) {
          if (c < 130 || c > 173) // Everything outside of this range maps 1:1 between Windows-1252 and Unicode.
             return c;
          switch (c) {
@@ -96,15 +97,15 @@ namespace cobb {
          ++iterator;
          auto working = iterator;
          auto count = _get_bytecount(c);
-         bool good = true;
-         while (good && --count) {
+         while (--count) {
+            if (working == end) // error: truncated character
+               return;
             c = iterator[0];
             ++working;
-            if (!_is_continuation(c) || working == end) // error
-               good = false;
+            if (!_is_continuation(c)) // error: character without enough continuation bytes
+               return;
          }
-         if (good)
-            iterator = working;
+         iterator = working;
          //
          // If we encounter a prefix byte that doesn't have enough continuation bytes, 
          // then we assume that the prefix and any found continuation bytes are just 
@@ -125,15 +126,15 @@ namespace cobb {
          ++iterator;
          auto working = iterator;
          auto count = _get_bytecount(c);
-         bool good = true;
-         while (good && --count) {
+         while (--count) {
+            if (working == end) // error: truncated character
+               return;
             c = iterator[0];
             ++working;
-            if (!_is_continuation(c) || working == end) // error
-               good = false;
+            if (!_is_continuation(c)) // error: character without enough continuation bytes
+               return;
          }
-         if (good)
-            iterator = working;
+         iterator = working;
          //
          // If we encounter a prefix byte that doesn't have enough continuation bytes, 
          // then we assume that the prefix and any found continuation bytes are just 
@@ -196,11 +197,11 @@ namespace cobb {
          if (_is_continuation(a))
             return _win1252_to_unicode(a); // HTML5 error handling: Treat (a) as a Windows-1252-encoded character and return its Unicode representation.
          UInt32 result;
-         char b;
-         char c;
-         char d;
+         unsigned char b;
+         unsigned char c;
+         unsigned char d;
          auto count = _get_bytecount(a);
-         if (iterator + count >= end)
+         if (iterator + count > end)
             return _win1252_to_unicode(a); // HTML5 error handling: Treat (a) as a Windows-1252-encoded character and return its Unicode representation.
          switch (count) {
             case 1:
@@ -249,11 +250,11 @@ namespace cobb {
          if (_is_continuation(a))
             return _win1252_to_unicode(a); // HTML5 error handling: Treat (a) as a Windows-1252-encoded character and return its Unicode representation.
          UInt32 result;
-         char b;
-         char c;
-         char d;
+         unsigned char b;
+         unsigned char c;
+         unsigned char d;
          auto count = _get_bytecount(a);
-         if (iterator + count >= end)
+         if (iterator + count > end)
             return _win1252_to_unicode(a); // HTML5 error handling: Treat (a) as a Windows-1252-encoded character and return its Unicode representation.
          switch (count) {
             case 1:
@@ -345,44 +346,6 @@ namespace cobb {
                return invalid_glyph;
             return (a << 0x18) | (b << 0x10) | (c << 0x08) | d;
          }
-      }
-      bool is_end(const std::string& container, const std::string::iterator& iterator) {
-         auto end = container.end();
-         if (iterator == end)
-            return true;
-         auto working = iterator;
-         char c;
-         //
-         c = working[0];
-         ++working;
-         auto count = _get_bytecount(c);
-         bool good = true;
-         while (good && --count) {
-            c = working[0];
-            ++working;
-            if (!_is_continuation(c) || working == end) // error
-               return false;
-         }
-         return working == end;
-      }
-      bool is_end(const std::string& container, const std::string::const_iterator& iterator) {
-         auto end = container.end();
-         if (iterator == end)
-            return true;
-         auto working = iterator;
-         char c;
-         //
-         c = working[0];
-         ++working;
-         auto count = _get_bytecount(c);
-         bool good = true;
-         while (good && --count) {
-            c = working[0];
-            ++working;
-            if (!_is_continuation(c) || working == end) // error
-               return false;
-         }
-         return working == end;
       }
    }
 };

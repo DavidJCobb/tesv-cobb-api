@@ -18,7 +18,5 @@ namespace cobb {
       unicodechar get(const std::string&, const std::string::const_iterator&);
       rawchar     get_raw(const std::string&, const std::string::iterator&);       // blindly reads a char with almost no validation
       rawchar     get_raw(const std::string&, const std::string::const_iterator&); // blindly reads a char with almost no validation
-      bool        is_end(const std::string&, const std::string::iterator&);
-      bool        is_end(const std::string&, const std::string::const_iterator&);
    }
 };

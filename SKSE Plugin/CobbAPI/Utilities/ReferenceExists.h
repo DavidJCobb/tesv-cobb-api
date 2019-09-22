@@ -16,6 +16,6 @@ static bool ReferenceWithIDExists(UInt32 formID){
       if (man == nullptr)
          throw new std::runtime_error("Couldn't access changeFlags.");
       UInt32 changeFlags;
-      return CALL_MEMBER_FN(man->unk3E8, GetChangeFlags)(&changeFlags, formID); // returns true if it can retrieve the change flags
+      return !!CALL_MEMBER_FN(man->unk3E8, GetChangeFlags)(&changeFlags, formID); // returns true if it can retrieve the change flags
    }
 };

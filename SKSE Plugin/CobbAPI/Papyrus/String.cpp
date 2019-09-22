@@ -1,4 +1,4 @@
-#include "Papyrus/String.h"
+﻿#include "Papyrus/String.h"
 
 #include "skse/PapyrusNativeFunctions.h"
 #include "skse/PapyrusObjects.h"
@@ -139,16 +139,16 @@ namespace CobbPapyrus {
          void _fix_regex(std::string& out, const std::string& regex, const std::string& sentinel) {
             out.clear();
             out.reserve(regex.size());
-            cobb::utf8iterator<std::string> a(regex);
-            cobb::utf8iterator<std::string> b(sentinel);
-            for (; !a.is_end() && !b.is_end(); ++a, ++b) {
-               UInt32 x = a.as_unicode();
-               UInt32 y = b.as_unicode();
+            auto a = regex.begin();
+            auto b = sentinel.begin();
+            for (; !cobb::utf8::is_end(regex, a) && !cobb::utf8::is_end(sentinel, b); cobb::utf8::advance(regex, a), cobb::utf8::advance(sentinel, b)) {
+               auto x = cobb::utf8::get(regex, a);
+               auto y = cobb::utf8::get(sentinel, b);
                if (y == '0')
-                  x = tolower(x);
+                  x = towlower(x);
                else if (y == '1')
-                  x = toupper(x);
-               cobb::utf8append(out, x);
+                  x = towupper(x);
+               cobb::utf8::append(out, x);
             }
          };
          //
@@ -158,7 +158,7 @@ namespace CobbPapyrus {
             ERROR_AND_RETURN_0_IF(!caseSentinel.data, "You must specify a non-empty case sentinel.", registry, stackId);
             std::string rxFixed  = regex.data;
             std::string sentinel = caseSentinel.data;
-            ERROR_AND_RETURN_0_IF(cobb::utf8count(rxFixed) != cobb::utf8count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
+            ERROR_AND_RETURN_0_IF(cobb::utf8::count(rxFixed) != cobb::utf8::count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
             _fix_regex(rxFixed, regex.data, sentinel);
             std::regex ex(rxFixed.c_str(), std::regex::ECMAScript | std::regex::icase);
             return std::regex_search(haystack.data, ex);
@@ -173,7 +173,7 @@ namespace CobbPapyrus {
             }
             std::string rxFixed = regex.data;
             std::string sentinel = caseSentinel.data;
-            if (cobb::utf8count(rxFixed) != cobb::utf8count(sentinel)) {
+            if (cobb::utf8::count(rxFixed) != cobb::utf8::count(sentinel)) {
                registry->LogError("The case sentinel must have the same number of code points as the regex.", stackId);
                return result;
             }
@@ -209,7 +209,7 @@ namespace CobbPapyrus {
             ERROR_AND_RETURN_0_IF(!caseSentinel.data, "You must specify a non-empty case sentinel.", registry, stackId);
             std::string rxFixed = regex.data;
             std::string sentinel = caseSentinel.data;
-            ERROR_AND_RETURN_0_IF(cobb::utf8count(rxFixed) != cobb::utf8count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
+            ERROR_AND_RETURN_0_IF(cobb::utf8::count(rxFixed) != cobb::utf8::count(sentinel), "The case sentinel must have the same number of code points as the regex.", registry, stackId);
             _fix_regex(rxFixed, regex.data, sentinel);
             std::regex  ex(rxFixed.c_str(), std::regex::ECMAScript | std::regex::icase);
             std::string haystackSTL(haystack.data);
@@ -221,7 +221,7 @@ namespace CobbPapyrus {
       namespace Sort {
          namespace Compare {
             SInt32 NaturalCompare_ASCII(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, BSFixedString a, BSFixedString b) {
-               return cobb::utf8_naturalcompare(cobb::lowerstring(a.data), cobb::lowerstring(b.data));
+               return cobb::utf8::naturalcompare(a.data, b.data);
             }
          }
          //
@@ -240,11 +240,11 @@ namespace CobbPapyrus {
                result.begin(),
                result.end(),
                [descending](const BSFixedString& x, const BSFixedString& y) {
-                  cobb::lowerstring a(x.data);
-                  cobb::lowerstring b(y.data);
+                  std::string a(x.data);
+                  std::string b(y.data);
                   if (descending)
                      std::swap(a, b);
-                  return cobb::utf8_naturalcompare(a, b) > 0;
+                  return cobb::utf8::naturalcompare(a, b) > 0;
                }
             );
             return result;
@@ -282,7 +282,7 @@ namespace CobbPapyrus {
                pairs.begin(),
                pairs.end(),
                [descending](const _pair& x, const _pair& y) {
-                  auto result = cobb::utf8_naturalcompare(cobb::lowerstring(x.first.data), cobb::lowerstring(y.first.data));
+                  auto result = cobb::utf8::naturalcompare(std::string(x.first.data), std::string(y.first.data));
                   if (descending)
                      result = -result;
                   return result > 0;
@@ -310,12 +310,41 @@ namespace CobbPapyrus {
          if (!str.data)
             return 0;
          std::string s(str.data);
-         return cobb::utf8count(s);
+         return cobb::utf8::count(s);
       };
    }
 }
 
 bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
+   // /*//
+   {  // UNIT TESTS
+      using namespace cobb;
+      std::string testASCII   = u8"Test string";
+      std::string testWin1252 = "Test • Test";
+      std::string testChinese = u8"一周有七天。";
+      //
+      UInt32 count = 0;
+      _MESSAGE("UTF8 TEST: ASCII: %s", testASCII.c_str());
+      for (auto it = testASCII.begin(); !utf8::is_end(testASCII, it); utf8::advance(testASCII, it)) {
+         _MESSAGE("[%d]: %04X", count, utf8::get(testASCII, it));
+      }
+      _MESSAGE("[Length]: %d", utf8::count(testASCII));
+      //
+      count = 0;
+      _MESSAGE("UTF8 TEST: WINDOWS-1252: %s", testWin1252.c_str());
+      for (auto it = testWin1252.begin(); !utf8::is_end(testWin1252, it); utf8::advance(testWin1252, it)) {
+         _MESSAGE("[%d]: %04X", count, utf8::get(testWin1252, it));
+      }
+      _MESSAGE("[Length]: %d", utf8::count(testWin1252));
+      //
+      count = 0;
+      _MESSAGE("UTF8 TEST: CHINESE: %s", testChinese.c_str());
+      for (auto it = testChinese.begin(); !utf8::is_end(testChinese, it); utf8::advance(testChinese, it)) {
+         _MESSAGE("[%d]: %04X", count, utf8::get(testChinese, it));
+      }
+      _MESSAGE("[Length]: %d", utf8::count(testChinese));
+   }
+   //*/
    {  // Numbers
       registry->RegisterFunction(new NativeFunction1<StaticFunctionTag, UInt32, BSFixedString>(
          "BinaryToInt32",

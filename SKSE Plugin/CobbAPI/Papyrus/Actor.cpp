@@ -5,6 +5,7 @@
 #include "skse/PapyrusVM.h"
 
 #include "ReverseEngineered/Forms/Actor.h"
+#include "ReverseEngineered/Forms/BGSBodyPartData.h"
 #include "ReverseEngineered/Systems/Timing.h"
 
 namespace CobbPapyrus {
@@ -88,7 +89,7 @@ namespace CobbPapyrus {
       };
       bool IsDecapitated(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* subject) {
          ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot check decapitation on a None actor.", registry, stackId);
-         return CALL_MEMBER_FN(subject, CheckDismembermentBit)(1);
+         return CALL_MEMBER_FN(subject, IsLimbSevered)(RE::BGSBodyPartData::kPartType_Head);
       };
       SInt32 GetSoulSize(VMClassRegistry* registry, UInt32 stackId, StaticFunctionTag*, RE::Actor* subject) {
          ERROR_AND_RETURN_0_IF(subject == nullptr, "Cannot get soul size for a None actor.", registry, stackId);

@@ -102,9 +102,9 @@ namespace CobbPapyrus {
             //
             RE::TESObjectCELL* parentCell = nullptr;
             RE::TESWorldSpace* worldspace = nullptr;
-            NiPoint3 finalPos(e.pos);
-            NiPoint3 originalPos(subject->pos);
-            NiPoint3 originalRot(subject->rot);
+            RE::NiPoint3 finalPos(e.pos);
+            RE::NiPoint3 originalPos(subject->pos);
+            RE::NiPoint3 originalRot(subject->rot);
             if (e.operationType == kOpType_MoveToEditorLocation) {
                bool success = ((RE::TESObjectREFR*)subject)->MoveToMyEditorLocation(false);
                if (!success) {
@@ -143,7 +143,7 @@ namespace CobbPapyrus {
                default:
                   if (e.operationType != kOpType_MoveToEditorLocation)
                      //MoveRefrToPosition(subject, &nullHandle, parentCell, worldspace, &finalPos, &e.rot);
-                     subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, &e.rot);
+                     subject->MoveTo(&nullHandle, parentCell, worldspace, &finalPos, (RE::NiPoint3*)&e.rot);
                   //
                   if (this->alsoMoveTeleportMarkers) {
                      RE::refr_ptr destination;

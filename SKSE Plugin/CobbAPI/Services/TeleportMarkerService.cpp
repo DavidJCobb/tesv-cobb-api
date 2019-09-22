@@ -140,8 +140,8 @@ bool TeleportMarkerService::MoveMarkerToRelativeEditorLocOffset(TESObjectREFR* d
    }
    Cobb::Coordinates desired;
    {  // Get the coordinates to move the marker to.
-      NiPoint3 doorEditorPos;
-      NiPoint3 doorEditorRot;
+      RE::NiPoint3 doorEditorPos;
+      RE::NiPoint3 doorEditorRot;
       {  // Get the editor position of the destination door.
          void* dummy;
          if (!((RE::TESObjectREFR*)destination)->GetEditorCoordinates(&doorEditorPos, &doorEditorRot, &dummy, nullptr)) {

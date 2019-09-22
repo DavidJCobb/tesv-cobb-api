@@ -98,12 +98,12 @@ namespace CobbPapyrus {
                auto extra_c = RE::ExtraCollisionData::Create();
                extra_c->data->collisionLayer = collisionLayer; // NAVCUT
                {  // Fill primitive data.
-                  NiPoint3 sizes;
+                  RE::NiPoint3 sizes;
                   halfwidths.Get(&sizes.x, 0);
                   halfwidths.Get(&sizes.y, 1);
                   halfwidths.Get(&sizes.z, 2);
                   //
-                  RE::BGSPrimitiveBox* box = RE::BGSPrimitiveBox::Create(&sizes);
+                  RE::BGSPrimitiveBox* box = RE::BGSPrimitiveBox::Create(sizes);
                   extra_p->primitive = (BGSPrimitive*) box;
                }
                subject->extraData.Add(kExtraData_Primitive, extra_p);

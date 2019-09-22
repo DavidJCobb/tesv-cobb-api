@@ -311,12 +311,12 @@ _MESSAGE("fOffset[%d] == %f", i, offsets[i]);
                   //    sphere primitives to be specified, in which case only the X-value of our halfwidth 
                   //    NiPoint3 will be used (as a radius).
                   //
-                  NiPoint3 sizes;
+                  RE::NiPoint3 sizes;
                   sizes.x = min(abs(boundObject->boundsMax.x), abs(boundObject->boundsMin.x));
                   sizes.y = min(abs(boundObject->boundsMax.y), abs(boundObject->boundsMin.y));
                   sizes.z = min(abs(boundObject->boundsMax.z), abs(boundObject->boundsMin.z));
                   //
-                  RE::BGSPrimitiveBox* box = RE::BGSPrimitiveBox::Create(&sizes);
+                  RE::BGSPrimitiveBox* box = RE::BGSPrimitiveBox::Create(sizes);
                   extra_p->primitive = (BGSPrimitive*) box;
                }
                subject->extraData.Add(kExtraData_Primitive, extra_p);

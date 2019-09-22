@@ -100,10 +100,10 @@ namespace CobbPapyrus {
             //
             TESObjectCELL* parentCell = nullptr;
             TESWorldSpace* worldspace = nullptr;
-            NiPoint3 finalPos(e.pos);
-            NiPoint3 finalRot(e.rot);
-            NiPoint3 originalPos(subject->pos);
-            NiPoint3 originalRot(subject->rot);
+            RE::NiPoint3 finalPos(e.pos);
+            RE::NiPoint3 finalRot(e.rot);
+            RE::NiPoint3 originalPos(subject->pos);
+            RE::NiPoint3 originalRot(subject->rot);
             //
             // If this is a "move to editor location" operation, then we run this code 
             // block and then skip to the next iteration.
@@ -147,10 +147,10 @@ namespace CobbPapyrus {
                   continue;
                Cobb::Coordinates editorOffset;
                {  // Get offset.
-                  NiPoint3 editorPosSubject;
-                  NiPoint3 editorRotSubject;
-                  NiPoint3 editorPosTarget;
-                  NiPoint3 editorRotTarget;
+                  RE::NiPoint3 editorPosSubject;
+                  RE::NiPoint3 editorRotSubject;
+                  RE::NiPoint3 editorPosTarget;
+                  RE::NiPoint3 editorRotTarget;
                   subject->GetEditorCoordinateDataAlways(&editorPosSubject, &editorRotSubject, &worldspace, &parentCell);
                   {
                      void* dummy;

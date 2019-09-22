@@ -97,8 +97,8 @@ namespace CobbPapyrus {
          VMResultArray<TESObjectREFR*> allMoved;
          //
          RE::refr_ptr root;
-         NiPoint3 originalRootPos;
-         NiPoint3 originalRootRot;
+         RE::NiPoint3 originalRootPos;
+         RE::NiPoint3 originalRootRot;
          {
             root.set_from_handle(&_rootRefrHandle);
             if (root == nullptr) {
@@ -117,12 +117,12 @@ namespace CobbPapyrus {
                } else {
                   worldspace = parentCell->parentWorld;
                }
-               NiPoint3 destinationRotAsRadians;
+               RE::NiPoint3 destinationRotAsRadians;
                destinationRotAsRadians.x = cobb::degrees_to_radians(this->_destinationRot.x);
                destinationRotAsRadians.y = cobb::degrees_to_radians(this->_destinationRot.y);
                destinationRotAsRadians.z = cobb::degrees_to_radians(this->_destinationRot.z);
                //
-               root->MoveTo(&nullHandle, parentCell, worldspace, &(this->_destinationPos), &destinationRotAsRadians);
+               root->MoveTo(&nullHandle, parentCell, worldspace, (RE::NiPoint3*)&(this->_destinationPos), &destinationRotAsRadians);
                //
                if (this->alsoMoveTeleportMarkers) {
                   RE::refr_ptr destination;
@@ -155,10 +155,10 @@ namespace CobbPapyrus {
                worldspace = parentCell->parentWorld;
             }
             //
-            NiPoint3 finalPos(subject->pos);
-            NiPoint3 finalRot(subject->rot);
-            NiPoint3 originalPos(finalPos);
-            NiPoint3 originalRot(finalRot);
+            RE::NiPoint3 finalPos(subject->pos);
+            RE::NiPoint3 finalRot(subject->rot);
+            RE::NiPoint3 originalPos(finalPos);
+            RE::NiPoint3 originalRot(finalRot);
             {
                //
                // Derive coordinates relative to the root's original location, and then apply them 

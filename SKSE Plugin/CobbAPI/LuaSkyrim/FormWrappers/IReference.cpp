@@ -66,8 +66,8 @@ namespace LuaSkyrim {
             auto form = (RE::TESObjectREFR*) wrapper->unwrap();
             if (!form)
                return 0;
-            NiPoint3 a;
-            NiPoint3 b;
+            RE::NiPoint3 a;
+            RE::NiPoint3 b;
             form->GetMinBounds(&a);
             form->GetMaxBounds(&b);
             lua_pushnumber(L, a.x);

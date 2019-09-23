@@ -8,6 +8,25 @@ namespace LuaSkyrim {
          _MESSAGE("Intercepted an error from Lua:\n%s\n\n--", lua_tostring(luaVM, -1));
          return 1;
       }
+      void warn(lua_State* luaVM, const char* message) {
+         lua_checkstack(luaVM, 1);
+         luaL_traceback(luaVM, luaVM, message, 1);
+         _MESSAGE("Intercepted a warning from Lua:\n%s\n\n--", lua_tostring(luaVM, -1));
+         lua_pop(luaVM, 1);
+      }
+      void warn(lua_State* luaVM, const char* fmt, ...) {
+         va_list argp;
+         va_start(argp, fmt);
+         lua_checkstack(luaVM, 2); // where .. pushvfstring, traceback
+         luaL_where(luaVM, 1);
+         lua_pushvfstring(luaVM, fmt, argp);
+         va_end(argp);
+         lua_concat(luaVM, 2);
+         auto message = lua_tostring(luaVM, -1);
+         luaL_traceback(luaVM, luaVM, message, 1);
+         _MESSAGE("Intercepted a warning from Lua:\n%s\n\n--", lua_tostring(luaVM, -1));
+         lua_pop(luaVM, 2); // where .. pushvfstring, traceback
+      }
       luastackchange_t safeCall(lua_State* luaVM, int argCount, int returnCount) {
          int handlerPos = lua_gettop(luaVM) - argCount;
          //
@@ -45,6 +64,61 @@ namespace LuaSkyrim {
                lua_pop(luaVM, 1); // pop duplicate key, potentially altered from number to string
             }
             lua_pop(luaVM, 1); // pop value; leave key
+         }
+      }
+       inline void argwarn(lua_State* L, int arg, const char* message) {
+         //
+         // following code is based on luaL_argerror:
+         //
+         lua_Debug ar;
+         if (!lua_getstack(L, 0, &ar)) // no stack frame?
+            return warn(L, "bad argument #%d (%s)", arg, message);
+         lua_getinfo(L, "n", &ar);
+         if (strcmp(ar.namewhat, "method") == 0) {
+            arg--; // don't count the (self) argument
+            if (arg == 0) // the (self) argument is the one that's busted
+               return warn(L, "calling '%s' on bad self (%s)", ar.name, message);
+         }
+         if (ar.name == NULL) // function name not identifiable
+            ar.name = "?";
+         return warn(L, "bad argument #%d to '%s' (%s)", arg, ar.name, message);
+      }
+       uint8_t getAVIndexArg(lua_State* L, int stackPos, int argIndex) {
+         lua_Integer i;
+         if (lua_isnumber(L, stackPos)) {
+            lua_Number  f = lua_tonumber(L, stackPos);
+            luaL_argcheck(L, lua_numbertointeger(f, &i), argIndex, "whole number or integer expected");
+         } else if (lua_isinteger(L, stackPos)) {
+            i = lua_tointeger(L, stackPos);
+         } else {
+            luaL_argerror(L, argIndex, "number expected");
+         }
+         luaL_argcheck(L, i >= 0 && i <= 255, argIndex, "actor value index is out of bounds");
+         return i;
+      }
+       float getColorComponentArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a color component
+         lua_Integer i;
+         if (lua_isnumber(L, stackPos)) {
+            lua_Number f = lua_tonumber(L, stackPos);
+            luaL_argcheck(L, lua_numbertointeger(f, &i), argIndex, "float could not be converted to an integer");
+         } else if (lua_isinteger(L, stackPos)) {
+            i = lua_tointeger(L, stackPos);
+         } else {
+            luaL_argcheck(L, false, argIndex, "number expected");
+         }
+         if (i < 0)
+            i = 0;
+         else if (i > 255)
+            i = 255;
+         return i;
+      }
+       float getNumberArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a float, even if the arg is an integer
+         if (lua_isnumber(L, stackPos)) {
+            return lua_tonumber(L, stackPos);
+         } else if (lua_isinteger(L, stackPos)) {
+            return lua_tointeger(L, stackPos);
+         } else {
+            luaL_argcheck(L, false, argIndex, "number expected");
          }
       }
    }

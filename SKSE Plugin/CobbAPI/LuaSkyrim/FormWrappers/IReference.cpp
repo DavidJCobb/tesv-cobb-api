@@ -1,6 +1,11 @@
 #include "IReference.h"
 #include "LuaSkyrim/_classes.h"
+#include "LuaSkyrim/_utilities.h"
+#include "LuaSkyrim/FormWrappers/IEffectShader.h"
+#include "ReverseEngineered/Forms/TESEffectShader.h"
+#include "ReverseEngineered/Forms/TESObjectCELL.h"
 #include "ReverseEngineered/Forms/TESObjectREFR.h"
+#include "ReverseEngineered/Systems/012E32E8.h"
 #include "Miscellaneous/math.h"
 #include "skse/GameRTTI.h"
 
@@ -159,6 +164,42 @@ namespace LuaSkyrim {
             lua_pushboolean(L, form->IsDead(0));
             return 1;
          };
+         luastackchange_t playEffectShader(lua_State* L) {
+            IForm* wrapperRef    = IReference::fromStack(L, 1);
+            IForm* wrapperShader = IEffectShader::fromStack(L, 2);
+            luaL_argcheck(L, wrapperRef    != nullptr, 1, "'IReference' expected");
+            luaL_argcheck(L, wrapperShader != nullptr, 2, "'IEffectShader' expected");
+            float duration = -1.0F; // internally, negative values mean "play indefinitely..."
+            if (!lua_isnoneornil(L, 3)) // ...and we want nil values to mean the same thing
+               duration = util::getNumberArg(L, 3, 3);
+            auto  ref      = (RE::TESObjectREFR*)   wrapperRef->unwrap();
+            auto  shader   = (RE::TESEffectShader*) wrapperShader->unwrap();
+            if (ref && shader) {
+               if (!ref->parentCell)
+                  luaL_error(L, "Cannot play EffectShaders on a reference with no parent cell.");
+               if (!ref->parentCell->IsLoaded())
+                  luaL_error(L, "Cannot play EffectShaders on a reference that is not in a loaded cell.");
+               if (!ref->GetNiNode())
+                  luaL_error(L, "Cannot play EffectShaders on a reference with no 3D.");
+               RE::PlayEffectShaderOn(ref, shader, duration, 0, 0, 0, 0);
+            }
+            return 0;
+         };
+         luastackchange_t stopEffectShader(lua_State* L) {
+            IForm* wrapperRef = IReference::fromStack(L, 1);
+            IForm* wrapperShader = IEffectShader::fromStack(L, 2);
+            luaL_argcheck(L, wrapperRef != nullptr, 1, "'IReference' expected");
+            luaL_argcheck(L, wrapperShader != nullptr, 2, "'IEffectShader' expected");
+            auto  ref = (RE::TESObjectREFR*)   wrapperRef->unwrap();
+            auto  shader = (RE::TESEffectShader*) wrapperShader->unwrap();
+            if (ref && shader) {
+               auto singleton = RE::Unknown012E32E8::GetInstance();
+               if (singleton) {
+                  CALL_MEMBER_FN(singleton, StopEffectShader)(ref, shader);
+               }
+            }
+            return 0;
+         };
       }
    }
    static const luaL_Reg _metatableMethods[] = {
@@ -173,6 +214,8 @@ namespace LuaSkyrim {
       { "getRotation",   _methods::getRotation }, // if arg1 == true, then returns radians; otherwise, degrees
       { "getScale",      _methods::getScale },
       { "isDead",        _methods::isDead },
+      { "playEffectShader", _methods::playEffectShader },
+      { "stopEffectShader", _methods::stopEffectShader },
       { NULL, NULL }
    };
    void IReference::setupClass(lua_State* luaVM) {

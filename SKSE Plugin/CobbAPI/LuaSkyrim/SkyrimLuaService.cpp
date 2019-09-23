@@ -6,6 +6,7 @@
 #include "FormWrappers/IForm.h"
 #include "FormWrappers/IActor.h"
 #include "FormWrappers/IActorBase.h"
+#include "FormWrappers/IEffectShader.h"
 #include "FormWrappers/IGlobal.h"
 #include "FormWrappers/IRace.h"
 #include "FormWrappers/IReference.h"
@@ -110,6 +111,7 @@ void SkyrimLuaService::StartVM() {
    //
    IForm::setupClass(luaVM);
    /**/IActorBase::setupClass(luaVM);
+   /**/IEffectShader::setupClass(luaVM);
    /**/IGlobal::setupClass(luaVM);
    /**/IRace::setupClass(luaVM);
    /**/IReference::setupClass(luaVM);
@@ -183,11 +185,17 @@ void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
       _MESSAGE(" - WARNING: VM thread is not OK!");
    }
    //
+   //_MESSAGE("SkyrimLuaService::OnReferenceDelete: Deleting reference with form ID %08X", formID);
    lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
    if (lua_rawgeti(luaVM, -1, formID) == LUA_TUSERDATA) {  // STACK: [wrapper, list]
       IForm* a = IForm::fromStack(luaVM, -1);
       if (a) {
-         a->isDeleted = true;
+         //
+         // BUG: This can run on the PLAYER after SKSE receives the save-file-loaded message. 
+         // Until we know exactly when this runs -- particularly relative to loading saves and 
+         // whatnot -- we can't use it.
+         //
+         //a->isDeleted = true;
       }
    }
 //_MESSAGE(" - Done");

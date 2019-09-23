@@ -201,6 +201,7 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
     <ClCompile Include="CobbRotation.cpp" />
     <ClCompile Include="LuaSkyrim\FormWrappers\IActor.cpp" />
     <ClCompile Include="LuaSkyrim\FormWrappers\IActorBase.cpp" />
+    <ClCompile Include="LuaSkyrim\FormWrappers\IEffectShader.cpp" />
     <ClCompile Include="LuaSkyrim\FormWrappers\IForm.cpp" />
     <ClCompile Include="LuaSkyrim\FormWrappers\IGlobal.cpp" />
     <ClCompile Include="LuaSkyrim\FormWrappers\IRace.cpp" />
@@ -270,6 +271,7 @@ ItemList = new Microsoft.Build.Framework.ITaskItem[0];
   <ItemGroup>
     <ClInclude Include="LuaSkyrim\FormWrappers\IActor.h" />
     <ClInclude Include="LuaSkyrim\FormWrappers\IActorBase.h" />
+    <ClInclude Include="LuaSkyrim\FormWrappers\IEffectShader.h" />
     <ClInclude Include="LuaSkyrim\FormWrappers\IForm.h" />
     <ClInclude Include="LuaSkyrim\FormWrappers\IGlobal.h" />
     <ClInclude Include="LuaSkyrim\FormWrappers\IRace.h" />

@@ -1,5 +1,6 @@
 #include "IActor.h"
 #include "LuaSkyrim/_classes.h"
+#include "LuaSkyrim/_utilities.h"
 #include "ReverseEngineered/Forms/Actor.h"
 #include "ReverseEngineered/Forms/BaseForms/TESActorBase.h"
 #include "ReverseEngineered/Systems/GameData.h"
@@ -17,36 +18,10 @@ namespace LuaSkyrim {
    };
 
    namespace { // metatable methods
-      namespace _helpers {
-         uint8_t getAVIndexArg(lua_State* L, int stackPos, int argIndex) {
-            if (lua_isnumber(L, stackPos)) {
-               lua_Number  f = lua_tonumber(L, stackPos);
-               lua_Integer i;
-               luaL_argcheck(L, lua_numbertointeger(f, &i), argIndex, "whole number or integer expected");
-               luaL_argcheck(L, i >= 0 && i <= 255,         argIndex, "actor value index is out of bounds");
-               return i;
-            } else if (lua_isinteger(L, stackPos)) {
-               lua_Integer i = lua_tointeger(L, stackPos);
-               luaL_argcheck(L, i >= 0 && i <= 255, argIndex, "actor value index is out of bounds");
-               return i;
-            } else {
-               luaL_argcheck(L, false, argIndex, "number or integer expected");
-            }
-         }
-         float getAVValueArg(lua_State* L, int stackPos, int argIndex) {
-            if (lua_isnumber(L, stackPos)) {
-               return lua_tonumber(L, stackPos);
-            } else if (lua_isinteger(L, stackPos)) {
-               return lua_tointeger(L, stackPos);
-            } else {
-               luaL_argcheck(L, false, argIndex, "number or integer expected");
-            }
-         }
-      }
       namespace _methods {
          luastackchange_t damageActorValue(lua_State* L) {
-            uint8_t avIndex = _helpers::getAVIndexArg(L, 2, 2);
-            float   value   = _helpers::getAVValueArg(L, 3, 3);
+            uint8_t avIndex = util::getAVIndexArg(L, 2, 2);
+            float   value   = util::getNumberArg(L, 3, 3);
             IForm*  wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
             auto form = (RE::Actor*) wrapper->unwrap();
@@ -64,7 +39,7 @@ namespace LuaSkyrim {
             return 0;
          };
          luastackchange_t getActorValue(lua_State* L) {
-            uint8_t avIndex = _helpers::getAVIndexArg(L, 2, 2);
+            uint8_t avIndex = util::getAVIndexArg(L, 2, 2);
             IForm*  wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
             auto form = (RE::Actor*) wrapper->unwrap();
@@ -235,8 +210,8 @@ namespace LuaSkyrim {
             return 0;
          };
          luastackchange_t restoreActorValue(lua_State* L) {
-            uint8_t avIndex = _helpers::getAVIndexArg(L, 2, 2);
-            float   value   = _helpers::getAVValueArg(L, 3, 3);
+            uint8_t avIndex = util::getAVIndexArg(L, 2, 2);
+            float   value   = util::getNumberArg(L, 3, 3);
             IForm*  wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
             auto form = (RE::Actor*) wrapper->unwrap();

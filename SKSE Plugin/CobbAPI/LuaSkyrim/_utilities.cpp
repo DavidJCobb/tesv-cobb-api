@@ -9,25 +9,29 @@ namespace LuaSkyrim {
          return 1;
       }
       void loadPartialLibrary(lua_State* luaVM, const char* modname, lua_CFunction openf, std::initializer_list<const char*> allowedFunctions) {
-         lua_checkstack(luaVM, 2);
+         lua_checkstack(luaVM, 4);
          luaL_requiref(luaVM, modname, openf, true);
          //
-         lua_pushnil(luaVM);
-         while (lua_next(luaVM, -2) != 0) {
-            lua_pop(luaVM, -1); // we don't need the value
+         lua_pushnil(luaVM); // stack: [nil, library]
+         while (lua_next(luaVM, -2) != 0) { // stack: [value, key, library]
+            lua_pop(luaVM, 1); // stack: [key, library]
             const char* key = lua_tostring(luaVM, -1);
             if (!key)
                continue;
+            bool found = false;
             const char* funcName;
             for (auto it = allowedFunctions.begin(); it != allowedFunctions.end(); ++it) {
                auto funcName = *it;
                if (strcmp(key, funcName) == 0) {
-                  lua_pushvalue(luaVM, -1); // stack: [key, key, library]
-                  lua_pushnil(luaVM); // stack: [nil, key, key, library]
-                  lua_rawset(luaVM, -4); // stack: [key, library]
+                  found = true;
                   break;
                }
             }
+            if (found)
+               continue;
+            lua_pushvalue(luaVM, -1); // stack: [key, key, library]
+            lua_pushnil(luaVM); // stack: [nil, key, key, library]
+            lua_rawset(luaVM, -4); // stack: [key, library]
          }
          // stack: [library]
       }

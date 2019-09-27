@@ -28,6 +28,22 @@ namespace LuaSkyrim {
             form->data.*member = val;
             return 0;
          };
+         luastackchange_t setPosFloat(lua_State* L, float RE::TESEffectShader::Data::*member) {
+            IForm* wrapper = IEffectShader::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IEffectShader' expected");
+            auto form = (RE::TESEffectShader*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            float val = lua_tonumber(L, 2);
+            luaL_argcheck(L, !isnan(val), 2, "the value used cannot be NaN");
+            // TODO: infinity checks
+            if (val < 0.0F) {
+               val = 0.0F;
+               util::argwarn(L, 2, "the value must be positive or zero");
+            }
+            form->data.*member = val;
+            return 0;
+         };
          luastackchange_t getColor(lua_State* L, UInt32 RE::TESEffectShader::Data::*member) {
             IForm* wrapper = IEffectShader::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IEffectShader' expected");
@@ -75,11 +91,33 @@ namespace LuaSkyrim {
             form->data.*member = val;
             return 0;
          };
+         luastackchange_t setBlendMode(lua_State* L, RE::TESEffectShader::BlendMode RE::TESEffectShader::Data::*member) {
+            IForm* wrapper = IEffectShader::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IEffectShader' expected");
+            auto form = (RE::TESEffectShader*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            luaL_argcheck(L, lua_type(L, 2) == LUA_TNUMBER, 2, "number (enum) expected");
+            UInt32 value = lua_tonumber(L, 2);
+            if (value < 1 || value > RE::TESEffectShader::kBlendMode_SourceAlphaSAT) {
+               luaL_argerror(L, 2, "Invalid blend mode specified.");
+            }
+            form->data.*member = (RE::TESEffectShader::BlendMode)value;
+            return 0;
+         };
       }
       namespace _methods {
          template<float RE::TESEffectShader::Data::*member>
          luastackchange_t getFloat(lua_State* L) {
             return _helpers::getFloat(L, member);
+         }
+         template<float RE::TESEffectShader::Data::*member>
+         luastackchange_t setFloat(lua_State* L) {
+            return _helpers::setFloat(L, member);
+         }
+         template<float RE::TESEffectShader::Data::*member>
+         luastackchange_t setPosFloat(lua_State* L) {
+            return _helpers::setPosFloat(L, member);
          }
          //
          template<UInt32 RE::TESEffectShader::Data::*member>
@@ -96,48 +134,10 @@ namespace LuaSkyrim {
             return _helpers::setRatio(L, member);
          }
          //
-         luastackchange_t setFillColorKeys(lua_State* L) {
-            IForm* wrapper = IEffectShader::fromStack(L, 1);
-            luaL_argcheck(L, wrapper != nullptr, 1, "'IEffectShader' expected");
-            auto form = (RE::TESEffectShader*) wrapper->unwrap();
-            if (!form)
-               return 0;
-            for (int i = 0; i < 3; i++) {
-               auto arg = 1 + i;
-               if (lua_isnoneornil(L, arg))
-                  continue;
-               UInt32 color = 0;
-               for (int j = 0; j < 4; j++) {
-                  auto t = lua_geti(L, arg, j + 1);
-                  if (t != LUA_TNUMBER) {
-                     if (j == 4) { // alpha is optional
-                        if (t == LUA_TNONE || t == LUA_TNIL)
-                           continue;
-                     }
-                     char err[256];
-                     snprintf(err, sizeof(err), "color component #%u is not a number", j);
-                     luaL_argerror(L, i, err);
-                  }
-                  UInt8 component = lua_tointeger(L, -1);
-                  lua_pop(L, 1);
-                  color |= component << (0x8 * j);
-               }
-               UInt32 RE::TESEffectShader::Data::*member;
-               switch (i) {
-                  case 0:
-                     member = &RE::TESEffectShader::Data::fillColorKey1;
-                     break;
-                  case 1:
-                     member = &RE::TESEffectShader::Data::fillColorKey2;
-                     break;
-                  case 2:
-                     member = &RE::TESEffectShader::Data::fillColorKey3;
-                     break;
-               }
-               form->data.*member = color;
-            }
-            return 0;
-         };
+         template<RE::TESEffectShader::BlendMode RE::TESEffectShader::Data::*member>
+         luastackchange_t setBlendMode(lua_State* L) {
+            return _helpers::setBlendMode(L, member);
+         }
 
          /*//
          luastackchange_t getValue(lua_State* L) {
@@ -171,10 +171,18 @@ namespace LuaSkyrim {
       { "setFillFullAlphaRatio", _methods::setRatio<&RE::TESEffectShader::Data::fillAlphaRatioFull> },
       { "getFillPersistentAlphaRatio", _methods::getFloat<&RE::TESEffectShader::Data::fillAlphaRatioPersistent> },
       { "setFillPersistentAlphaRatio", _methods::setRatio<&RE::TESEffectShader::Data::fillAlphaRatioPersistent> },
-      { "setFillColorKeys", _methods::setFillColorKeys }, // args are three arrays of color components { r, g, b, optional_a }; nil instead of an array == don't change this color
-
-      // TODO: commit everything to Github; then change your mind and split 
-      // setFillColorKeys into setFillColorKey1, ...2, and ...3
+      { "getFillColorKey1", _methods::getColor<&RE::TESEffectShader::Data::fillColorKey1> },
+      { "setFillColorKey1", _methods::setColor<&RE::TESEffectShader::Data::fillColorKey1> },
+      { "getFillColorKey2", _methods::getColor<&RE::TESEffectShader::Data::fillColorKey2> },
+      { "setFillColorKey2", _methods::setColor<&RE::TESEffectShader::Data::fillColorKey2> },
+      { "getFillColorKey3", _methods::getColor<&RE::TESEffectShader::Data::fillColorKey3> },
+      { "setFillColorKey3", _methods::setColor<&RE::TESEffectShader::Data::fillColorKey3> },
+      // TODO: getMembraneSourceBlendMode
+      { "setMembraneSourceBlendMode", _methods::setBlendMode<&RE::TESEffectShader::Data::membraneSourceBlendMode> },
+      // TODO: getMembraneDestinationBlendMode
+      { "setMembraneDestinationBlendMode", _methods::setBlendMode<&RE::TESEffectShader::Data::membraneDestinationBlendMode> },
+      { "getEdgeFalloff", _methods::getFloat<&RE::TESEffectShader::Data::edgeFalloff> },
+      { "setEdgeFalloff", _methods::setPosFloat<&RE::TESEffectShader::Data::edgeFalloff> },
 
       /*//
       { "getValue", _methods::getValue },

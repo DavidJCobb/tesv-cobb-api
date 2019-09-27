@@ -7,6 +7,8 @@ namespace LuaSkyrim {
    namespace util {
       extern luastackchange_t errorHandler(lua_State* luaVM);
       //
+      extern void loadPartialLibrary(lua_State* luaVM, const char* lib, lua_CFunction func, std::initializer_list<const char*> allowedFunctions);
+      //
       extern void warn(lua_State* luaVM, const char* message);
       extern void warn(lua_State* luaVM, const char* fmt, ...);
       //

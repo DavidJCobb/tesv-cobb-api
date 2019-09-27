@@ -119,6 +119,10 @@ void SkyrimLuaService::StartVM() {
    //
    HookManager::attach(luaVM);
    //
+   // TODO: all APIs should be stored in the registry and made available to loaded 
+   // scripts via lua_setlocal, to ensure that one script cannot clobber the globals 
+   // and thus interfere with other scripts' API access
+   //
    lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
    lua_register(luaVM, "form_by_id", _globals::FormByID);
    //
@@ -134,6 +138,10 @@ void SkyrimLuaService::StartVM() {
    luaL_requiref(luaVM, "table", luaopen_table, true);
    lua_pop(luaVM, 1); // pop library off the stack
    luaL_requiref(luaVM, "utf8", luaopen_utf8, true);
+   lua_pop(luaVM, 1); // pop library off the stack
+   util::loadPartialLibrary(luaVM, "os", luaopen_os, { "clock", "difftime", "time" });
+   lua_pop(luaVM, 1); // pop library off the stack
+   util::loadPartialLibrary(luaVM, "debug", luaopen_debug, { "getmetatable", "setmetatable", "traceback" });
    lua_pop(luaVM, 1); // pop library off the stack
    //
    // Now let's run the script:

@@ -8,6 +8,29 @@ namespace LuaSkyrim {
          _MESSAGE("Intercepted an error from Lua:\n%s\n\n--", lua_tostring(luaVM, -1));
          return 1;
       }
+      void loadPartialLibrary(lua_State* luaVM, const char* modname, lua_CFunction openf, std::initializer_list<const char*> allowedFunctions) {
+         lua_checkstack(luaVM, 2);
+         luaL_requiref(luaVM, modname, openf, true);
+         //
+         lua_pushnil(luaVM);
+         while (lua_next(luaVM, -2) != 0) {
+            lua_pop(luaVM, -1); // we don't need the value
+            const char* key = lua_tostring(luaVM, -1);
+            if (!key)
+               continue;
+            const char* funcName;
+            for (auto it = allowedFunctions.begin(); it != allowedFunctions.end(); ++it) {
+               auto funcName = *it;
+               if (strcmp(key, funcName) == 0) {
+                  lua_pushvalue(luaVM, -1); // stack: [key, key, library]
+                  lua_pushnil(luaVM); // stack: [nil, key, key, library]
+                  lua_rawset(luaVM, -4); // stack: [key, library]
+                  break;
+               }
+            }
+         }
+         // stack: [library]
+      }
       void warn(lua_State* luaVM, const char* message) {
          lua_checkstack(luaVM, 1);
          luaL_traceback(luaVM, luaVM, message, 1);

@@ -299,15 +299,7 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
          }
          continue;
       } else if (section == kSection_Files) {
-         if (c == '/' || c == '\\') // absolute paths are not allowed
-            continue;
-         if (strpbrk(buffer + i, "<>:\"|?*")) // characters with disallowed special meanings
-            continue;
-         std::string relpath = buffer + i;
-         cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
-         if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
-            continue;
-         this->loadAddonScript(addon, folder + relpath);
+         continue; // we load the script files on the second pass
       }
    }
    this->addons[addon.name] = addon;

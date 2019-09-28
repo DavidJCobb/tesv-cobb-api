@@ -99,12 +99,43 @@ SkyrimLuaService::SkyrimLuaService() {
 void SkyrimLuaService::loadAddonScript(SkyrimLuaService::Addon& addon, std::string path) {
    _MESSAGE("Lua would have loaded <%s> for addon <%s>", path.c_str(), addon.name.c_str());
 }
-void SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
+bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
    enum Section {
       kSection_None = 0, // add-on metadata goes here
       kSection_Unknown = 1,
       kSection_Files = 2,
    };
+   //
+   if (addon.loaded || addon.failed)
+      return addon.loaded;
+   if (!this->currentAddon.size())
+      this->currentAddon = addon.name;
+   else if (this->currentAddon == addon.name) {
+      //
+      // Circular dependency detected!
+      //
+      return false;
+   }
+   if (addon.dependencies.size()) {
+      //
+      // Force dependencies to load first. Recurse as necessary so that the 
+      // entire dependency tree loads first.
+      //
+      for (auto it = addon.dependencies.begin(); it != addon.dependencies.end(); it++) {
+         auto& dname = *it;
+         try {
+            auto& target = this->addons.at(dname);
+            if (!this->loadAddonScriptFiles(target)) {
+               addon.failed = true;
+               return false;
+            }
+         } catch (std::out_of_range) { // dependency not present
+            addon.failed = true;
+            return false;
+         }
+      }
+   }
+   this->currentAddon = "";
    //
    std::ifstream file;
    file.open(addon.folder + "manifest.txt");
@@ -112,7 +143,7 @@ void SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
       //
       // TODO: error
       //
-      return;
+      return false;
    }
    Section section = kSection_None;
    while (!file.bad() && !file.eof()) {
@@ -138,12 +169,6 @@ void SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
             *delim = '\0';
       }
       if (c == '[') {
-         if (!addon.name.size()) {
-            //
-            // TODO: log error: no name given
-            //
-            return;
-         }
          std::string header;
          auto delim = strchr(buffer + i, ']');
          if (!delim)
@@ -175,9 +200,10 @@ void SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
          this->loadAddonScript(addon, addon.folder + relpath);
       }
    }
-   this->addons[addon.name] = addon;
    //
    file.close();
+   addon.loaded = true;
+   return true;
 }
 void SkyrimLuaService::loadAddonMetadata(std::string& folder) {
    enum Section {
@@ -267,9 +293,21 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
                // TODO: bad version
                //
             }
-            //
-            // TODO: add a "dependencies" field that works like "savevars"
-            //
+         } else if (_strnicmp(k, "dependencies", s) == 0) {
+            std::string v = delim + 1;
+            UInt32 s = v.size();
+            UInt32 last = 0;
+            for (UInt32 i = 0; i < s; i++) {
+               if (v[i] == ',') {
+                  last = i + 1;
+                  //
+                  std::string var = v.substr(last, i - last);
+                  cobb::trim(var);
+                  if (!var.size())
+                     continue;
+                  addon.dependencies.push_back(var);
+               }
+            }
          } else if (_strnicmp(k, "savevars", s) == 0) { // comma-separated list of globals
             std::string v = delim + 1;
             UInt32 s    = v.size();
@@ -320,6 +358,9 @@ void SkyrimLuaService::loadAddons() {
    //  - Open each remaining addon's manifest file again and load the script files.
    //
    _MESSAGE("Lua: Loading add-ons...");
+   clock_t begin = clock();
+   this->addons.clear();
+   //
    WIN32_FIND_DATA state;
    HANDLE handle;
    {
@@ -348,16 +389,11 @@ void SkyrimLuaService::loadAddons() {
       }
    } while (FindNextFileA(handle, &state));
    FindClose(handle);
-   //
-   // TODO: sort (this->addosn) by dependencies; an add-on should come after the other 
-   // add-ons it depends on
-   //
-   // and then we load the add-ons' script files:
-   //
    for (auto it = this->addons.begin(); it != this->addons.end(); ++it) {
-      this->loadAddonScriptFiles(it->second);
+      this->loadAddonScriptFiles(it->second); // if the addon has dependencies, those are forced to load first
    }
-
+   clock_t end = clock();
+   _MESSAGE(" - Loaded all add-ons. Time taken: %f", (end - begin) / CLOCKS_PER_SEC);
 }
 
 void SkyrimLuaService::StartVM() {

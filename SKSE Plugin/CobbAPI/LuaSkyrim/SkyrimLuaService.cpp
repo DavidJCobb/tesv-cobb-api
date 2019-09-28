@@ -1,7 +1,9 @@
 #include "SkyrimLuaService.h"
+#include <fstream>
 #include "_includes.h"
 #include "Lua5.3.5/luauser.h"
 #include "_utilities.h"
+#include "Miscellaneous/strings.h"
 
 #include "FormWrappers/IForm.h"
 #include "FormWrappers/IActor.h"
@@ -22,6 +24,17 @@ lua_State* SkyrimLuaService::getState() {
 };
 
 namespace { // utility tools
+   const std::string& GetAddonBasePath() {
+      static std::string path;
+      if (path.empty()) {
+         std::string	runtimePath = GetRuntimeDirectory();
+         if (!runtimePath.empty()) {
+            path = runtimePath;
+            path += "Data\\scripts\\CobbAPILua\\";
+         }
+      }
+      return path;
+   };
    const std::string& GetScriptBasePath() {
       static std::string path;
       if (path.empty()) {
@@ -81,6 +94,190 @@ namespace { // APIs provided to Lua; we're gonna change how these work in the fu
 }
 
 SkyrimLuaService::SkyrimLuaService() {
+}
+
+void SkyrimLuaService::loadAddonScript(SkyrimLuaService::Addon& addon, std::string path) {
+   _MESSAGE("Lua would have loaded <%s> for addon <%s>", path.c_str(), addon.name.c_str());
+}
+void SkyrimLuaService::loadAddon(std::string& folder) {
+   //
+   // TODO: The only way to do things like a "DependsOn" metadata key would be to:
+   //
+   //  - Open each addon's manifest file once, to load the metadata and save it 
+   //    into memory. Do not load script files.
+   //
+   //  - Loop over all add-ons and ditch any whose dependencies are not available. 
+   //    Sort add-ons, also, so that each add-on comes after its dependencies in 
+   //    the list.
+   //
+   //  - Open each remaining addon's manifest file again and load the script files.
+   //
+   enum Section {
+      kSection_None     = 0, // add-on metadata goes here
+      kSection_Unknown  = 1,
+      kSection_Files    = 2,
+   };
+   //
+   std::ifstream file;
+_MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
+   file.open(folder + "manifest.txt");
+   if (!file) { // empty folder or not an add-on folder
+      return;
+   }
+   Section section = kSection_None;
+   Addon   addon;
+   while (!file.bad() && !file.eof()) {
+      char buffer[1024];
+      file.getline(buffer, sizeof(buffer));
+      buffer[1023] = '\0';
+      //
+      UInt32 i = 0;
+      char   c = buffer[0];
+      if (!c)
+         continue;
+      bool whitespace = true;
+      do {
+         if (!isspace(c))
+            break;
+      } while (++i < sizeof(buffer) && (c = buffer[i]));
+      if (!c) // no non-whitespace content on line
+         continue;
+      // i == index of first non-whitespace character
+      {  // Deal with comments.
+         auto delim = strchr(buffer + i, ';');
+         if (delim)
+            *delim = '\0';
+      }
+      if (c == '[') {
+         if (!addon.name.size()) {
+            //
+            // TODO: log error: no name given
+            //
+            return;
+         }
+         std::string header;
+         auto delim = strchr(buffer + i, ']');
+         if (!delim)
+            continue;
+         header.assign(buffer + i + 1, delim - (buffer + i + 1));
+         if (!header.size())
+            continue;
+         auto h = header.c_str();
+         auto s = header.size();
+         if (_strnicmp(h, "files", s) == 0) {
+            section = kSection_Files;
+         } else {
+            section = kSection_Unknown;
+         }
+         continue;
+      }
+      if (section == kSection_None) {
+         if (c == '=') // zero-length key
+            continue;
+         std::string key;
+         std::string value;
+         auto delim = strchr(buffer + i, '=');
+         if (!delim)
+            continue;
+         key.assign(buffer + i, delim - (buffer + i));
+         //value.assign(delim + 1);
+         //
+         auto k = key.c_str();
+         auto s = key.size();
+         if (_strnicmp(k, "name", s) == 0) {
+            addon.name = delim + 1;
+_MESSAGE("Lua Addon Manifest: name=%s", addon.name.c_str());
+         } else if (_strnicmp(k, "author", s) == 0) {
+            addon.author = delim + 1;
+_MESSAGE("Lua Addon Manifest: author=%s", addon.author.c_str());
+         } else if (_strnicmp(k, "description", s) == 0) {
+            addon.description = delim + 1;
+_MESSAGE("Lua Addon Manifest: description=%s", addon.description.c_str());
+         } else if (_strnicmp(k, "version", s) == 0) {
+            char* end = nullptr;
+            addon.version = (delim + 1, &end, 10);
+            if (!end) {
+               //
+               // TODO: bad version
+               //
+            }
+_MESSAGE("Lua Addon Manifest: version=%u", addon.version);
+         } else if (_strnicmp(k, "savevars", s) == 0) { // comma-separated list of globals
+            std::string v = delim + 1;
+            UInt32 s    = v.size();
+            UInt32 last = 0;
+            for (UInt32 i = 0; i < s; i++) {
+               if (v[i] == ',') {
+                  last = i + 1;
+                  //
+                  std::string var = v.substr(last, i - last);
+                  cobb::trim(var);
+                  if (!var.size())
+                     //
+                     // TODO: warn
+                     //
+                     continue;
+                  //
+                  // TODO: Should we limit these to names allowed in global variables? 
+                  // You *can* use any non-null glyph in a variable name e.g. _G[" myVar"]
+                  //
+                  addon.savevars.push_back(var);
+               }
+            }
+         } else {
+            //
+            // TODO: warn on unrecognized metadata key
+            //
+         }
+         continue;
+      } else if (section == kSection_Files) {
+         if (c == '/' || c == '\\') // absolute paths are not allowed
+            continue;
+         if (strpbrk(buffer + i, "<>:\"|?*")) // characters with disallowed special meanings
+            continue;
+         std::string relpath = buffer + i;
+         cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
+_MESSAGE("Lua Addon Manifest: Specified file path: %s", relpath.c_str());
+         if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
+            continue;
+         this->loadAddonScript(addon, folder + relpath);
+      }
+   }
+   this->addons[addon.name] = addon;
+   //
+   file.close();
+}
+void SkyrimLuaService::loadAddons() {
+   _MESSAGE("Lua: Loading add-ons...");
+   WIN32_FIND_DATA state;
+   HANDLE handle;
+   {
+      std::string a = GetAddonBasePath() + '*';
+      handle = FindFirstFileA(a.c_str(), &state);
+   }
+   if (handle == INVALID_HANDLE_VALUE) {
+      auto e = GetLastError();
+      switch (e) {
+         case ERROR_FILE_NOT_FOUND:
+            break;
+         case ERROR_PATH_NOT_FOUND:
+            _MESSAGE("The add-ons path doesn't exist.");
+            break;
+         default:
+            _MESSAGE("FindFirstFile failed (%d)", e);
+      }
+      _MESSAGE(" - Done.");
+      return;
+   }
+   do {
+      if (state.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+         if (state.cFileName[0] == '.') // FindNextFileA returns the "." and ".." pseudo-directories; really dumb
+            continue;
+         this->loadAddon(GetAddonBasePath() + state.cFileName + "\\");
+      }
+   } while (FindNextFileA(handle, &state));
+   FindClose(handle);
+
 }
 
 void SkyrimLuaService::StartVM() {
@@ -143,6 +340,12 @@ void SkyrimLuaService::StartVM() {
    lua_pop(luaVM, 1); // pop library off the stack
    util::loadPartialLibrary(luaVM, "debug", luaopen_debug, { "getmetatable", "setmetatable", "traceback" });
    lua_pop(luaVM, 1); // pop library off the stack
+   //
+   // load add-ons
+   //
+   _MESSAGE("Lua: Attempting to load add-ons...");
+   this->loadAddons();
+   _MESSAGE("Lua: Add-ons loaded.");
    //
    // Now let's run the script:
    //

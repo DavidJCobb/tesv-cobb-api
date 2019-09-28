@@ -99,19 +99,87 @@ SkyrimLuaService::SkyrimLuaService() {
 void SkyrimLuaService::loadAddonScript(SkyrimLuaService::Addon& addon, std::string path) {
    _MESSAGE("Lua would have loaded <%s> for addon <%s>", path.c_str(), addon.name.c_str());
 }
-void SkyrimLuaService::loadAddon(std::string& folder) {
+void SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
+   enum Section {
+      kSection_None = 0, // add-on metadata goes here
+      kSection_Unknown = 1,
+      kSection_Files = 2,
+   };
    //
-   // TODO: The only way to do things like a "DependsOn" metadata key would be to:
+   std::ifstream file;
+   file.open(addon.folder + "manifest.txt");
+   if (!file) { // empty folder or not an add-on folder
+      //
+      // TODO: error
+      //
+      return;
+   }
+   Section section = kSection_None;
+   while (!file.bad() && !file.eof()) {
+      char buffer[1024];
+      file.getline(buffer, sizeof(buffer));
+      buffer[1023] = '\0';
+      //
+      UInt32 i = 0;
+      char   c = buffer[0];
+      if (!c)
+         continue;
+      bool whitespace = true;
+      do {
+         if (!isspace(c))
+            break;
+      } while (++i < sizeof(buffer) && (c = buffer[i]));
+      if (!c) // no non-whitespace content on line
+         continue;
+      // i == index of first non-whitespace character
+      {  // Deal with comments.
+         auto delim = strchr(buffer + i, ';');
+         if (delim)
+            *delim = '\0';
+      }
+      if (c == '[') {
+         if (!addon.name.size()) {
+            //
+            // TODO: log error: no name given
+            //
+            return;
+         }
+         std::string header;
+         auto delim = strchr(buffer + i, ']');
+         if (!delim)
+            continue;
+         header.assign(buffer + i + 1, delim - (buffer + i + 1));
+         if (!header.size())
+            continue;
+         auto h = header.c_str();
+         auto s = header.size();
+         if (_strnicmp(h, "files", s) == 0) {
+            section = kSection_Files;
+         } else {
+            section = kSection_Unknown;
+         }
+         continue;
+      }
+      if (section == kSection_None) {
+         continue;
+      } else if (section == kSection_Files) {
+         if (c == '/' || c == '\\') // absolute paths are not allowed
+            continue;
+         if (strpbrk(buffer + i, "<>:\"|?*")) // characters with disallowed special meanings
+            continue;
+         std::string relpath = buffer + i;
+         cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
+         _MESSAGE("Lua Addon Manifest: Specified file path: %s", relpath.c_str());
+         if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
+            continue;
+         this->loadAddonScript(addon, addon.folder + relpath);
+      }
+   }
+   this->addons[addon.name] = addon;
    //
-   //  - Open each addon's manifest file once, to load the metadata and save it 
-   //    into memory. Do not load script files.
-   //
-   //  - Loop over all add-ons and ditch any whose dependencies are not available. 
-   //    Sort add-ons, also, so that each add-on comes after its dependencies in 
-   //    the list.
-   //
-   //  - Open each remaining addon's manifest file again and load the script files.
-   //
+   file.close();
+}
+void SkyrimLuaService::loadAddonMetadata(std::string& folder) {
    enum Section {
       kSection_None     = 0, // add-on metadata goes here
       kSection_Unknown  = 1,
@@ -126,6 +194,7 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
    }
    Section section = kSection_None;
    Addon   addon;
+   addon.folder = folder;
    while (!file.bad() && !file.eof()) {
       char buffer[1024];
       file.getline(buffer, sizeof(buffer));
@@ -186,13 +255,10 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
          auto s = key.size();
          if (_strnicmp(k, "name", s) == 0) {
             addon.name = delim + 1;
-_MESSAGE("Lua Addon Manifest: name=%s", addon.name.c_str());
          } else if (_strnicmp(k, "author", s) == 0) {
             addon.author = delim + 1;
-_MESSAGE("Lua Addon Manifest: author=%s", addon.author.c_str());
          } else if (_strnicmp(k, "description", s) == 0) {
             addon.description = delim + 1;
-_MESSAGE("Lua Addon Manifest: description=%s", addon.description.c_str());
          } else if (_strnicmp(k, "version", s) == 0) {
             char* end = nullptr;
             addon.version = (delim + 1, &end, 10);
@@ -201,7 +267,9 @@ _MESSAGE("Lua Addon Manifest: description=%s", addon.description.c_str());
                // TODO: bad version
                //
             }
-_MESSAGE("Lua Addon Manifest: version=%u", addon.version);
+            //
+            // TODO: add a "dependencies" field that works like "savevars"
+            //
          } else if (_strnicmp(k, "savevars", s) == 0) { // comma-separated list of globals
             std::string v = delim + 1;
             UInt32 s    = v.size();
@@ -237,7 +305,6 @@ _MESSAGE("Lua Addon Manifest: version=%u", addon.version);
             continue;
          std::string relpath = buffer + i;
          cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
-_MESSAGE("Lua Addon Manifest: Specified file path: %s", relpath.c_str());
          if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
             continue;
          this->loadAddonScript(addon, folder + relpath);
@@ -248,6 +315,18 @@ _MESSAGE("Lua Addon Manifest: Specified file path: %s", relpath.c_str());
    file.close();
 }
 void SkyrimLuaService::loadAddons() {
+   //
+   // The only way to do things like a "DependsOn" metadata key would be to:
+   //
+   //  - Open each addon's manifest file once, to load the metadata and save it 
+   //    into memory. Do not load script files.
+   //
+   //  - Loop over all add-ons and ditch any whose dependencies are not available. 
+   //    Sort add-ons, also, so that each add-on comes after its dependencies in 
+   //    the list.
+   //
+   //  - Open each remaining addon's manifest file again and load the script files.
+   //
    _MESSAGE("Lua: Loading add-ons...");
    WIN32_FIND_DATA state;
    HANDLE handle;
@@ -273,10 +352,19 @@ void SkyrimLuaService::loadAddons() {
       if (state.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
          if (state.cFileName[0] == '.') // FindNextFileA returns the "." and ".." pseudo-directories; really dumb
             continue;
-         this->loadAddon(GetAddonBasePath() + state.cFileName + "\\");
+         this->loadAddonMetadata(GetAddonBasePath() + state.cFileName + "\\");
       }
    } while (FindNextFileA(handle, &state));
    FindClose(handle);
+   //
+   // TODO: sort (this->addosn) by dependencies; an add-on should come after the other 
+   // add-ons it depends on
+   //
+   // and then we load the add-ons' script files:
+   //
+   for (auto it = this->addons.begin(); it != this->addons.end(); ++it) {
+      this->loadAddonScriptFiles(it->second);
+   }
 
 }
 

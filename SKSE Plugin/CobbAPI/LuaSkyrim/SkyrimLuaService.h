@@ -17,6 +17,7 @@ class SkyrimLuaService {
          std::string author;
          std::string description;
          std::vector<std::string> savevars; // TODO: use a set; we need these to be unique
+         std::vector<std::string> dependencies; // TODO: use a set; we need these to be unique
          UInt32 version = 0;
       };
    protected:
@@ -30,7 +31,8 @@ class SkyrimLuaService {
       std::recursive_mutex setupLock; // some of our hooks can fire during setup; we lock Lua to only run on one thread at a time, but Skyrim itself is still multi-threaded
       //
       void loadAddonScript(Addon& addon, std::string path);
-      void loadAddon(std::string& folder);
+      void loadAddonScriptFiles(Addon& addon);
+      void loadAddonMetadata(std::string& folder);
       void loadAddons();
       //
    public:

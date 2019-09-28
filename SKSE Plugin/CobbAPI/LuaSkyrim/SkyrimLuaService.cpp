@@ -111,9 +111,7 @@ bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
    if (!this->currentAddon.size())
       this->currentAddon = addon.name;
    else if (this->currentAddon == addon.name) {
-      //
-      // Circular dependency detected!
-      //
+      _MESSAGE("Unable to load add-on <%s> or any add-ons that depend on it (directly or indirectly) due to a circular dependency.", addon.name.c_str());
       return false;
    }
    if (addon.dependencies.size()) {
@@ -137,12 +135,12 @@ bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
    }
    this->currentAddon = "";
    //
+_MESSAGE("Lua: Loading script files for add-on <%s>.", addon.name.c_str());
    std::ifstream file;
    file.open(addon.folder + "manifest.txt");
-   if (!file) { // empty folder or not an add-on folder
-      //
-      // TODO: error
-      //
+   if (!file) {
+      _MESSAGE("Lua: The manifest file for add-on <%s> went missing during load.", addon.name.c_str());
+      addon.failed = true;
       return false;
    }
    Section section = kSection_None;
@@ -194,7 +192,6 @@ bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
             continue;
          std::string relpath = buffer + i;
          cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
-         _MESSAGE("Lua Addon Manifest: Specified file path: %s", relpath.c_str());
          if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
             continue;
          this->loadAddonScript(addon, addon.folder + relpath);
@@ -297,11 +294,10 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
             std::string v = delim + 1;
             UInt32 s = v.size();
             UInt32 last = 0;
-            for (UInt32 i = 0; i < s; i++) {
-               if (v[i] == ',') {
-                  last = i + 1;
-                  //
+            for (UInt32 i = 0; i <= s; i++) {
+               if (v[i] == ',' || v[i] == '\0') { // handling the end-of-string means we don't need to duplicate code to get everything after the last ','
                   std::string var = v.substr(last, i - last);
+                  last = i + 1;
                   cobb::trim(var);
                   if (!var.size())
                      continue;
@@ -312,11 +308,10 @@ _MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
             std::string v = delim + 1;
             UInt32 s    = v.size();
             UInt32 last = 0;
-            for (UInt32 i = 0; i < s; i++) {
-               if (v[i] == ',') {
-                  last = i + 1;
-                  //
+            for (UInt32 i = 0; i <= s; i++) {
+               if (v[i] == ',' || v[i] == '\0') { // handling the end-of-string means we don't need to duplicate code to get everything after the last ','
                   std::string var = v.substr(last, i - last);
+                  last = i + 1;
                   cobb::trim(var);
                   if (!var.size())
                      //
@@ -393,7 +388,7 @@ void SkyrimLuaService::loadAddons() {
       this->loadAddonScriptFiles(it->second); // if the addon has dependencies, those are forced to load first
    }
    clock_t end = clock();
-   _MESSAGE(" - Loaded all add-ons. Time taken: %f", (end - begin) / CLOCKS_PER_SEC);
+   _MESSAGE(" - Loaded all add-ons. Time taken: %f", (double)(end - begin) / CLOCKS_PER_SEC);
 }
 
 void SkyrimLuaService::StartVM() {

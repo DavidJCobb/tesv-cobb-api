@@ -108,6 +108,16 @@ namespace { // APIs provided to Lua; we're gonna change how these work in the fu
 }
 
 namespace {
+   //
+   // SKSE's form-delete hook fires on a bunch of stuff that *isn't* strictly 
+   // form deletion. The Papyrus VM uses the form-delete BSTEvent sink to do 
+   // some processing -- clearing script handles and I think other stuff -- 
+   // but that same processing is done in response to other events as well. 
+   // As such, we can't use SKSE's form-delete hook; if we do, we get lots of 
+   // false-positives e.g. the player being repeatedly "deleted" during play. 
+   // The form-delete BSTEvent sink is upstream from SKSE's hook site and is 
+   // reliable for our purposes.
+   //
    class LuaFormDeleteSink : public RE::BSTEventSink<RE::TESFormDeleteEvent> {
       public:
          virtual EventResult Handle(void* aEv, void* aSource) override {
@@ -472,8 +482,17 @@ void SkyrimLuaService::loadAddons() {
 }
 
 void SkyrimLuaService::onLuaCodeDone() {
-   auto luaVM = this->state;
+   auto luaVM = this->state; // Don't use wrapped_lua_pointer here; the wrapper's destructor is what calls this function in the first place.
    lua_checkstack(luaVM, 3);
+   //
+   // Iterate over all form wrappers (IForm instances) kept in Lua. If a wrapper 
+   // represents a form that can unload at run-time, then tell it to abandon its 
+   // pointer to that form; the wrapper will re-obtain that pointer the next time 
+   // Lua is running and a script code uses it.
+   //
+   // TODO: The table we're iterating over here is a list of ALL form wrappers; 
+   // wouldn't it be more efficient to have two lists which we keep in synch, one 
+   // for all form wrappers and another for just the ones that can unload?
    //
    lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
    if (lua_isnil(luaVM, -1)) {
@@ -503,7 +522,7 @@ void SkyrimLuaService::StartVM() {
    lua_State* luaVM = luaL_newstate(); // create a VM instance
    this->state    = luaVM;
    this->threadID = GetCurrentThreadId();
-   wrapped_lua_pointer luaVMWrapper; // ensure we run teardown tasks when we're done
+   wrapped_lua_pointer luaVMWrapper; // Create this just to ensure we run onLuaCodeDone when we're done here.
    //
    std::string file = "nativeTestScript.lua";
    file = GetScriptBasePath() + file;

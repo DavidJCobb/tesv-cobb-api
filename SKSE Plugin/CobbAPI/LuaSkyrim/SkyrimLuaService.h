@@ -12,6 +12,8 @@ class wrapped_lua_pointer {
    // outside caller is done with Lua and perform cleanup tasks, e.g. abandoning wrapped  
    // form pointers between Lua call stacks. Think of it like a smart pointer.
    //
+   // This also handles thread-safety, using the (accessLock) on SkyrimLuaService.
+   //
    // Usage:
    //
    //    wrapped_lua_pointer luaVM;
@@ -57,7 +59,7 @@ class SkyrimLuaService {
       std::unordered_map<std::string, Addon> addons;
       std::string currentAddon; // add-on currently loading script files; used for cyclical dependency checks
       //
-      mutable std::recursive_mutex accessLock;
+      mutable std::recursive_mutex accessLock; // used and managed by wrapped_lua_pointer
       mutable std::recursive_mutex setupLock; // some of our hooks can fire during setup; we lock Lua to only run on one thread at a time, but Skyrim itself is still multi-threaded
       //
       void loadAddonScript(Addon& addon, std::string path);

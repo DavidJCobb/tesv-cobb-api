@@ -102,9 +102,6 @@
     <ClInclude Include="lzio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="luauser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -207,9 +204,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lzio.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="luauser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

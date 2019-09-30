@@ -5,7 +5,33 @@
 #include <unordered_map>
 #include <vector>
 
+class wrapped_lua_pointer {
+   //
+   // Outside callers, e.g. hooks from x86, should use this to access the Lua state and 
+   // call into it. That way, we can rely on this class's destructor to know when the 
+   // outside caller is done with Lua and perform cleanup tasks, e.g. abandoning wrapped  
+   // form pointers between Lua call stacks. Think of it like a smart pointer.
+   //
+   // Usage:
+   //
+   //    wrapped_lua_pointer luaVM;
+   //    //
+   //    // And now, just use it exactly as you would a lua_State*! The constructor 
+   //    // automatically gets the lua_State pointer for you.
+   //
+   protected:
+      lua_State* state = nullptr;
+   public:
+      wrapped_lua_pointer();
+      ~wrapped_lua_pointer();
+      //
+      operator bool() const noexcept { return this->state != nullptr; };
+      operator lua_State*() const noexcept { return this->state; };
+      bool operator!() const noexcept { return !(bool)this; };
+};
 class SkyrimLuaService {
+   friend wrapped_lua_pointer;
+   //
    public:
       static SkyrimLuaService& GetInstance() {
          static SkyrimLuaService instance;
@@ -31,16 +57,17 @@ class SkyrimLuaService {
       std::unordered_map<std::string, Addon> addons;
       std::string currentAddon; // add-on currently loading script files; used for cyclical dependency checks
       //
-      std::recursive_mutex setupLock; // some of our hooks can fire during setup; we lock Lua to only run on one thread at a time, but Skyrim itself is still multi-threaded
+      mutable std::recursive_mutex accessLock;
+      mutable std::recursive_mutex setupLock; // some of our hooks can fire during setup; we lock Lua to only run on one thread at a time, but Skyrim itself is still multi-threaded
       //
       void loadAddonScript(Addon& addon, std::string path);
       bool loadAddonScriptFiles(Addon& addon);
       void loadAddonMetadata(std::string& folder);
       void loadAddons();
       //
+      void onLuaCodeDone(); // Runs whenever a Lua call stack finishes and we are "fully exiting" to C++; called by wrapped_lua_pointer as necessary.
+      //
    public:
-      lua_State* getState();
-
       void StartVM();
       void StopVM();
 

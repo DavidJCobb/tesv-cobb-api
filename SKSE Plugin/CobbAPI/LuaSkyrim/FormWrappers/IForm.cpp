@@ -50,6 +50,10 @@ namespace LuaSkyrim {
                // But if those tests pass, then we already have a wrapper for this form, 
                // and we can return it.
                //
+               // Note that the existing wrapper may have abandoned its form, i.e. its 
+               // (wrapped) member may be nullptr. We do not call (resolve) here; that 
+               // should get called when Lua actually tries to use the form.
+               //
                lua_remove(luaVM, -2);
                return 1;
             }

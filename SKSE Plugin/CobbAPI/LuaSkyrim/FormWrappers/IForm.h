@@ -49,13 +49,13 @@ namespace LuaSkyrim {
    //
    //       The general strategy for these form types is to store "directions to 
    //       the form" alongside the wrapped form pointer. Whenever Lua code isn't 
-   //       running, we set the pointer to nullptr; the next time a Lua script 
-   //       attempts to access the form, we "follow the directions" to retrieve 
-   //       the form again. If the form has unloaded since the last time Lua 
-   //       worked with it, then we'll get nullptr and we know that the form is 
-   //       currently unavailable. If the form unloaded and then reloaded (such 
-   //       that it's now located at a different address), then we'll get the 
-   //       fresh, up-to-date pointer.
+   //       running, we set the pointer to nullptr via IForm::abandon; the next 
+   //       time a Lua script attempts to access the form, we "follow the direct-
+   //       ions" to retrieve the form again. If the form has unloaded since the 
+   //       last time Lua worked with it, then we'll get nullptr and we know that 
+   //       the form is currently unavailable. If the form unloaded and then re-
+   //       loaded (such that it's now located at a different address), then 
+   //       we'll get the fresh, up-to-date pointer.
    //
    //       As for ruleOutForm(TESForm*)? Well, consider this case: we get a 
    //       wrapper for a created reference -- a TESObjectREFR with an 0xFF 
@@ -115,19 +115,20 @@ namespace LuaSkyrim {
    //    interface singletons could hold useful methods (e.g. "for each form of 
    //    this type") and constants (e.g. IActorBase.GENDER_MALE = 0).
    //
-   //  - We should probably move form interfaces to a subfolder, and have a 
-   //    single file that includes all of them.
-   //
-   //     - That file should also define a function that sets up all form 
-   //       metatables and similar for a given lua_State.
-   //
    //  - If we hook the game's reference-delete event, then we don't need to 
    //    guard against new references reusing the form IDs of old references. 
    //    Likewise if we hook every gameplay-related deletion of other created 
    //    forms.
    //
-   //     - We have code for this in place for references, although currently, 
-   //       that isn't hooked up to our specific test (it's in SkyrimLuaService).
+   //     - REFR deletion is hooked; PACK and NPC_ deletion is not.
+   //
+   //     - If we do this for every form type that needs it, then we can ditch 
+   //       IForm::ruleOutForm entirely. That function was literally only made 
+   //       available as a means of guarding against form ID reuse. If we ditch 
+   //       that function, then we need to amend the documentation comments 
+   //       above.
+   //
+   //        - IReference uses it; we can probably remove it from that class.
    //
    class IForm {
       protected:
@@ -138,7 +139,7 @@ namespace LuaSkyrim {
          virtual void resolve() {};
          virtual void abandon() {};
          virtual const char* signature() const { return "FORM"; }; // return a four-character string matching the form type's record signature
-         virtual bool ruleOutForm(TESForm*) { return false; };
+         virtual bool ruleOutForm(TESForm*) { return false; }; // this must be able to function even when (this->wrapped == nullptr)
          //
          static constexpr char* metatableName = "Skyrim.IForm";
 

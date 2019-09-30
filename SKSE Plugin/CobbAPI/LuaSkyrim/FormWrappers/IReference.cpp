@@ -21,7 +21,7 @@ namespace LuaSkyrim {
       auto form = LookupFormByID(this->formID);
       if (form) {
          auto ref = (RE::TESObjectREFR*) DYNAMIC_CAST(form, TESForm, TESObjectREFR);
-         if (ref && this->_verifyRef(ref))
+         if (ref && !this->ruleOutForm((TESForm*)ref))
             this->wrapped = form;
       }
    };
@@ -186,11 +186,11 @@ namespace LuaSkyrim {
             return 0;
          };
          luastackchange_t stopEffectShader(lua_State* L) {
-            IForm* wrapperRef = IReference::fromStack(L, 1);
+            IForm* wrapperRef    = IReference::fromStack(L, 1);
             IForm* wrapperShader = IEffectShader::fromStack(L, 2);
-            luaL_argcheck(L, wrapperRef != nullptr, 1, "'IReference' expected");
+            luaL_argcheck(L, wrapperRef    != nullptr, 1, "'IReference' expected");
             luaL_argcheck(L, wrapperShader != nullptr, 2, "'IEffectShader' expected");
-            auto  ref = (RE::TESObjectREFR*)   wrapperRef->unwrap();
+            auto  ref    = (RE::TESObjectREFR*)   wrapperRef->unwrap();
             auto  shader = (RE::TESEffectShader*) wrapperShader->unwrap();
             if (ref && shader) {
                auto singleton = RE::Unknown012E32E8::GetInstance();

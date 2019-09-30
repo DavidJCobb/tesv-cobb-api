@@ -20,9 +20,22 @@
 
 using namespace LuaSkyrim;
 
-lua_State* SkyrimLuaService::getState() {
-   return this->state;
-};
+wrapped_lua_pointer::wrapped_lua_pointer() {
+   auto& service = SkyrimLuaService::GetInstance();
+   if (!service.accessLock.try_lock()) {
+      _MESSAGE("WARNING: Attempted to access the SkyrimLuaService state when something else is already accessing it!");
+      return;
+   }
+   this->state = service.state;
+}
+wrapped_lua_pointer::~wrapped_lua_pointer() {
+   auto& service = SkyrimLuaService::GetInstance();
+   service.accessLock.unlock();
+   if (service.accessLock.try_lock()) { // if we managed to unlock it, then this will lock it again and return true
+      service.accessLock.unlock();
+      service.onLuaCodeDone();
+   }
+}
 
 namespace { // utility tools
    const std::string& GetAddonBasePath() {
@@ -458,6 +471,29 @@ void SkyrimLuaService::loadAddons() {
    _MESSAGE(" - Loaded all add-ons. Time taken: %fs", (double)(end - begin) / CLOCKS_PER_SEC);
 }
 
+void SkyrimLuaService::onLuaCodeDone() {
+   auto luaVM = this->state;
+   lua_checkstack(luaVM, 3);
+   //
+   lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
+   if (lua_isnil(luaVM, -1)) {
+      _MESSAGE("LUA: INTERNAL WARNING: The form wrapper reuse table is missing!");
+      return;
+   }
+   lua_pushnil(luaVM);
+   while (lua_next(luaVM, -2) != 0) {
+      // STACK: [value:userdata<IForm>, key:formID, list]
+      void* userdata = lua_touserdata(luaVM, -1);
+      if (userdata) {
+         auto wrap = (IForm*)userdata;
+         if (wrap->wrapped && wrap->canUnload)
+            wrap->abandon();
+      } else if (!lua_isnoneornil(luaVM, -1))
+         _MESSAGE("LUA: INTERNAL WARNING: onLuaCodeDone: Failed to lookup IForm for form ID %08X", lua_tonumber(luaVM, -2));
+      lua_pop(luaVM, 1); // pop only the value; key is used by lua_next to iterate
+   }
+}
+
 void SkyrimLuaService::StartVM() {
    std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
    if (this->state)
@@ -467,6 +503,7 @@ void SkyrimLuaService::StartVM() {
    lua_State* luaVM = luaL_newstate(); // create a VM instance
    this->state    = luaVM;
    this->threadID = GetCurrentThreadId();
+   wrapped_lua_pointer luaVMWrapper; // ensure we run teardown tasks when we're done
    //
    std::string file = "nativeTestScript.lua";
    file = GetScriptBasePath() + file;

@@ -172,8 +172,10 @@ namespace LuaSkyrim {
       }
       std::vector<std::string> listeners;
       util::tableKeys(luaVM, listeners, -1);
-      if (!listeners.size())
+      if (!listeners.size()) {
+         lua_pop(luaVM, 1); // STACK: []
          return;
+      }
       // STACK: [list]
       for (const auto& it : listeners) {
          // STACK: [list]
@@ -196,8 +198,7 @@ namespace LuaSkyrim {
    };
 
    bool HookManager::interceptActorKill(RE::Actor* target, RE::Actor* killer) {
-      auto& service = SkyrimLuaService::GetInstance();
-      auto  luaVM   = service.getState();
+      wrapped_lua_pointer luaVM;
       if (!luaVM)
          return true;
       //
@@ -249,8 +250,7 @@ namespace LuaSkyrim {
          return pendingChange;
       cobb::scoped_no_recurse guard(s_isRunning);
       //
-      auto& service = SkyrimLuaService::GetInstance();
-      auto  luaVM   = service.getState();
+      wrapped_lua_pointer luaVM;
       if (!luaVM)
          return pendingChange;
       //

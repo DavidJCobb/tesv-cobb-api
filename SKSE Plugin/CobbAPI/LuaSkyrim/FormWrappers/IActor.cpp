@@ -12,7 +12,7 @@ namespace LuaSkyrim {
       auto form = LookupFormByID(this->formID);
       if (form) {
          auto ref = (RE::Actor*) DYNAMIC_CAST(form, TESForm, Actor);
-         if (ref && this->_verifyRef(ref))
+         if (ref && !this->ruleOutForm((TESForm*)ref))
             this->wrapped = form;
       }
    };

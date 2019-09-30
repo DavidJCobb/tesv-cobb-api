@@ -9,14 +9,10 @@ namespace LuaSkyrim {
       public:
          IReference(TESForm* form);
 
-         virtual void resolve();
-         virtual void abandon();
-         virtual const char* signature() const { return "REFR"; };
-         virtual bool ruleOutForm(TESForm*);
-
-         inline bool _verifyRef(RE::TESObjectREFR* ref) { // helper
-            return ref->handleRefObject.GetRefHandle() == this->refHandle;
-         };
+         virtual void resolve() override;
+         virtual void abandon() override;
+         virtual const char* signature() const override { return "REFR"; };
+         virtual bool ruleOutForm(TESForm*) override; // TODO: We shouldn't need this for REFR due to the form-delete hook; we still need it for NPC_ and PACK, maybe others
 
          //
          // These fields serve as "directions," used to retrieve a reference after it 

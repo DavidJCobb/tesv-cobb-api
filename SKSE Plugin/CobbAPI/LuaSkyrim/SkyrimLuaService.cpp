@@ -16,6 +16,7 @@
 
 #include "skse/GameForms.h" // LookupFormByID
 #include "skse/Utilities.h" // GetRuntimeDirectory
+#include "ReverseEngineered/Systems/BSTEvent.h"
 
 using namespace LuaSkyrim;
 
@@ -93,11 +94,41 @@ namespace { // APIs provided to Lua; we're gonna change how these work in the fu
    }
 }
 
+namespace {
+   class LuaFormDeleteSink : public RE::BSTEventSink<RE::TESFormDeleteEvent> {
+      public:
+         virtual EventResult Handle(void* aEv, void* aSource) override {
+            auto ev = convertEvent(aEv);
+            if (ev)
+               SkyrimLuaService::GetInstance().OnReferenceDelete(ev->refrFormID);
+            return EventResult::kEvent_Continue;
+         };
+   };
+   static LuaFormDeleteSink s_luaFormDeleteSink;
+}
 SkyrimLuaService::SkyrimLuaService() {
+   CALL_MEMBER_FN(&RE::BSTEventSourceHolder::GetOrCreate()->formDelete, AddEventSink)(&s_luaFormDeleteSink);
 }
 
 void SkyrimLuaService::loadAddonScript(SkyrimLuaService::Addon& addon, std::string path) {
-   _MESSAGE("Lua would have loaded <%s> for addon <%s>", path.c_str(), addon.name.c_str());
+   //_MESSAGE("Lua: Loading script <%s> for addon <%s>", path.c_str(), addon.name.c_str());
+   auto luaVM = this->state;
+   int status = luaL_loadfile(luaVM, path.c_str());
+   if (status) {
+      _MESSAGE("Missing script file for add-on <%s>: %s", addon.name.c_str(), lua_tostring(luaVM, -1)); // loadfile logs error messages to the top of Lua's stack
+      lua_pop(luaVM, 1);
+      return;
+   }
+   //
+   // The script file is now an anonymous function loaded at stack position -1.
+   //
+   auto stackSizePrior = lua_gettop(luaVM);
+   int  result = util::safeCall(luaVM, 0, LUA_MULTRET); // boilerplate for pcall
+   if (result) {
+      _MESSAGE("Failed to run script for add-on <%s>: %s", addon.name.c_str(), lua_tostring(luaVM, -1));
+      lua_settop(luaVM, stackSizePrior);
+      return;
+   }
 }
 bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
    enum Section {
@@ -135,7 +166,7 @@ bool SkyrimLuaService::loadAddonScriptFiles(Addon& addon) {
    }
    this->currentAddon = "";
    //
-_MESSAGE("Lua: Loading script files for add-on <%s>.", addon.name.c_str());
+//_MESSAGE("Lua: Loading script files for add-on <%s>.", addon.name.c_str());
    std::ifstream file;
    file.open(addon.folder + "manifest.txt");
    if (!file) {
@@ -192,14 +223,50 @@ _MESSAGE("Lua: Loading script files for add-on <%s>.", addon.name.c_str());
             continue;
          std::string relpath = buffer + i;
          cobb::rtrim(relpath); // left-hand side is already trimmed since we skipped whitespace
+         if (!relpath.size())
+            continue;
          if (_strnicmp(relpath.c_str() + relpath.size() - 4, ".lua", 4) != 0) // make sure it's a Lua file
             continue;
+         {  // check for relative directory segments
+            bool   found = false;
+            UInt32 i    = 0;
+            UInt32 last = 0;
+            UInt32 size = relpath.size() - 4; // no need to iterate up to the file extension
+            do {
+               char c = relpath[i];
+               if (c == '/' || c == '\\')
+                  last = i;
+               else if (c == '.') {
+                  if (i + 2 >= size)
+                     break;
+                  char d = relpath[i + 1];
+                  char e = relpath[i + 2];
+                  if (d == '.' && (e == '/' || e == '\\')) { // ".." == up one level
+                     found = true;
+                     continue;
+                  }
+                  if (d == '/' || d == '\\') { // "." == current level
+                     found = true;
+                     continue;
+                  }
+               }
+            } while (++i < size);
+            if (found) {
+               _MESSAGE("Rejected suspicious script file path (contains relative directory segments e.g. \"..\"): <%s>", relpath.c_str());
+               continue;
+            }
+         }
          this->loadAddonScript(addon, addon.folder + relpath);
       }
    }
    //
    file.close();
    addon.loaded = true;
+   //
+   // TODO: fire an "OnAddonLoaded" event in Lua so that add-ons have a convenient way to 
+   // run code when all of their script files are loaded (i.e. without having to put a 
+   // file at the end of their lists that just exists to fire such an event manually).
+   //
    return true;
 }
 void SkyrimLuaService::loadAddonMetadata(std::string& folder) {
@@ -210,7 +277,7 @@ void SkyrimLuaService::loadAddonMetadata(std::string& folder) {
    };
    //
    std::ifstream file;
-_MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
+//_MESSAGE("Lua: loading manifest at <%s>...", folder + "manifest.txt");
    file.open(folder + "manifest.txt");
    if (!file) { // empty folder or not an add-on folder
       return;
@@ -388,7 +455,7 @@ void SkyrimLuaService::loadAddons() {
       this->loadAddonScriptFiles(it->second); // if the addon has dependencies, those are forced to load first
    }
    clock_t end = clock();
-   _MESSAGE(" - Loaded all add-ons. Time taken: %f", (double)(end - begin) / CLOCKS_PER_SEC);
+   _MESSAGE(" - Loaded all add-ons. Time taken: %fs", (double)(end - begin) / CLOCKS_PER_SEC);
 }
 
 void SkyrimLuaService::StartVM() {
@@ -494,6 +561,8 @@ void SkyrimLuaService::StopVM() {
 
 void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
 //_MESSAGE("[THREAD %08X] Lua VM was notified about the deletion of form %08X...", GetCurrentThreadId(), formID);
+   if (formID == 0x14)
+      _MESSAGE("Lua VM was notified about the deletion of the player-ref.");
    if (this->setupLock.try_lock())
       this->setupLock.unlock();
    else
@@ -517,7 +586,7 @@ void SkyrimLuaService::OnReferenceDelete(UInt32 formID) {
          // Until we know exactly when this runs -- particularly relative to loading saves and 
          // whatnot -- we can't use it.
          //
-         //a->isDeleted = true;
+         a->isDeleted = true;
       }
    }
 //_MESSAGE(" - Done");

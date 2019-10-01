@@ -1,0 +1,11 @@
+name=SpecificTests
+author=DavidJCobb
+description=Tests for CobbAPI Lua.
+
+[Files]
+main.lua
+tests/magicka-as-energy-shields.lua
+tests/actor-value-reduction-stack.lua
+tests/launch-enemies-on-death.lua
+tests/prevent-player-kills.lua
+tests/glow-player-on-kills.lua

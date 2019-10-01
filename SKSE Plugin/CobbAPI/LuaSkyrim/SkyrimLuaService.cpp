@@ -1,7 +1,6 @@
 #include "SkyrimLuaService.h"
 #include <fstream>
 #include "_includes.h"
-#include "Lua5.3.5/luauser.h"
 #include "_utilities.h"
 #include "Miscellaneous/strings.h"
 
@@ -112,11 +111,11 @@ namespace {
    // SKSE's form-delete hook fires on a bunch of stuff that *isn't* strictly 
    // form deletion. The Papyrus VM uses the form-delete BSTEvent sink to do 
    // some processing -- clearing script handles and I think other stuff -- 
-   // but that same processing is done in response to other events as well. 
-   // As such, we can't use SKSE's form-delete hook; if we do, we get lots of 
-   // false-positives e.g. the player being repeatedly "deleted" during play. 
-   // The form-delete BSTEvent sink is upstream from SKSE's hook site and is 
-   // reliable for our purposes.
+   // but that same processing is done in response to other events as well, 
+   // and that's what SKSE hooked. As such, we can't use SKSE's form-delete 
+   // hook; if we do, we get lots of false-positives e.g. the player being 
+   // repeatedly "deleted" during play. The form-delete BSTEvent sink is 
+   // upstream from SKSE's hook site and is reliable for our purposes.
    //
    class LuaFormDeleteSink : public RE::BSTEventSink<RE::TESFormDeleteEvent> {
       public:
@@ -145,7 +144,7 @@ void SkyrimLuaService::loadAddonScript(SkyrimLuaService::Addon& addon, std::stri
    //
    // The script file is now an anonymous function loaded at stack position -1.
    //
-   auto stackSizePrior = lua_gettop(luaVM);
+   auto stackSizePrior = lua_gettop(luaVM); // scripts are anonymous functions and can return an arbitrary number of values, which we must discard
    int  result = util::safeCall(luaVM, 0, LUA_MULTRET); // boilerplate for pcall
    if (result) {
       _MESSAGE("Failed to run script for add-on <%s>: %s", addon.name.c_str(), lua_tostring(luaVM, -1));
@@ -524,18 +523,6 @@ void SkyrimLuaService::StartVM() {
    this->threadID = GetCurrentThreadId();
    wrapped_lua_pointer luaVMWrapper; // Create this just to ensure we run onLuaCodeDone when we're done here.
    //
-   std::string file = "nativeTestScript.lua";
-   file = GetScriptBasePath() + file;
-   //
-   int status = luaL_loadfile(luaVM, file.c_str());
-   if (status) {
-      _MESSAGE("Couldn't load file: %s\n", lua_tostring(luaVM, -1)); // loadfile logs error messages to the top of Lua's stack
-      lua_close(luaVM); // Terminate the VM.
-      this->state    = nullptr;
-      this->threadID = 0;
-      return;
-   }
-   //
    // Set up metatables and similar for all native types that we plan to expose to Lua:
    //
    // DO NOT FORGET TO CALL THESE
@@ -580,29 +567,6 @@ void SkyrimLuaService::StartVM() {
    _MESSAGE("Lua: Attempting to load add-ons...");
    this->loadAddons();
    _MESSAGE("Lua: Add-ons loaded.");
-   //
-   // Now let's run the script:
-   //
-   _MESSAGE("Lua: Executing script file at hardcoded path...");
-   auto stackSizePrior = lua_gettop(luaVM);
-   //int  result = lua_pcall(luaVM, 0, LUA_MULTRET, 0);
-   int  result = util::safeCall(luaVM, 0, LUA_MULTRET);
-   if (result) {
-      _MESSAGE("Failed to run script: %s\n", lua_tostring(luaVM, -1));
-      lua_settop(luaVM, stackSizePrior);
-      return;
-   }
-   _MESSAGE("Lua: Script executed without any detectable errors.");
-   /*//
-   //
-   // Every Lua script is an anonymous function. If the script ran a top-level 
-   // "return" statement, then the return value will be at the top of the Lua 
-   // stack, and we can retrieve it:
-   //
-   double returned = lua_tonumber(luaVM, -1);
-   lua_settop(luaVM, stackSizePrior);
-   _MESSAGE("Script returned: %.0f\n", returned);
-   //*/
 }
 void SkyrimLuaService::StopVM() {
    std::lock_guard<decltype(this->setupLock)> guard(this->setupLock);
@@ -610,7 +574,7 @@ void SkyrimLuaService::StopVM() {
       return;
    _MESSAGE("Lua: VM is shutting down...");
    lua_close(this->state); // should also kill child threads
-   lua_unlock(this->state); // lua_close doesn't call this on its own, when it REALLY REALLY BLOODY SHOULD
+   //lua_unlock(this->state); // uncomment if using the lua_lock and lua_unlock macros // lua_close doesn't call this on its own, when it REALLY SHOULD
    this->state    = nullptr;
    this->threadID = 0;
 }

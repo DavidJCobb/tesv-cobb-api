@@ -1,0 +1,8 @@
+name=TestAddon
+author=DavidJCobb
+description=Manifest format test
+
+[Files]
+foo.lua
+bar.lua
+baz.lua

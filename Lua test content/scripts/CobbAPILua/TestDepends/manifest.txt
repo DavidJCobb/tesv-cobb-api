@@ -1,0 +1,7 @@
+name=TestDepends
+author=DavidJCobb
+description=Dependency handling test
+dependencies=TestAddon
+
+[Files]
+foo.lua

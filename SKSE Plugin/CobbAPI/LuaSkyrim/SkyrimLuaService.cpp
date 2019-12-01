@@ -114,7 +114,7 @@ namespace {
    // but that same processing is done in response to other events as well, 
    // and that's what SKSE hooked. As such, we can't use SKSE's form-delete 
    // hook; if we do, we get lots of false-positives e.g. the player being 
-   // repeatedly "deleted" during play. The form-delete BSTEvent sink is 
+   // repeatedly "deleted" during play. The form-delete BSTEvent source is 
    // upstream from SKSE's hook site and is reliable for our purposes.
    //
    class LuaFormDeleteSink : public RE::BSTEventSink<RE::TESFormDeleteEvent> {
@@ -482,6 +482,8 @@ void SkyrimLuaService::loadAddons() {
 
 void SkyrimLuaService::onLuaCodeDone() {
    auto luaVM = this->state; // Don't use wrapped_lua_pointer here; the wrapper's destructor is what calls this function in the first place.
+   if (!luaVM) // some hooks can fire before we've actually fired up the Lua VM
+      return;
    lua_checkstack(luaVM, 3);
    //
    // Iterate over all form wrappers (IForm instances) kept in Lua. If a wrapper 
@@ -491,7 +493,9 @@ void SkyrimLuaService::onLuaCodeDone() {
    //
    // TODO: The table we're iterating over here is a list of ALL form wrappers; 
    // wouldn't it be more efficient to have two lists which we keep in synch, one 
-   // for all form wrappers and another for just the ones that can unload?
+   // for all form wrappers and another for just the ones that can unload? If 
+   // we use two lists, then OnReferenceDeleted should use the can-unload list as 
+   // well.
    //
    lua_getfield(luaVM, LUA_REGISTRYINDEX, ce_formWrapperReuseKey); // STACK: [list]
    if (lua_isnil(luaVM, -1)) {

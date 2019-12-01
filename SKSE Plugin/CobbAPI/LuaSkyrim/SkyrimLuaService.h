@@ -29,7 +29,7 @@ class wrapped_lua_pointer {
       //
       operator bool() const noexcept { return this->state != nullptr; };
       operator lua_State*() const noexcept { return this->state; };
-      bool operator!() const noexcept { return !(bool)this; };
+      bool operator!() const noexcept { return this->state == nullptr; };
 };
 class SkyrimLuaService {
    friend wrapped_lua_pointer;

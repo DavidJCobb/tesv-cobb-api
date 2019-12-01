@@ -88,6 +88,9 @@ namespace LuaSkyrim {
             luaL_argcheck(luaVM, lua_isfunction(luaVM, 3), 3, "function expected");
             const char* listKey = nullptr;
             _helpers::eventConstantToListRegistryKey(luaVM, lua_tonumber(luaVM, 2), listKey);
+            //
+            // TODO: Lua error if (listKey) is still nullptr
+            //
             lua_getfield(luaVM, LUA_REGISTRYINDEX, listKey); // STACK: [list, arg3, arg2, arg1]
             if (lua_type(luaVM, -1) != LUA_TTABLE)
                return luaL_error(luaVM, "An internal error occurred: CobbAPI was unable to access the listener list for this hook.");
@@ -97,7 +100,7 @@ namespace LuaSkyrim {
                //
                // This event name is already in use.
                //
-               return luaL_error(luaVM, "The specified event name is already in use for this hook."); // TODO: I think this should be a non-fatal warning instead
+               return luaL_error(luaVM, "The specified listener name is already in use for this event."); // TODO: I think this should be a non-fatal warning instead
             }
             lua_pop(luaVM, 1); // STACK: [list, arg3, arg2, arg1]
             lua_pushvalue(luaVM, 1);

@@ -30,6 +30,21 @@ namespace LuaSkyrim {
             form->actorValueOwner.ModifyModifier(RE::kAVModifier_Damage, avIndex, -value);
             return 0;
          };
+         luastackchange_t decapitate(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            if (!lua_isnoneornil(L, 2))
+               luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean or nil (even-if-alive boolean) expected"); // even-if-alive
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            if (!lua_toboolean(L, 2)) {
+               if (!form->IsDead(0))
+                  return 0;
+            }
+            CALL_MEMBER_FN(form, Decapitate)();
+            return 0;
+         };
          luastackchange_t drawWeapon(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
@@ -222,12 +237,26 @@ namespace LuaSkyrim {
          };
          luastackchange_t setShowsOnStealthMeter(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L, 1);
-            luaL_argcheck(L, wrapper != nullptr,  1, "'IActor' caster expected");
+            luaL_argcheck(L, wrapper != nullptr,  1, "'IActor' expected");
             luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean expected");
             auto form = (RE::Actor*) wrapper->unwrap();
             if (!form)
                return 0;
             CALL_MEMBER_FN(form, SetNotShowOnStealthMeter)(!lua_toboolean(L, 2));
+            return 0;
+         };
+         luastackchange_t setSwimming(lua_State* L) {
+            //
+            // TODO: This doesn't work very well. The game just sets the player to be non-swimming on the 
+            // next frame.
+            //
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr,  1, "'IActor' expected");
+            luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, SetSwimming)(lua_toboolean(L, 2)); // TODO: returns previous state? once we know what this returns, we should have the Lua API return it too
             return 0;
          };
          luastackchange_t sheatheWeapon(lua_State* L) {
@@ -257,6 +286,7 @@ namespace LuaSkyrim {
    }
    static const luaL_Reg _metatableMethods[] = {
       { "damageActorValue",  _methods::damageActorValue },
+      { "decapitate",        _methods::decapitate },
       { "drawWeapon",        _methods::drawWeapon },
       { "getActorValue",     _methods::getActorValue },
       { "getCrimeFaction",   _methods::getCrimeFaction },
@@ -275,6 +305,7 @@ namespace LuaSkyrim {
       { "pushAwayFrom",      _methods::pushAwayFrom }, // args: x,y,z to push away from; force magnitude
       { "restoreActorValue", _methods::restoreActorValue },
       { "setShowsOnStealthMeter", _methods::setShowsOnStealthMeter },
+      { "setSwimming",       _methods::setSwimming },
       { "sheatheWeapon",     _methods::sheatheWeapon },
       { "soulTrap",          _methods::soulTrap }, // caster:soulTrap(target)
       { NULL, NULL }

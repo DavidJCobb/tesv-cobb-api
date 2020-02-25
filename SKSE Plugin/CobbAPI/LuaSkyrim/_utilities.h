@@ -29,5 +29,7 @@ namespace LuaSkyrim {
       extern uint8_t getAVIndexArg(lua_State* L, int stackPos, int argIndex);
       extern float getColorComponentArg(lua_State* L, int stackPos, int argIndex); // gets an arg as a color component
       extern float getNumberArg(lua_State* L, int stackPos, int argIndex); // gets an arg as a float, even if the arg is an integer
+      //
+      extern void dumpStackContent(lua_State* L);
    }
 }

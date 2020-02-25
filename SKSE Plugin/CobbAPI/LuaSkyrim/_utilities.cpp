@@ -19,7 +19,6 @@ namespace LuaSkyrim {
             if (!key)
                continue;
             bool found = false;
-            const char* funcName;
             for (auto it = allowedFunctions.begin(); it != allowedFunctions.end(); ++it) {
                auto funcName = *it;
                if (strcmp(key, funcName) == 0) {
@@ -55,16 +54,18 @@ namespace LuaSkyrim {
          lua_pop(luaVM, 2); // where .. pushvfstring, traceback
       }
       luastackchange_t safeCall(lua_State* luaVM, int argCount, int returnCount) {
-         int handlerPos = lua_gettop(luaVM) - argCount;
+         int handlerPos = lua_gettop(luaVM) - argCount; // this is currently the position of the function to call, but we'll be moving the handler here
          //
          // Add the error handler to the stack, and then move it before the Lua 
          // function and arguments:
          //
-         lua_pushcfunction(luaVM, errorHandler);
-         lua_insert(luaVM, handlerPos);
+         lua_pushcfunction(luaVM, errorHandler); // STACK: [error handler, args..., function]
+         lua_insert(luaVM, handlerPos); // STACK: [args..., function, error handler]
+         // STACK: [args..., function, error handler]
          //
          auto ret = lua_pcall(luaVM, argCount, returnCount, handlerPos);
-         lua_remove(luaVM, handlerPos); // remove error handler from stack
+         // STACK: [return values..., error handler]
+         lua_remove(luaVM, -returnCount - 1); // remove error handler from stack
          return ret;
       }
       void tableKeys(lua_State* luaVM, std::vector<std::string>& out, int stackPos) {
@@ -123,7 +124,7 @@ namespace LuaSkyrim {
          luaL_argcheck(L, i >= 0 && i <= 255, argIndex, "actor value index is out of bounds");
          return i;
       }
-       float getColorComponentArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a color component
+      float getColorComponentArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a color component
          lua_Integer i;
          if (lua_isnumber(L, stackPos)) {
             lua_Number f = lua_tonumber(L, stackPos);
@@ -139,13 +140,34 @@ namespace LuaSkyrim {
             i = 255;
          return i;
       }
-       float getNumberArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a float, even if the arg is an integer
+      float getNumberArg(lua_State* L, int stackPos, int argIndex) { // gets an arg as a float, even if the arg is an integer
          if (lua_isnumber(L, stackPos)) {
             return lua_tonumber(L, stackPos);
          } else if (lua_isinteger(L, stackPos)) {
             return lua_tointeger(L, stackPos);
          } else {
             luaL_argcheck(L, false, argIndex, "number expected");
+         }
+      }
+      void dumpStackContent(lua_State* L) {
+         _MESSAGE("STACK:");
+         auto top = lua_gettop(L);
+         for (int i = 1; i <= top; i++) {
+            auto type = lua_type(L, i);
+            switch (type) {
+               case LUA_TSTRING:  /* strings */
+                  _MESSAGE("   \"%s\"", lua_tostring(L, i));
+                  break;
+               case LUA_TBOOLEAN:  /* booleans */
+                  _MESSAGE("   %s", lua_toboolean(L, i) ? "true" : "false");
+                  break;
+               case LUA_TNUMBER:  /* numbers */
+                  _MESSAGE("   %g", lua_tonumber(L, i));
+                  break;
+               default:  /* other values */
+                  _MESSAGE("   %s", lua_typename(L, type));
+                  break;
+            }
          }
       }
    }

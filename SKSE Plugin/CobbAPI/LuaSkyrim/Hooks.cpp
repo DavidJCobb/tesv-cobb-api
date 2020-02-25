@@ -5,11 +5,39 @@
 #include "Miscellaneous/scope_control.h"
 #include "_utilities.h"
 
+#include "ReverseEngineered/Systems/BSTEvent.h"
+#include "skse/GameForms.h"
+#include "skse/GameRTTI.h"
 #include "skse/SafeWrite.h"
 
 #include <functional>
 
 namespace LuaSkyrim {
+   namespace EventSinks {
+      namespace SpellCastStart {
+         class _Sink : public RE::BSTEventSink<RE::TESSpellCastEvent> {
+            public:
+               virtual EventResult Handle(void* aEv, void* aSource) override {
+                  auto ev = convertEvent(aEv);
+                  if (ev) {
+                     SpellItem* s = DYNAMIC_CAST(LookupFormByID(ev->spellFormID), TESForm, SpellItem);
+                     if (s)
+                        HookManager::eventSpellCastStart(ev->caster, s);
+                  }
+                  return EventResult::kEvent_Continue;
+               };
+         };
+         static _Sink s_sink;
+         //
+         void Apply() {
+            CALL_MEMBER_FN(&RE::BSTEventSourceHolder::GetOrCreate()->spellCast, AddEventSink)(&s_sink);
+         }
+      }
+      //
+      void Apply() {
+         SpellCastStart::Apply();
+      }
+   }
    namespace Patches {
       namespace InterceptActorKill {
          bool _stdcall Inner(RE::Actor* target, RE::Actor* killer) {
@@ -157,13 +185,15 @@ namespace LuaSkyrim {
       //
       // Set up the various hooks' Lua stuff:
       //
-      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_KILL",         kHook_InterceptActorKill, ce_hookFunctionList_interceptActorKill, -1);
-      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_VALUE_CHANGE", kHook_InterceptAVChange,  ce_hookFunctionList_interceptAVChange,  -1);
+      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_KILL",         kHook_InterceptActorKill,  ce_hookFunctionList_interceptActorKill,  -1);
+      _prepHook(luaVM, "SKYRIM_EVENT_INTERCEPT_ACTOR_VALUE_CHANGE", kHook_InterceptAVChange,   ce_hookFunctionList_interceptAVChange,   -1);
+      _prepHook(luaVM, "SKYRIM_EVENT_SPELL_CAST_START",             kHook_EventSpellCastStart, ce_hookFunctionList_eventSpellCastStart, -1);
       //
       lua_pop(luaVM, 1); // pop the constant-to-registry-name map from the stack
    }
 
    void HookManager::setup() {
+      EventSinks::Apply();
       Patches::Apply();
    };
 
@@ -187,8 +217,8 @@ namespace LuaSkyrim {
          if (lua_isfunction(luaVM, -1)) {
             auto top = lua_gettop(luaVM);
             functor(luaVM);
-            if (top > lua_gettop(luaVM)) {
-               _MESSAGE("WARNING: The hook/event handler for %s managed the Lua stack incorrectly!", registryKey);
+            if (top - 1 > lua_gettop(luaVM)) { // minus one because we'll have popped the function-to-call too
+               _MESSAGE("WARNING: The hook/event handler for %s managed the Lua stack incorrectly! (Difference is %d.)", registryKey, ((top - 1) - lua_gettop(luaVM)));
             }
             lua_settop(luaVM, top - 1); // STACK: [list]
          } else {
@@ -199,7 +229,31 @@ namespace LuaSkyrim {
       lua_pop(luaVM, 1); // STACK: []
       return;
    };
-
+   
+   void HookManager::eventSpellCastStart(RE::TESObjectREFR* target, SpellItem* spell) {
+      wrapped_lua_pointer luaVM;
+      if (!luaVM)
+         return;
+      //
+      // Wrap the forms outside of the loop, so that we don't do redundant 
+      // processing. Capture their Lua stack indices for use when pushing 
+      // args to each listener.
+      //
+      wrapForm(luaVM, (TESForm*)target); // STACK: [arg1]
+      auto casterPos = lua_gettop(luaVM);
+      wrapForm(luaVM, (TESForm*)spell); // STACK: [arg2, arg1]
+      auto spellPos  = lua_gettop(luaVM);
+      //
+      _forEachListenerOfType(luaVM, ce_hookFunctionList_eventSpellCastStart,
+         [casterPos, spellPos](lua_State* luaVM) {
+            lua_pushvalue(luaVM, casterPos);
+            lua_pushvalue(luaVM, spellPos);
+            if (util::safeCall(luaVM, 2, 0) == LUA_OK) { // STACK: [arg2, arg1, list]
+            }
+         }
+      );
+      lua_pop(luaVM, 2); // pop forms
+   }
    bool HookManager::interceptActorKill(RE::Actor* target, RE::Actor* killer) {
       wrapped_lua_pointer luaVM;
       if (!luaVM)
@@ -223,6 +277,7 @@ namespace LuaSkyrim {
             if (util::safeCall(luaVM, 3, 1) == LUA_OK) { // STACK: [(list[i](target, result)) or errorText, arg2, arg1, list]
                if (lua_isboolean(luaVM, -1))
                   result = lua_toboolean(luaVM, -1);
+               lua_pop(luaVM, 1); // pop return values
             }
          }
       );
@@ -277,6 +332,7 @@ namespace LuaSkyrim {
                } else if (lua_isinteger(luaVM, -1)) {
                   pendingChange = lua_tointeger(luaVM, -1);
                }
+               lua_pop(luaVM, 1); // pop return values
             }
          }
       );

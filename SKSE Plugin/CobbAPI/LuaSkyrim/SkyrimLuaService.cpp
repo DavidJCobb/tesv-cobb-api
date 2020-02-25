@@ -16,6 +16,7 @@
 #include "skse/GameForms.h" // LookupFormByID
 #include "skse/Utilities.h" // GetRuntimeDirectory
 #include "ReverseEngineered/Systems/BSTEvent.h"
+#include "ReverseEngineered/UI/Miscellaneous.h"
 
 using namespace LuaSkyrim;
 
@@ -102,6 +103,21 @@ namespace { // APIs provided to Lua; we're gonna change how these work in the fu
          UInt32 id = num;
          TESForm* form = ::LookupFormByID(id);
          return wrapForm(L, form);
+      }
+      static luastackchange_t ShowNotification(lua_State* L) {
+         int n = lua_gettop(L); // number of arguments
+         //
+         if (!lua_isstring(L, 1)) {
+            lua_pushliteral(L, "incorrect argument");
+            lua_error(L);
+            return 0;
+         }
+         const char* message = lua_tostring(L, 1);
+         const char* soundID = nullptr;
+         if (lua_isstring(L, 2)) {
+            soundID = lua_tostring(L, 2);
+         }
+         RE::ShowNotification(message, soundID, 1);
       }
    }
 }
@@ -547,6 +563,7 @@ void SkyrimLuaService::StartVM() {
    //
    lua_register(luaVM, "logmessage", _globals::LuaLog); // make a C function available to the Lua script under the name "logmessage"
    lua_register(luaVM, "form_by_id", _globals::FormByID);
+   lua_register(luaVM, "show_notification", _globals::ShowNotification);
    //
    // Make the standard libraries available to scripts. There are 
    // some that we want to omit to avoid threading issues and similar.

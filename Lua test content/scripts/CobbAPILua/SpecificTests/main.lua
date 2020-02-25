@@ -5,6 +5,8 @@ CobbAPIUnitTests = {
       launchEnemiesOnDeath     = false,
       preventPlayerKills       = true,
       glowPlayerOnKills        = true,
+      swimOnClairvoyance       = true,
+      decapPlayerOnCastFear    = true,
    }
 }
 

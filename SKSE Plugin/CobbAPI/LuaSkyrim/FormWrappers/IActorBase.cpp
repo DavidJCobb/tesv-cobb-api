@@ -29,7 +29,7 @@ namespace LuaSkyrim {
                if (form->formType == kFormType_NPC) {
                   auto  base = (RE::TESNPC*) form;
                   auto& data = base->actorData;
-                  if (data.flags & RE::TESNPC::kFlag_Female)
+                  if (data.flags & RE::TESActorBaseData::kFlag_Female)
                      gender = 1;
                   else
                      gender = 0;

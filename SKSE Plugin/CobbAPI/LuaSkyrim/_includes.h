@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "Lua5.3.5/lua.hpp"
 
 //

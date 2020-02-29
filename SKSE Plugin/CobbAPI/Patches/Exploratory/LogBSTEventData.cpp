@@ -456,6 +456,8 @@ namespace CobbPatches {
          };
          //
          void Apply() {
+            return; // just for now
+
             auto holder = RE::BSTEventSourceHolder::GetOrCreate();
             CALL_MEMBER_FN(&holder->actorLocationChange, AddEventSink)(&DumpActorLoc::GetInstance());
             CALL_MEMBER_FN(&holder->bookRead, AddEventSink)(&DumpBook::GetInstance());

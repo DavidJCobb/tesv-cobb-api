@@ -45,6 +45,14 @@ namespace LuaSkyrim {
             CALL_MEMBER_FN(form, Decapitate)();
             return 0;
          };
+         luastackchange_t dismount(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (form)
+               CALL_MEMBER_FN(form, Dismount)();
+            return 0;
+         };
          luastackchange_t drawWeapon(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
@@ -124,6 +132,46 @@ namespace LuaSkyrim {
             lua_pushboolean(L, result);
             return 1;
          };
+         luastackchange_t isBlocking(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, IsBlocking)();
+            lua_pushboolean(L, result);
+            return 1;
+         };
+         luastackchange_t isGhost(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, IsGhost)();
+            lua_pushboolean(L, result);
+            return 1;
+         };
+         luastackchange_t isGuard(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = form->IsGuard();
+            lua_pushboolean(L, result);
+            return 1;
+         };
+         luastackchange_t isHorse(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, IsHorse)();
+            lua_pushboolean(L, result);
+            return 1;
+         };
          luastackchange_t isInMidAir(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
@@ -134,6 +182,16 @@ namespace LuaSkyrim {
             lua_pushboolean(L, result);
             return 1;
          };
+         luastackchange_t isLeveledActor(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = form->IsLeveledActor();
+            lua_pushboolean(L, result);
+            return 1;
+         };
          luastackchange_t isOverencumbered(lua_State* L) {
             IForm* wrapper = IActor::fromStack(L, 1);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
@@ -141,6 +199,16 @@ namespace LuaSkyrim {
             if (!form)
                return 0;
             bool result = CALL_MEMBER_FN(form, IsOverencumbered)();
+            lua_pushboolean(L, result);
+            return 1;
+         };
+         luastackchange_t isRunning(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, IsRunning)();
             lua_pushboolean(L, result);
             return 1;
          };
@@ -245,6 +313,16 @@ namespace LuaSkyrim {
             CALL_MEMBER_FN(form, SetNotShowOnStealthMeter)(!lua_toboolean(L, 2));
             return 0;
          };
+         luastackchange_t setSneaking(lua_State* L) {
+            IForm* wrapper = IActor::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IActor' expected");
+            luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean expected");
+            auto form = (RE::Actor*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            bool result = CALL_MEMBER_FN(form, SetSneaking)(lua_toboolean(L, 2)); // returns success bool
+            return 0;
+         };
          luastackchange_t setSwimming(lua_State* L) {
             //
             // TODO: This doesn't work very well. The game just sets the player to be non-swimming on the 
@@ -287,6 +365,7 @@ namespace LuaSkyrim {
    static const luaL_Reg _metatableMethods[] = {
       { "damageActorValue",  _methods::damageActorValue },
       { "decapitate",        _methods::decapitate },
+      { "dismount",          _methods::dismount },
       { "drawWeapon",        _methods::drawWeapon },
       { "getActorValue",     _methods::getActorValue },
       { "getCrimeFaction",   _methods::getCrimeFaction },
@@ -295,8 +374,14 @@ namespace LuaSkyrim {
       { "getMaxCarryWeight", _methods::getMaxCarryWeight }, // returns CarryWeight AV influenced by the GetMaxCarryWeight perk entry point
       { "getShowsOnStealthMeter", _methods::getShowsOnStealthMeter },
       { "isAlerted",         _methods::isAlerted },
+      { "isBlocking",        _methods::isBlocking },
+      { "isGhost",           _methods::isGhost },
+      { "isGuard",           _methods::isGuard },
+      { "isHorse",           _methods::isHorse },
       { "isInMidAir",        _methods::isInMidAir }, // used by the game to disallow waiting/sleeping in midair; not sure how it actually works
+      { "isLeveledActor",    _methods::isLeveledActor },
       { "isOverencumbered",  _methods::isOverencumbered }, // always false for NPCs; always false if god mode is enabled; always false if the actor has ExtraInteraction; otherwise, compare max carry weight (with perk entry points) with inventory weight
+      { "isRunning",         _methods::isRunning },
       { "isSneaking",        _methods::isSneaking },
       { "isSprinting",       _methods::isSprinting },
       { "isSwimming",        _methods::isSwimming },
@@ -305,6 +390,7 @@ namespace LuaSkyrim {
       { "pushAwayFrom",      _methods::pushAwayFrom }, // args: x,y,z to push away from; force magnitude
       { "restoreActorValue", _methods::restoreActorValue },
       { "setShowsOnStealthMeter", _methods::setShowsOnStealthMeter },
+      { "setSneaking",       _methods::setSneaking },
       { "setSwimming",       _methods::setSwimming },
       { "sheatheWeapon",     _methods::sheatheWeapon },
       { "soulTrap",          _methods::soulTrap }, // caster:soulTrap(target)

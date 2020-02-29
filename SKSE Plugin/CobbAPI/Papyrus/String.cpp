@@ -316,7 +316,7 @@ namespace CobbPapyrus {
 }
 
 bool CobbPapyrus::String::Register(VMClassRegistry* registry) {
-   // /*//
+   /*//
    {  // UNIT TESTS
       using namespace cobb;
       std::string testASCII   = u8"Test string";

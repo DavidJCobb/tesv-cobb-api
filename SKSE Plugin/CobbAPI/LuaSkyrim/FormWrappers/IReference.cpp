@@ -37,6 +37,15 @@ namespace LuaSkyrim {
 
    namespace { // metatable methods
       namespace _methods {
+         luastackchange_t containsQuestItem(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            auto form = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            lua_pushboolean(L, CALL_MEMBER_FN(form, ContainsQuestItem)());
+            return 1;
+         };
          luastackchange_t disable(lua_State* L) {
             IForm* wrapper = IReference::fromStack(L);
             luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
@@ -164,6 +173,24 @@ namespace LuaSkyrim {
             lua_pushboolean(L, form->IsDead(0));
             return 1;
          };
+         luastackchange_t isLocked(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            auto form = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            lua_pushboolean(L, CALL_MEMBER_FN(form, IsLocked)());
+            return 1;
+         };
+         luastackchange_t isQuestObject(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            auto form = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (!form)
+               return 0;
+            lua_pushboolean(L, CALL_MEMBER_FN(form, IsQuestObject)());
+            return 1;
+         };
          luastackchange_t playEffectShader(lua_State* L) {
             IForm* wrapperRef    = IReference::fromStack(L, 1);
             IForm* wrapperShader = IEffectShader::fromStack(L, 2);
@@ -185,6 +212,51 @@ namespace LuaSkyrim {
             }
             return 0;
          };
+         luastackchange_t setDestroyed(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            luaL_argcheck(L, lua_isboolean(L, 2), 2, "boolean expected");
+            auto ref = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (ref) {
+               bool destroyed = lua_toboolean(L, 2);
+               CALL_MEMBER_FN(ref, SetDestroyed)(destroyed);
+            }
+            return 0;
+         };
+         luastackchange_t setPosition(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            auto ref = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (!ref)
+               return 0;
+            //
+            RE::NiPoint3 to = ref->pos;
+            if (!lua_isnoneornil(L, 2))
+               to.x = util::getNumberArg(L, 2, 2);
+            if (!lua_isnoneornil(L, 3))
+               to.y = util::getNumberArg(L, 3, 3);
+            if (!lua_isnoneornil(L, 4))
+               to.z = util::getNumberArg(L, 4, 4);
+            CALL_MEMBER_FN(ref, SetPosition)(&to);
+            return 0;
+         };
+         luastackchange_t setRotation(lua_State* L) {
+            IForm* wrapper = IReference::fromStack(L, 1);
+            luaL_argcheck(L, wrapper != nullptr, 1, "'IReference' expected");
+            auto ref = (RE::TESObjectREFR*) wrapper->unwrap();
+            if (!ref)
+               return 0;
+            //
+            RE::NiPoint3 to = ref->rot;
+            if (!lua_isnoneornil(L, 2))
+               to.x = util::getNumberArg(L, 2, 2);
+            if (!lua_isnoneornil(L, 3))
+               to.y = util::getNumberArg(L, 3, 3);
+            if (!lua_isnoneornil(L, 4))
+               to.z = util::getNumberArg(L, 4, 4);
+            CALL_MEMBER_FN(ref, SetRotation)(&to);
+            return 0;
+         };
          luastackchange_t stopEffectShader(lua_State* L) {
             IForm* wrapperRef    = IReference::fromStack(L, 1);
             IForm* wrapperShader = IEffectShader::fromStack(L, 2);
@@ -203,19 +275,25 @@ namespace LuaSkyrim {
       }
    }
    static const luaL_Reg _metatableMethods[] = {
-      { "disable",       _methods::disable },
-      { "enable",        _methods::enable },
-      { "getBaseForm",   _methods::getBaseForm },
-      { "getBounds",     _methods::getBounds },
-      { "getLockLevel",  _methods::getLockLevel },
-      { "getName",       _methods::getName },
-      { "getParentCell", _methods::getParentCell },
-      { "getPosition",   _methods::getPosition },
-      { "getRotation",   _methods::getRotation }, // if arg1 == true, then returns radians; otherwise, degrees
-      { "getScale",      _methods::getScale },
-      { "isDead",        _methods::isDead },
-      { "playEffectShader", _methods::playEffectShader },
-      { "stopEffectShader", _methods::stopEffectShader },
+      { "containsQuestItem", _methods::containsQuestItem },
+      { "disable",           _methods::disable },
+      { "enable",            _methods::enable },
+      { "getBaseForm",       _methods::getBaseForm },
+      { "getBounds",         _methods::getBounds },
+      { "getLockLevel",      _methods::getLockLevel },
+      { "getName",           _methods::getName },
+      { "getParentCell",     _methods::getParentCell },
+      { "getPosition",       _methods::getPosition },
+      { "getRotation",       _methods::getRotation }, // if arg1 == true, then returns radians; otherwise, degrees
+      { "getScale",          _methods::getScale },
+      { "isDead",            _methods::isDead },
+      { "isLocked",          _methods::isLocked },
+      { "isQuestObject",     _methods::isQuestObject },
+      { "playEffectShader",  _methods::playEffectShader },
+      { "setDestroyed",      _methods::setDestroyed },
+      { "setPosition",       _methods::setPosition }, // TODO: do we need to limit this to the main thread?
+      { "setRotation",       _methods::setRotation }, // TODO: do we need to limit this to the main thread?
+      { "stopEffectShader",  _methods::stopEffectShader },
       { NULL, NULL }
    };
    void IReference::setupClass(lua_State* luaVM) {

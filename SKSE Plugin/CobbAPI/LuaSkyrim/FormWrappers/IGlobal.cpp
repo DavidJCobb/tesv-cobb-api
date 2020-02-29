@@ -59,10 +59,10 @@ namespace LuaSkyrim {
    }
    static const luaL_Reg _metatableMethods[] = {
       { "forceValue", _methods::forceValue },
-      { "getName",  _methods::getName },
-      { "getValue", _methods::getValue },
+      { "getName",    _methods::getName },
+      { "getValue",   _methods::getValue },
       { "isConstant", _methods::isConstant },
-      { "setValue", _methods::setValue },
+      { "setValue",   _methods::setValue },
       { NULL, NULL }
    };
    void IGlobal::setupClass(lua_State* luaVM) {
